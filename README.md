@@ -42,6 +42,8 @@ This particular implementation could be used to quickly fetch a subset of all ob
 [clickhouse](https://github.com/ClickHouse/ClickHouse) 
 that we can observe with [grafana](https://github.com/grafana/grafana) - giving a real-time insight in crawling performance
 
+![example](./resources/grafana.png)
+
 ## Getting started
 
 ## Contributing
