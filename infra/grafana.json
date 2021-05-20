@@ -1,0 +1,904 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 1,
+  "iteration": 1621069891907,
+  "links": [],
+  "panels": [
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 2,
+        "x": 0,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.1",
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "table",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    count(created_at) as tasks\n    \nFROM default.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id) AND error = 0\n",
+          "rawQuery": "SELECT\n    count(created_at) as tasks\n    \nFROM default.metrics_task\n\nWHERE\n    created_at >= toDateTime(1620299918)\n     AND host = 'Crawler-1'   AND app_id = 'RustySpider'  AND error = 0",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Tasks processed",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 2,
+        "x": 22,
+        "y": 0
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.5.1",
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "table",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    count(created_at) as tasks\n    \nFROM default.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id) AND error = 1\n",
+          "rawQuery": "SELECT\n    count(created_at) as tasks\n    \nFROM default.metrics_task\n\nWHERE\n    created_at >= toDateTime(1620299957)\n     AND host = 'Crawler-1'   AND app_id = 'RustySpider'  AND error = 1",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Tasks with errors",
+      "type": "stat"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 2
+      },
+      "hiddenSeries": false,
+      "id": 2,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(read_size_b) / 5 as rx,\n    sum(write_size_b) / 5 as tx\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(read_size_b) / 5 as rx,\n    sum(write_size_b) / 5 as tx\nFROM $DB.metrics_task\n\nWHERE\n    created_at >= toDateTime(1620735993)\n     AND host = 'crawler-1'   AND app_id = 'rusty-spider' \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "RX/TX",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:80",
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:81",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "wps"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 2
+      },
+      "hiddenSeries": false,
+      "id": 7,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 2,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": false,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as inserted\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'insert' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as inserted\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= toDateTime(1620735930)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as updated\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'update' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as updated\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= toDateTime(1620735930)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "B",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": false,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'read' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as read\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= toDateTime(1620735930)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "C",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Job Q Write Throughput",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:262",
+          "format": "wps",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:263",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 11
+      },
+      "hiddenSeries": false,
+      "id": 3,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as pages\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as pages\nFROM $DB.metrics_task\n\nWHERE created_at >= toDateTime(1620735909)  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Pages/sec",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:213",
+          "format": "ops",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:214",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "hiddenSeries": false,
+      "id": 6,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": false,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as insert\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'insert' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as insert\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= toDateTime(1620735942)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as update\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'update' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as update\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= toDateTime(1620735942)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "B",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'read' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as read\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= toDateTime(1620735942)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "C",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Job Q Write Latencies",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:640",
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:641",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "hiddenSeries": false,
+      "id": 4,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": false,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time_per_1mb_of_html\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time_per_1mb_of_html\nFROM $DB.metrics_task\n\nWHERE created_at >= toDateTime(1620735918)  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Parsing time / 1mb of HTML",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:320",
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:321",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "hiddenSeries": false,
+      "id": 5,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": false,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    updated_at as time,\n    len as jobs\nFROM $DB.metrics_queue\n\nWHERE\n    $timeFilterByColumn(time)\n    AND name = 'Job' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\nORDER BY time",
+          "rawQuery": "SELECT\n    updated_at as time,\n    len as jobs\nFROM $DB.metrics_queue\n\nWHERE\n    time >= toDateTime(1620735948)\n    AND name = 'Job'  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Queue Filling",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:747",
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:748",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "crawler-1",
+          "value": "crawler-1"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "host",
+        "options": [
+          {
+            "selected": false,
+            "text": "Crawler-1",
+            "value": "Crawler-1"
+          }
+        ],
+        "query": "crawler-1",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "crusty",
+          "value": "crusty"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "app_id",
+        "options": [
+          {
+            "selected": false,
+            "text": "rusty-spider",
+            "value": "rusty-spider"
+          }
+        ],
+        "query": "crusty",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "crusty",
+          "value": "crusty"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "DB",
+        "options": [
+          {
+            "selected": false,
+            "text": "rusty",
+            "value": "rusty"
+          }
+        ],
+        "query": "crusty",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Rusty Spider",
+  "uid": "cxvqmArMz",
+  "version": 14
+}

@@ -1,0 +1,120 @@
+---
+log_level: INFO
+host: crawler-1 # for metrics
+app_id: crusty # for metrics
+
+# Clickhouse database settings
+clickhouse:
+  url: http://localhost:8123
+  username: default
+  password: ""
+  database: crusty
+
+  # We persist various queue metrics
+  metrics_queue:
+    table_name: metrics_queue
+    label: ""
+    # we always try to write in bulk, buffer up to max items before writing
+    buffer_capacity: 1000
+    # while we're waiting for buffer to fill wake once in a while to check for force_write_duration
+    check_for_force_write_duration: 100ms
+    # if force_write_duration elapsed since last write but we yet not filled buffer_capacity force the write anyway
+    force_write_duration: 500ms
+  # We persist some db metrics for further analysis
+  metrics_db:
+    table_name: metrics_db
+    label: ""
+    buffer_capacity: 1000
+    check_for_force_write_duration: 100ms
+    force_write_duration: 500ms
+  # We persist metrics and various meta-data for each visited page
+  metrics_task:
+    table_name: metrics_task
+    label: ""
+    buffer_capacity: 10000
+    check_for_force_write_duration: 100ms
+    force_write_duration: 500ms
+  # We persist candidates for newly discovered domains, db will perform final deduplication
+  domain_discovery_insert:
+    table_name: domain_discovery
+    label: insert
+    buffer_capacity: 10000
+    check_for_force_write_duration: 500ms
+    force_write_duration: 2500ms
+  # We persist confirmations that domain has been checked so that it won't be re-selected unless special criteria is met
+  domain_discovery_update:
+    table_name: domain_discovery
+    label: update
+    buffer_capacity: 10000
+    check_for_force_write_duration: 500ms
+    force_write_duration: 2500ms
+# domain discovery cache capacity, this cache helps to ease load on clickhouse(so we do not insert billions of duplicated records)
+# but because cache is local it's effectiveness will drop when adding new crawler nodes
+# so if one were to try running this on google scale it would most likely require a dedicated dedup layer before hitting clickhouse
+ddc_cap: 25000000
+# recently discovered domains live in cache up to this duration
+ddc_lifetime: 1h
+# We monitor various internal queues and persist their status to db
+queue_monitor_interval: 1s
+# We parse HTML in a separate thread pool, stack size is configurable
+parser_processor_stack_size: 32mib
+# Fancy local address binding for monster setups with several NICs(local port limitation)
+networking_profile:
+  values:
+    bind_local_ipv4:
+    bind_local_ipv6:
+    socket_read_buffer_size: 32kib
+    socket_write_buffer_size: 32kib
+    connect_timeout: 5s
+#concurrency_profile:
+  # leave empty to use N of physical cores
+  #parser_concurrency:
+  # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
+  #domain_concurrency:
+# We select new jobs(domains) from queue-like structure hosted in clickhouse(weird, right? :D)
+# but this structure and the way we access it actually benefits from what db provides
+job_reader:
+  domain_table_name: domain_discovery
+  # re-select checked domains after some time
+  re_after_days: 3
+  # queue is sharded, do not ask the same shard for job unless duration has passed since last time we asked
+  shard_min_last_read: 1s
+  # min shard number we have access to
+  shard_min: 1
+  # max shard number we have access to
+  shard_max: 25
+  # total number of all shards, in a multi-node setup shard_total > shard_max - shard_min + 1 (always)
+  shard_total: 25
+  # select up to N domains from a shard at once
+  shard_select_limit: 100000
+  # buffer up to N domains and do not try to fetch new if we have enough
+  job_buffer: 100000
+  # select up to N sub-domains, (a.tumblr.com, b.tumblr.com, c.tumblr.com but not d.tumblr.com)
+  domain_tail_top_n: 3
+  # those settings relate to a crawler running on some particular domain
+  default_crawler_settings:
+    # up to N pages concurrently, keep this number low to avoid excess stress
+    concurrency: 2
+    internal_read_buffer_size: 32kib
+    max_response_size: 2mib
+    # follow up to N redirects before giving up
+    max_redirect: 5
+    # 1s-5s is a safe bet to keep to avoid extra stress
+    delay: 1s
+    # timeout for page loading and buffering
+    load_timeout: 10s
+    # after soft timeout elapses we no longer queue new tasks for domain
+    job_soft_timeout: 30s
+    # after hard timeout elapses we forcibly stop the crawling job for this domain
+    job_hard_timeout: 60s
+    # custom headers are supported
+    custom_headers:
+      user-agent:
+        - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36"
+      accept:
+        - "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      accept-encoding:
+        - "gzip, deflate" # compression is supported
+  # initial list of seed URLs to start the broad crawling from
+  seeds:
+    - "https://bash.im"

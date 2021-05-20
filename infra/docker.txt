@@ -1,0 +1,7 @@
+docker network create my-net
+docker volume create grafana-data
+docker volume create clickhouse-data
+docker run -d --name=grafana --network my-net -p 3000:3000 -v grafana-data:/var/lib/grafana grafana/grafana
+docker run -d --name clickhouse-server --network my-net -p 9000:9000 -p 8123:8123 --ulimit nofile=262144:262144 -v clickhouse-data:/var/lib/clickhouse yandex/clickhouse-server
+
+docker run -it --rm --network my-net yandex/clickhouse-client --host clickhouse-server
