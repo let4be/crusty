@@ -1,4 +1,4 @@
-# Crusty - Polite && Scalable Broad Web Crawler written in Rust
+# Crusty - Polite && Scalable Broad Web Crawler
 
 ## Introduction
 Broad web crawling is an activity of going through practically boundless web by starting from a set of locations(urls) and following outgoing links
@@ -47,6 +47,15 @@ that we can observe with [grafana](https://github.com/grafana/grafana) - giving 
 ![example](./resources/grafana.png)
 
 ## Getting started
+
+- building
+
+there is a Dockerfile for easier building and distribution: `docker build -f ./infra/Dockerfile -t crusty .`
+(supports incremental builds)
+
+- external service dependencies - clickhouse and grafana
+
+for now see [those notes](./infra/docker.txt), docker compose is coming a bit later
 
 ## Contributing
 
