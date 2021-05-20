@@ -29,6 +29,7 @@ struct Crusty {
     state: CrustyState,
     cfg: config::CrustyConfig
 }
+
 impl Crusty {
     fn new(cfg: config::CrustyConfig) -> Self {
         let client = Client::default()
@@ -105,13 +106,7 @@ impl Crusty {
     fn domain_filter_map(lnk: &rt::Link, task_domain: &str, ddc: &mut TtlCache<String, ()>, cfg: &CrustyConfig) -> Option<Domain> {
         let domain = lnk.host()?;
 
-        if domain.len() < 3 || !domain.contains('.') {
-            return None;
-        }
-        if domain == *task_domain {
-            return None;
-        }
-        if ddc.get(domain.as_str()).is_some() {
+        if domain.len() < 3 || !domain.contains('.') || domain == *task_domain || ddc.contains_key(&domain) {
             return None;
         }
         ddc.insert(domain.clone(), (), *cfg.ddc_lifetime);
@@ -245,7 +240,7 @@ impl Crusty {
     fn job_reader(state: CrustyState, cfg: config::CrustyConfig, tx_job: Sender<Job>, tx_metrics_db: Sender<Vec<chu::GenericNotification>>, rx_domain_update_notify_p: Receiver<chu::Notification<Domain>>) -> TracingTask<'static> {
         TracingTask::new(span!(Level::INFO), async move {
             let job_reader = job_reader::JobReader::new(cfg.job_reader);
-            job_reader.go(state.client.clone(), tx_job, tx_metrics_db, rx_domain_update_notify_p).await.context("")?;
+            job_reader.go(state.client.clone(), tx_job, tx_metrics_db, rx_domain_update_notify_p).await?;
             Ok(())
         })
     }
