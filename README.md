@@ -7,6 +7,8 @@ It presents a unique set of challenges one must overcome to get a stable and sca
 
 This particular implementation could be used to quickly fetch a subset of all observable internet in a scalable and stable manner
 
+Built on top of [crusty-core](https://github.com/let4be/crusty-core) - which handles all low-level aspects of web-crawling
+
 ## Key features 
 - Configurability && extensibility
   
