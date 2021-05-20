@@ -57,6 +57,10 @@ there is a Dockerfile for easier building and distribution: `docker build -f ./i
 
 for now see [those notes](./infra/docker.txt), docker compose is coming a bit later
 
+to create / clean db use [this script](./infra/clean-clickhouse.sh)
+
+grafana dashboard is exported as [json model](./infra/grafana.json)
+
 ## Contributing
 
 I'm open to discussions/contributions, use github issues, pull requests are welcomed ;)
