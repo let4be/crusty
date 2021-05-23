@@ -1,4 +1,4 @@
-# Crusty - Polite && Scalable Broad Web Crawler
+# Crusty - polite && scalable broad web crawler
 
 ## Introduction
 Broad web crawling is an activity of going through practically boundless web by starting from a set of locations(urls) and following outgoing links
