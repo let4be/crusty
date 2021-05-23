@@ -103,7 +103,7 @@ impl Crusty {
         tx
     }
 
-    fn domain_filter_map(lnk: &rt::Link, task_domain: &str, ddc: &mut TtlCache<String, ()>, cfg: &CrustyConfig) -> Option<Domain> {
+    fn domain_filter_map(lnk: Arc<rt::Link>, task_domain: &str, ddc: &mut TtlCache<String, ()>, cfg: &CrustyConfig) -> Option<Domain> {
         let domain = lnk.host()?;
 
         if domain.len() < 3 || !domain.contains('.') || domain == *task_domain || ddc.contains_key(&domain) {
@@ -131,14 +131,8 @@ impl Crusty {
                 let task_domain = r.task.link.host().unwrap();
                 match r.status {
                     rt::JobStatus::Processing(ref jp) => {
-                        if !jp.is_ok() {
-                            let _ = tx_metrics.send(vec![TaskMeasurement::from(r)]).await;
-                            continue;
-                        }
-                        let jp = jp.as_ref().unwrap();
-
-                        let domains: Vec<Domain> = jp.collect_links()
-                            .filter_map(|lnk| Crusty::domain_filter_map(lnk, &task_domain, &mut ddc, &cfg)).collect();
+                        let domains: Vec<Domain> = jp.links.iter()
+                            .filter_map(|lnk| Crusty::domain_filter_map(Arc::clone(lnk), &task_domain, &mut ddc, &cfg)).collect();
 
                         let _ = tokio::join!(
                             async{ if !domains.is_empty() {

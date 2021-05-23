@@ -9,6 +9,7 @@ use crusty_core::{types as ct};
 
 use clickhouse::Reflection;
 use serde::{Deserialize, Serialize};
+use crusty_core::types::StatusResult;
 
 pub type Result<T> = anyhow::Result<T>;
 pub type Job = ct::Job<JobState, TaskState>;
@@ -120,20 +121,21 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
         &self,
     ) -> ct::TaskFilters<JobState, TaskState> {
         vec![
-            Box::new(crusty_core::task_filters::SameDomainTaskFilter::new(true)),
-            Box::new(crusty_core::task_filters::PageBudgetTaskFilter::new(50)),
-            Box::new(crusty_core::task_filters::LinkPerPageBudgetTaskFilter::new(10)),
-            Box::new(crusty_core::task_filters::PageLevelTaskFilter::new(10)),
-            Box::new(crusty_core::task_filters::HashSetDedupTaskFilter::new()),
+            Box::new(crusty_core::task_filters::MaxRedirect::new(5)),
+            Box::new(crusty_core::task_filters::SameDomain::new(true)),
+            Box::new(crusty_core::task_filters::TotalPageBudget::new(50)),
+            Box::new(crusty_core::task_filters::LinkPerPageBudget::new(10)),
+            Box::new(crusty_core::task_filters::PageLevel::new(10)),
+            Box::new(crusty_core::task_filters::HashSetDedup::new()),
         ]
     }
 
     fn status_filters(&self) -> ct::StatusFilters<JobState, TaskState> {
         vec![
-            Box::new(crusty_core::status_filters::ContentTypeFilter::new(vec![
+            Box::new(crusty_core::status_filters::ContentType::new(vec![
                 String::from("text/html"),
             ], true)),
-            Box::new(crusty_core::status_filters::RedirectStatusFilter::new(true))
+            Box::new(crusty_core::status_filters::Redirect::new(true))
         ]
     }
 
@@ -144,7 +146,7 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 
     fn task_expanders(&self, ) -> ct::TaskExpanders<JobState, TaskState> {
         vec![
-            Box::new(crusty_core::expanders::FollowLinks::new()),
+            Box::new(crusty_core::task_expanders::FollowLinks::new(ct::LinkTarget::Follow)),
         ]
     }
 }
@@ -300,7 +302,7 @@ impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 }
 impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurement {
     fn from(r: ct::JobUpdate<JS, TS>) -> Self {
-        if let ct::JobStatus::Processing(Ok(ref load_data)) = r.status {
+        if let ct::JobStatus::Processing(ref load_data) = r.status {
             let parse_time_ms =
                 if let ct::FollowResult::Ok(ref follow_data) = load_data.follow_data {
                     follow_data.metrics.parse_time.as_millis() as u32
@@ -308,28 +310,29 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 
             let (load_time_ms, write_size_b, read_size_b) = if let ct::LoadResult::Ok(ref load_data) = load_data.load_data {
                 (
-                    load_data.load_metrics.load_time.as_millis() as u32,
-                    load_data.load_metrics.write_size as u32,
-                    load_data.load_metrics.read_size as u32
+                    load_data.metrics.load_time.as_millis() as u32,
+                    load_data.metrics.write_size as u32,
+                    load_data.metrics.read_size as u32
                 )
             } else {
                 (0, 0, 0)
             };
 
-            let status = &load_data.status;
-            return TaskMeasurement {
-                time: now(),
-                url: r.task.link.url.to_string(),
-                md: Some(TaskMeasurementData {
-                    status_code: status.status_code as u16,
-                    wait_time_ms: status.status_metrics.wait_time.as_millis() as u32,
-                    status_time_ms: status.status_metrics.status_time.as_millis() as u32,
-                    load_time_ms,
-                    write_size_b,
-                    read_size_b,
-                    parse_time_ms,
-                }),
-            };
+            if let StatusResult::Ok(status) = &load_data.status {
+                return TaskMeasurement {
+                    time: now(),
+                    url: r.task.link.url.to_string(),
+                    md: Some(TaskMeasurementData {
+                        status_code: status.status_code as u16,
+                        wait_time_ms: status.status_metrics.wait_time.as_millis() as u32,
+                        status_time_ms: status.status_metrics.status_time.as_millis() as u32,
+                        load_time_ms,
+                        write_size_b,
+                        read_size_b,
+                        parse_time_ms,
+                    }),
+                };
+            }
         }
 
         TaskMeasurement {
