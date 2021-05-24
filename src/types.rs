@@ -108,8 +108,6 @@ pub struct JobState {
     pub selected_domain: Domain,
 }
 
-impl ct::JobStateValues for JobState {}
-
 #[derive(Debug, Default, Clone)]
 pub struct TaskState {
 }
@@ -263,7 +261,6 @@ pub enum QueueKind {
     MetricsTask,
     MetricsQueue,
     MetricsDB,
-    Parse,
     DomainUpdate,
     DomainInsert,
 

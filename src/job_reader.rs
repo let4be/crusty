@@ -29,7 +29,7 @@ pub struct JobReaderConfig {
     pub job_buffer: usize,
     pub domain_tail_top_n: usize,
     pub domain_table_name: String,
-    pub default_crawler_settings: rc::CrawlerSettings,
+    pub default_crawling_settings: rc::CrawlingSettings,
     pub seeds: Vec<String>,
 }
 
@@ -47,7 +47,7 @@ impl Default for JobReaderConfig {
             re_after_days: 3,
             shard_select_limit: 100_000,
             job_buffer: 100_000,
-            default_crawler_settings: rc::CrawlerSettings::default(),
+            default_crawling_settings: rc::CrawlingSettings::default(),
 
             seeds: vec![String::from("https://bash.im")]
         }
@@ -258,7 +258,7 @@ impl JobReader {
 
         let job_obj = Job {
             url,
-            settings: self.cfg.default_crawler_settings.clone(),
+            settings: self.cfg.default_crawling_settings.clone(),
             rules: Box::new(CrawlingRules {}),
             job_state: JobState{selected_domain: job.clone()}
         };

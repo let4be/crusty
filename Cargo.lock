@@ -245,7 +245,7 @@ dependencies = [
 [[package]]
 name = "crusty-core"
 version = "0.1.104"
-source = "git+https://github.com/let4be/crusty-core?rev=d02f9e9#d02f9e9344aee38737b1add688d154b8e6ab77ac"
+source = "git+https://github.com/let4be/crusty-core?rev=24ffb7f#24ffb7ff457a281f1ea213869417d39aa3e07d58"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -260,6 +260,7 @@ dependencies = [
  "lazy_static",
  "num_cpus",
  "pin-project",
+ "rand 0.8.3",
  "select",
  "serde",
  "thiserror",

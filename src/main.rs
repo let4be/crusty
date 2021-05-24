@@ -13,7 +13,7 @@ use crate::{
     config::CrustyConfig
 };
 
-use crusty_core::{self, types as rt, ParserProcessor};
+use crusty_core::{self, types as rt};
 
 use clickhouse::Client;
 use ttl_cache::TtlCache;
@@ -224,13 +224,6 @@ impl Crusty {
         })
     }
 
-    fn parser_processor(pp: ParserProcessor) -> TracingTask<'static> {
-        TracingTask::new(span!(Level::INFO), async move {
-            pp.go().await.context("error during parser processor execution")?;
-            Ok(())
-        })
-    }
-
     fn job_reader(state: CrustyState, cfg: config::CrustyConfig, tx_job: Sender<Job>, tx_metrics_db: Sender<Vec<chu::GenericNotification>>, rx_domain_update_notify_p: Receiver<chu::Notification<Domain>>) -> TracingTask<'static> {
         TracingTask::new(span!(Level::INFO), async move {
             let job_reader = job_reader::JobReader::new(cfg.job_reader);
@@ -248,8 +241,7 @@ impl Crusty {
     fn go(mut self) -> PinnedFut<'static, ()> {
         TracingTask::new(span!(Level::INFO), async move {
             info!("Creating parser processor...");
-            let (pp, tx_pp) = crusty_core::ParserProcessor::new(self.cfg.concurrency_profile.clone(), *self.cfg.parser_processor_stack_size);
-            self.spawn(Crusty::parser_processor(pp));
+            let pp= crusty_core::ParserProcessor::spawn(self.cfg.concurrency_profile.clone(), *self.cfg.parser_processor_stack_size);
 
             let network_profile = self.cfg.networking_profile.clone().resolve()?;
             info!("Resolved Network Profile: {:?}", network_profile);
@@ -257,7 +249,7 @@ impl Crusty {
             info!("Creating crawler instance...");
             let (crawler, tx_job, rx_job_state_update) =
                 crusty_core::MultiCrawler::new(
-                    tx_pp.clone(),
+                    &pp,
                     self.cfg.concurrency_profile.clone(),
                     network_profile
                 );
@@ -284,7 +276,6 @@ impl Crusty {
                 let tx_metrics_db = tx_metrics_db.clone();
                 let tx_domain_insert = tx_domain_insert.clone();
                 let tx_domain_update = tx_domain_update.clone();
-                let tx_pp = tx_pp.clone();
                 let tx_job = tx_job.clone();
                 let rx_job_state_update = rx_job_state_update.clone();
 
@@ -296,7 +287,6 @@ impl Crusty {
                 self.add_queue_measurement(QueueKind::MetricsDB, move || tx_metrics_db.len());
                 self.add_queue_measurement(QueueKind::DomainInsert, move || tx_domain_insert.len());
                 self.add_queue_measurement(QueueKind::DomainUpdate, move || tx_domain_update.len());
-                self.add_queue_measurement(QueueKind::Parse, move || tx_pp.len());
                 self.add_queue_measurement(QueueKind::Job, move || tx_job.len());
                 self.add_queue_measurement(QueueKind::JobUpdate, move || rx_job_state_update.len());
             }
