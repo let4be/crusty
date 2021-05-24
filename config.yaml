@@ -92,7 +92,7 @@ job_reader:
   # select up to N sub-domains, (a.tumblr.com, b.tumblr.com, c.tumblr.com but not d.tumblr.com)
   domain_tail_top_n: 3
   # those settings relate to a crawler running on some particular domain
-  default_crawler_settings:
+  default_crawling_settings:
     # up to N pages concurrently, keep this number low to avoid excess stress
     concurrency: 2
     internal_read_buffer_size: 32kib
@@ -101,6 +101,8 @@ job_reader:
     max_redirect: 5
     # 1s-5s is a safe bet to keep to avoid extra stress
     delay: 1s
+    # vary delay time by this jitter(0..)
+    delay_jitter: 1s
     # timeout for page loading and buffering
     load_timeout: 10s
     # after soft timeout elapses we no longer queue new tasks for domain
