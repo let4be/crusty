@@ -20,7 +20,7 @@ opt-level = 3
 
 [dependencies]
 tracing-tools = "~0.1.0"
-crusty-core = {git = "https://github.com/let4be/crusty-core", rev="24ffb7f"}
+crusty-core = "~0.2.1"
 
 async-channel = "~1.6.1"
 futures-lite = "~1.11.3"

@@ -244,8 +244,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.1.104"
-source = "git+https://github.com/let4be/crusty-core?rev=24ffb7f#24ffb7ff457a281f1ea213869417d39aa3e07d58"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f62e26e46633b67f84df82ee691de4f714f44c52f58fc796fa610557e08bc358"
 dependencies = [
  "anyhow",
  "async-channel",

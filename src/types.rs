@@ -302,12 +302,12 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
         if let ct::JobStatus::Processing(ref load_data) = r.status {
             let parse_time_ms =
                 if let ct::FollowResult::Ok(ref follow_data) = load_data.follow_data {
-                    follow_data.metrics.parse_time.as_millis() as u32
+                    follow_data.metrics.parse_dur.as_millis() as u32
                 } else { 0 };
 
             let (load_time_ms, write_size_b, read_size_b) = if let ct::LoadResult::Ok(ref load_data) = load_data.load_data {
                 (
-                    load_data.metrics.load_time.as_millis() as u32,
+                    load_data.metrics.load_dur.as_millis() as u32,
                     load_data.metrics.write_size as u32,
                     load_data.metrics.read_size as u32
                 )
@@ -321,8 +321,8 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
                     url: r.task.link.url.to_string(),
                     md: Some(TaskMeasurementData {
                         status_code: status.status_code as u16,
-                        wait_time_ms: status.status_metrics.wait_time.as_millis() as u32,
-                        status_time_ms: status.status_metrics.status_time.as_millis() as u32,
+                        wait_time_ms: status.status_metrics.wait_dur.as_millis() as u32,
+                        status_time_ms: status.status_metrics.status_dur.as_millis() as u32,
                         load_time_ms,
                         write_size_b,
                         read_size_b,
