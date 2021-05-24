@@ -125,7 +125,7 @@ impl Crusty {
         TracingTask::new(span!(Level::INFO), async move {
             let mut ddc: TtlCache<String, ()> = TtlCache::new(cfg.ddc_cap);
 
-            while let Ok(r) = rx_job_state_update.recv().await {
+            while let Ok(r) = rx_job_state_update.recv_async().await {
                 info!("- {}", r);
 
                 let task_domain = r.task.link.host().unwrap();
@@ -136,16 +136,16 @@ impl Crusty {
 
                         let _ = tokio::join!(
                             async{ if !domains.is_empty() {
-                                let _ = tx_domain_insert.send(domains).await;
+                                let _ = tx_domain_insert.send_async(domains).await;
                             }},
-                            tx_metrics.send(vec![TaskMeasurement::from(r)])
+                            tx_metrics.send_async(vec![TaskMeasurement::from(r)])
                         );
                     }
                     rt::JobStatus::Finished(ref _jd) => {
                         let selected_domain = {
                             r.context.job_state.lock().unwrap().selected_domain.clone()
                         };
-                        let _ = tx_domain_update.send(vec![selected_domain]).await;
+                        let _ = tx_domain_update.send_async(vec![selected_domain]).await;
                     }
                 }
             }
@@ -164,13 +164,13 @@ impl Crusty {
         TracingTask::new(span!(Level::INFO), async move {
             loop {
                 tokio::select! {
-                    Ok(r) = rx_domain_insert_notify.recv() => {
-                        let _ = tx_metrics_db.send(vec![r.into()]).await;
+                    Ok(r) = rx_domain_insert_notify.recv_async() => {
+                        let _ = tx_metrics_db.send_async(vec![r.into()]).await;
                     },
-                    Ok(r) = rx_domain_update_notify.recv() => {
+                    Ok(r) = rx_domain_update_notify.recv_async() => {
                         let _ = tokio::join!(
-                            tx_domain_update_notify.send(r.clone()),
-                            tx_metrics_db.send(vec![r.into()]),
+                            tx_domain_update_notify.send_async(r.clone()),
+                            tx_metrics_db.send_async(vec![r.into()]),
                         );
                     },
                     else => break
@@ -193,12 +193,13 @@ impl Crusty {
         })))
     }
 
-    fn monitor_queues(state: CrustyState, cfg: config::CrustyConfig, tx_job: Sender<Job>, tx_metrics_queue: Sender<Vec<QueueMeasurement>>) -> TracingTask<'static> {
+    fn monitor_queues(state: CrustyState, cfg: config::CrustyConfig, rx_sig: Receiver<()>, tx_metrics_queue: Sender<Vec<QueueMeasurement>>) -> TracingTask<'static> {
         TracingTask::new(span!(Level::INFO), async move {
-            while !tx_job.is_closed() {
+            while !rx_sig.is_disconnected() {
                 let ms = state.queue_measurements.iter().map(
                     |measure|measure()).collect();
-                let _ = tx_metrics_queue.send(ms).await;
+
+                let _ = tx_metrics_queue.send_async(ms).await;
                 tokio::time::sleep(*cfg.queue_monitor_interval).await;
             }
 
@@ -206,15 +207,15 @@ impl Crusty {
         })
     }
 
-    fn signal_handler(tx_job: Sender<Job>) -> TracingTask<'static> {
+    fn signal_handler(tx_sig: Sender<()>) -> TracingTask<'static> {
         TracingTask::new(span!(Level::INFO), async move {
-            while !tx_job.is_closed() {
+            while !tx_sig.is_disconnected() {
                 let timeout = tokio::time::sleep(Duration::from_millis(100));
 
                 tokio::select! {
                     _ = tokio::signal::ctrl_c() => {
                         warn!("Ctrl-C detected - no more accepting new tasks");
-                        tx_job.close();
+                        break
                     }
                     _ = timeout => {}
                 }
@@ -224,16 +225,15 @@ impl Crusty {
         })
     }
 
-    fn job_reader(state: CrustyState, cfg: config::CrustyConfig, tx_job: Sender<Job>, tx_metrics_db: Sender<Vec<chu::GenericNotification>>, rx_domain_update_notify_p: Receiver<chu::Notification<Domain>>) -> TracingTask<'static> {
+    fn job_reader(state: CrustyState, cfg: config::CrustyConfig, tx_job: Sender<Job>, rx_sig: Receiver<()>, tx_metrics_db: Sender<Vec<chu::GenericNotification>>, rx_domain_update_notify_p: Receiver<chu::Notification<Domain>>) -> TracingTask<'static> {
         TracingTask::new(span!(Level::INFO), async move {
             let job_reader = job_reader::JobReader::new(cfg.job_reader);
-            job_reader.go(state.client.clone(), tx_job, tx_metrics_db, rx_domain_update_notify_p).await?;
+            job_reader.go(state.client.clone(), tx_job, rx_sig, tx_metrics_db, rx_domain_update_notify_p).await?;
             Ok(())
         })
     }
 
-    pub fn spawn(&mut self, task: TracingTask<'static, ()>)
-    {
+    pub fn spawn(&mut self, task: TracingTask<'static, ()>) {
         let h = tokio::spawn(task.instrument());
         self.handles.push(h);
     }
@@ -254,7 +254,9 @@ impl Crusty {
                     network_profile
                 );
 
-            self.spawn(Crusty::signal_handler(tx_job.clone()));
+            let (tx_sig, rx_sig) = bounded_ch(1);
+
+            self.spawn(Crusty::signal_handler(tx_sig));
 
             let (tx_domain_insert_notify, rx_domain_insert_notify) = bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
             let (tx_domain_update_notify, rx_domain_update_notify) = bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
@@ -293,11 +295,12 @@ impl Crusty {
 
             self.spawn(Crusty::result_handler(self.cfg.clone(), tx_metrics_task, tx_domain_insert, tx_domain_update, rx_job_state_update));
 
-            self.spawn(Crusty::job_reader(self.state.clone(), self.cfg.clone(), tx_job.clone(), tx_metrics_db.clone(), rx_domain_update_notify_p));
+            self.spawn(Crusty::job_reader(self.state.clone(), self.cfg.clone(), tx_job, rx_sig.clone(),tx_metrics_db.clone(), rx_domain_update_notify_p));
 
             self.spawn(Crusty::domain_notification_plex(rx_domain_insert_notify, rx_domain_update_notify, tx_metrics_db, tx_domain_update_notify_p));
 
-            self.spawn(Crusty::monitor_queues(self.state.clone(), self.cfg.clone(), tx_job, tx_metrics_queue));
+            self.spawn(Crusty::monitor_queues(self.state.clone(), self.cfg.clone(), rx_sig, tx_metrics_queue));
+            drop(self.state);
 
             info!("Crawling is a go...");
             crawler.go().await?;

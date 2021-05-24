@@ -60,8 +60,8 @@ impl Writer {
     pub async fn go_with_retry<A: Clone + std::fmt::Debug + Send, R: Reflection + Serialize, F: Fn(A) -> R>(
         &self,
         client: Client,
-        rx: async_channel::Receiver<Vec<A>>,
-        notify_tx: Option<async_channel::Sender<Notification<A>>>,
+        rx: Receiver<Vec<A>>,
+        notify_tx: Option<Sender<Notification<A>>>,
         map: F,
     ) -> Result<()> {
         let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
@@ -82,8 +82,8 @@ impl Writer {
     pub async fn go<A: Clone + std::fmt::Debug + Send, R: Reflection + Serialize, F: Fn(A) -> R>(
         &self,
         client: Client,
-        rx: async_channel::Receiver<Vec<A>>,
-        notify_tx: Option<async_channel::Sender<Notification<A>>>,
+        rx: Receiver<Vec<A>>,
+        notify_tx: Option<Sender<Notification<A>>>,
         map: &F,
         state: Arc<Mutex<WriterState<A>>>,
     ) -> Result<()> {
@@ -108,7 +108,7 @@ impl Writer {
             tokio::pin!(timeout);
 
             tokio::select! {
-                els = rx.recv() => {
+                els = rx.recv_async() => {
                     if els.is_err() {
                         done = true;
                     } else {
@@ -142,7 +142,7 @@ impl Writer {
                         duration: write_took,
                         items: notify.clone(),
                     };
-                    let _ = notify_tx.as_ref().unwrap().send(n).await;
+                    let _ = notify_tx.as_ref().unwrap().send_async(n).await;
                 }
                 notify.clear();
                 last_write = Instant::now();

@@ -263,7 +263,7 @@ impl JobReader {
             job_state: JobState{selected_domain: job.clone()}
         };
 
-        let _ = tx.send(job_obj).await;
+        let _ = tx.send_async(job_obj).await;
         trace!("->sending task  for {}", &job.domain);
     }
 
@@ -302,6 +302,7 @@ impl JobReader {
         self,
         client: clickhouse::Client,
         tx_jobs: Sender<Job>,
+        rx_sig: Receiver<()>,
         tx_metrics_db: Sender<Vec<chu::GenericNotification>>,
         rx_confirmation: Receiver<chu::Notification<Domain>>,
     ) -> Result<()>{
@@ -315,7 +316,7 @@ impl JobReader {
             .collect();
 
         let mut last_read = Instant::now();
-        while !tx_jobs.is_closed() {
+        while !rx_sig.is_disconnected() {
             let (shard, job) = state.next_job_and_shard(self.cfg.job_buffer);
 
             // seed domains list is fairly short, so we do it dumb ;)
@@ -353,7 +354,7 @@ impl JobReader {
             }
 
             let mut awaiting_notification = true;
-            let read_notification = Box::pin(rx_confirmation.recv());
+            let read_notification = Box::pin(rx_confirmation.recv_async());
             futures.push(Box::pin(async move {
                 FutureResult::Notify(read_notification.await)
             }));
@@ -373,7 +374,7 @@ impl JobReader {
                             items: jobs.len()
                         };
                         futures.push(Box::pin(async {
-                            let _ = tx_metrics_db.send(vec![notification]).await;
+                            let _ = tx_metrics_db.send_async(vec![notification]).await;
                             FutureResult::MetricsSent
                         }));
 
