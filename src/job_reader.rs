@@ -10,8 +10,6 @@ use std::{
     cell::RefCell,
 };
 
-use backoff::future::retry;
-use backoff::ExponentialBackoff;
 use clickhouse::Reflection;
 use serde::{Deserialize};
 
@@ -150,14 +148,12 @@ impl JobReaderState {
         {
             let mut busy_shards = self.busy_shards.borrow_mut();
 
-            let busy_shard = busy_shards.get_mut(&domain.shard);
-            if busy_shard.is_none() {
+            if let Some(busy_shard) = busy_shards.get_mut(&domain.shard) {
+                if !busy_shard.remove(&domain.domain) {
+                    panic!("Got notification about finished job '{domain}' but couldn't locate it inside the shard {shard}", shard = domain.shard, domain = &domain.domain);
+                }
+            } else {
                 panic!("Got notification about finished job '{domain}' but couldn't locate shard {shard}", shard = domain.shard, domain = &domain.domain);
-            }
-
-            let busy_shard = busy_shard.unwrap();
-            if !busy_shard.remove(&domain.domain) {
-                panic!("Got notification about finished job '{domain}' but couldn't locate it inside the shard {shard}", shard = domain.shard, domain = &domain.domain);
             }
         }
 
@@ -245,26 +241,22 @@ impl JobReader {
     }
 
     async fn send_job(&self, tx: &Sender<Job>, job: Domain) {
-        let mut url = job.url.clone();
-        if url.is_none() {
-            let std_url = Url::parse(format!("http://{}", &job.domain).as_str());
-            if std_url.is_err() {
-                warn!("->cannot create task for {}: invalid url - {}", &job.domain, std_url.err().unwrap());
-                return
-            }
-            url = Some(std_url.unwrap());
+        let url = job.url.clone()
+            .map(|u|u.to_string())
+            .unwrap_or_else(||format!("http://{}", &job.domain));
+        let job_obj = Job::new(
+            &url,
+            self.cfg.default_crawling_settings.clone(),
+            CrawlingRules {},
+            JobState{selected_domain: job.clone()}
+        );
+
+        if let Ok(job_obj) = job_obj {
+            let _ = tx.send_async(job_obj).await;
+            trace!("->sending task  for {}", &job.domain);
+        } else {
+            warn!("->cannot create task for {}: invalid url - {}", &job.domain, &url);
         }
-        let url = url.unwrap();
-
-        let job_obj = Job {
-            url,
-            settings: self.cfg.default_crawling_settings.clone(),
-            rules: Box::new(CrawlingRules {}),
-            job_state: JobState{selected_domain: job.clone()}
-        };
-
-        let _ = tx.send_async(job_obj).await;
-        trace!("->sending task  for {}", &job.domain);
     }
 
     fn handle_sent_job(&self, state: &JobReaderState, job: Domain) {
@@ -293,9 +285,6 @@ impl JobReader {
             state.free_shards.borrow().len(),
             state.busy_shards.borrow().len()
         );
-        if state.free_shards.borrow().len() == 0 {
-            info!("busy shards dump: {:?}", state.busy_shards.borrow())
-        }
     }
 
     pub async fn go(
@@ -308,7 +297,7 @@ impl JobReader {
     ) -> Result<()>{
         let state = JobReaderState::new(self.cfg.shard_min, self.cfg.shard_max, *self.cfg.shard_min_last_read);
 
-        let mut seed_domains : Vec<Domain> = self.cfg.seeds.iter()
+        let mut seed_domains : Vec<_> = self.cfg.seeds.iter()
             .filter_map(|seed|Url::parse(seed).ok())
             .map(|seed|Domain::new(
                 seed.domain().unwrap().into(), self.cfg.shard_total, Some(seed.clone()), false
@@ -319,9 +308,7 @@ impl JobReader {
         while !rx_sig.is_disconnected() {
             let (shard, job) = state.next_job_and_shard(self.cfg.job_buffer);
 
-            // seed domains list is fairly short, so we do it dumb ;)
-            if !seed_domains.is_empty() && shard.is_some() {
-                let shard = shard.unwrap();
+            if let(Some(shard), false) = (shard, seed_domains.is_empty()) {
                 for i in 0..seed_domains.len() {
                     let d = &seed_domains[i];
                     if shard == d.shard {
@@ -336,19 +323,15 @@ impl JobReader {
             let mut futures = FuturesUnordered::<BoxedFuture>::new();
 
             if shard.is_some() {
-                let read_jobs = Box::pin(retry(ExponentialBackoff::default(), || async {
-                    self.read_jobs(&client, shard.unwrap())
-                        .instrument().await.map_err(backoff::Error::Transient)
-                }));
-                futures.push(Box::pin(async move {
-                    FutureResult::JobsRead(read_jobs.await)
+                futures.push(Box::pin(async {
+                    let res = self.read_jobs(&client, shard.unwrap()).instrument().await;
+                    FutureResult::JobsRead(res)
                 }))
             }
 
-            if job.is_some() {
-                let send_job = Box::pin(self.send_job(&tx_jobs, job.as_ref().unwrap().clone()));
-                futures.push(Box::pin(async move {
-                    send_job.await;
+            if let Some(job) = job.clone() {
+                futures.push(Box::pin(async {
+                    self.send_job(&tx_jobs, job).await;
                     FutureResult::JobsSent
                 }))
             }
@@ -362,31 +345,34 @@ impl JobReader {
             let t = Instant::now();
             while let Some(r) = futures.next().await {
                 match r {
-                    FutureResult::JobsRead(jobs) => {
-                        let jobs = jobs.unwrap_or_default();
-
+                    FutureResult::JobsRead(Ok(jobs)) => {
                         let queried_for = t.elapsed();
-                        let notification = chu::GenericNotification{
-                            table_name: self.cfg.domain_table_name.clone(),
-                            label: String::from("read"),
-                            since_last: last_read.elapsed(),
-                            duration: queried_for,
-                            items: jobs.len()
-                        };
-                        futures.push(Box::pin(async {
-                            let _ = tx_metrics_db.send_async(vec![notification]).await;
-                            FutureResult::MetricsSent
-                        }));
+                        if jobs.len() > 0 {
+                            let notification = chu::GenericNotification {
+                                table_name: self.cfg.domain_table_name.clone(),
+                                label: String::from("read"),
+                                since_last: last_read.elapsed(),
+                                duration: queried_for,
+                                items: jobs.len()
+                            };
+                            futures.push(Box::pin(async {
+                                let _ = tx_metrics_db.send_async(vec![notification]).await;
+                                FutureResult::MetricsSent
+                            }));
+                        }
 
-                        last_read = Instant::now();
                         self.handle_read_jobs(&state, shard.unwrap(), jobs, queried_for);
+                        last_read = Instant::now();
                     },
                     FutureResult::JobsSent => {
                         self.handle_sent_job(&state, job.as_ref().unwrap().clone());
                     },
-                    FutureResult::Notify(notification) => {
+                    FutureResult::Notify(Ok(notification)) => {
                         awaiting_notification = false;
-                        self.handle_confirmation(&state, notification.unwrap().items);
+                        self.handle_confirmation(&state, notification.items);
+                    },
+                    FutureResult::Notify(Err(_)) => {
+                        awaiting_notification = false;
                     },
                     _ => {}
                 }

@@ -109,13 +109,13 @@ impl Writer {
 
             tokio::select! {
                 els = rx.recv_async() => {
-                    if els.is_err() {
-                        done = true;
-                    } else {
-                        for el in els.unwrap() {
+                    if let Ok(els) = els {
+                        for el in els {
                             notify.push(el.clone());
                             inserter.write(&map(el)).await.context("error during inserter.write")?;
                         }
+                    } else {
+                        done = true
                     }
                 }
 
@@ -133,8 +133,8 @@ impl Writer {
             let s = s?;
 
             if s.entries > 0 {
-                info!("Clickhouse write to {}/{}({} rows, {} transactions, {}ms since last) finished for {}ms.", &self.cfg.table_name, &self.cfg.label, s.entries, s.transactions, since_last.as_millis(), write_took.as_millis());
-                if notify_tx.is_some() {
+                warn!("Clickhouse write to {}/{}({} rows, {} transactions, {}ms since last) finished for {}ms.", &self.cfg.table_name, &self.cfg.label, s.entries, s.transactions, since_last.as_millis(), write_took.as_millis());
+                if let Some(notify_tx) = &notify_tx {
                     let n = Notification {
                         label: self.cfg.label.clone(),
                         table_name: self.cfg.table_name.clone(),
@@ -142,7 +142,7 @@ impl Writer {
                         duration: write_took,
                         items: notify.clone(),
                     };
-                    let _ = notify_tx.as_ref().unwrap().send_async(n).await;
+                    let _ = notify_tx.send_async(n).await;
                 }
                 notify.clear();
                 last_write = Instant::now();

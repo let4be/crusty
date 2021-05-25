@@ -324,10 +324,11 @@ async fn go() -> Result<()> {
 
     let collector = tracing_subscriber::fmt()
         .with_target(false)
-        .with_max_level(*cfg.log_level.clone())
+        .with_ansi(cfg.log.ansi)
+        .with_max_level(*cfg.log.level.clone())
         .finish();
     tracing::subscriber::set_global_default(collector)?;
-    info!("Log system configured...: {}", *cfg.log_level);
+    info!("Log system configured...: {}", *cfg.log.level);
     info!("{:#?}", &cfg);
 
     info!("New FD limit set: {:?}", fdlimit::raise_fd_limit());

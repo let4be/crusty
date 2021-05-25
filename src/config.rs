@@ -86,11 +86,26 @@ impl Default for ClickhouseConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct LogConfig {
+    pub level: rc::CLevel,
+    pub ansi: bool,
+}
+
+impl Default for LogConfig {
+    fn default() -> Self {
+        Self {
+            level: rc::CLevel(Level::INFO),
+            ansi: true
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
 #[serde(default)]
 pub struct CrustyConfig {
     pub host: String,
     pub app_id: String,
-    pub log_level: rc::CLevel,
+    pub log: LogConfig,
     pub clickhouse: ClickhouseConfig,
 
     pub ddc_cap: usize,
@@ -108,7 +123,7 @@ impl Default for CrustyConfig {
         Self {
             host: String::from("crawler-1"),
             app_id: String::from("rusty-spider"),
-            log_level: rc::CLevel(Level::INFO),
+            log: LogConfig::default(),
             clickhouse: ClickhouseConfig::default(),
 
             ddc_cap: 25_000_000,

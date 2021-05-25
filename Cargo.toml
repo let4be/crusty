@@ -20,7 +20,7 @@ opt-level = 3
 
 [dependencies]
 tracing-tools = "~0.1.0"
-crusty-core = "~0.2.2"
+crusty-core = {path = "../crusty-core"}
 
 futures-lite = "~1.11.3"
 futures = "~0.3.14"

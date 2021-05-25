@@ -1,5 +1,7 @@
 ---
-log_level: INFO
+log:
+  level: WARN
+  ansi: false
 host: crawler-1 # for metrics
 app_id: crusty # for metrics
 
