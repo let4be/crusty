@@ -89,13 +89,15 @@ impl Default for ClickhouseConfig {
 pub struct LogConfig {
     pub level: rc::CLevel,
     pub ansi: bool,
+    pub filter: Option<Vec<String>>
 }
 
 impl Default for LogConfig {
     fn default() -> Self {
         Self {
             level: rc::CLevel(Level::INFO),
-            ansi: true
+            ansi: true,
+            filter: None,
         }
     }
 }

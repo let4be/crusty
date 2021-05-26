@@ -121,11 +121,7 @@ impl JobReaderState {
         shard_last_read.insert(shard, Instant::now());
 
         if let Some(v) = busy_shards.insert(shard, HashSet::new()) {
-            panic!(
-                "Shard {} is not supposed to be busy: {:?}",
-                shard,
-                v
-            )
+            panic!("Shard {} is not supposed to be busy: {:?}", shard, v)
         }
 
         info!("Busy shard {} reserved", shard);
@@ -189,7 +185,7 @@ impl JobReader {
         client: &'a clickhouse::Client,
         shard: u16,
     ) -> TracingTask<'a, Vec<String>> {
-        TracingTask::new_short_lived(span!(Level::INFO), async move {
+        TracingTask::new_short_lived(span!(Level::ERROR), async move {
             let r = client
                 .query(format!(
                     "SELECT domain, groupArray(?)(domain_tail) as tails FROM (
