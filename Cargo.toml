@@ -1,6 +1,6 @@
 [package]
 name = "crusty"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Sergey F. <let4be@gmail.com>"]
 edition = "2018"
 description = "Fast, scalable and stable Broad Web Crawler developed on top of crusty-core"
@@ -20,7 +20,7 @@ opt-level = 3
 
 [dependencies]
 tracing-tools = "~0.1.0"
-crusty-core = "~0.2.2"
+crusty-core = "~0.2.3"
 
 futures-lite = "~1.11.3"
 futures = "~0.3.14"
