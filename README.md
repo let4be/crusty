@@ -29,11 +29,11 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
   
   One might think, "clickhouse? wtf?!" but this DB is so darn fast while providing rich querying capabilities, indexing, filtering.
 
-  The idea is basically a huge sharded table where each domain belongs to some shard(crc32(domain_name) % number_of_shards), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so called domain discovery).
+  The idea is basically a huge sharded table where each domain belongs to some `shard(crc32(domain_name) % number_of_shards)`, now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so called domain discovery).
   I.e. each shard is readable by only one `Crusty` instance by a single thread(it's important, to avoid interference in multi-node setups).
   On moderate installments(~ <16 nodes) such systems is viable as this, although if someone tries to take this to a mega-scale dynamic shard manager might be required...
   
-  There is additional challenge of domain discovery deduplication in multi-node setups, - right now we dedup locally and on click-house(AggregatingMergeTree) but the more nodes we add the less efficient local deduplication becomes
+  There is additional challenge of domain discovery deduplication in multi-node setups, - right now we dedup locally and on clickhouse(AggregatingMergeTree) but the more nodes we add the less efficient local deduplication becomes
 
   In big setups a dedicated dedup layer might be required, alternatively one might try to simply push overflowing deduplication jobs to clickhouse by creating more shards
   
