@@ -35,7 +35,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
   
   There is additional challenge of domain discovery deduplication in multi-node setups, - right now we dedup locally and on click-house(AggregatingMergeTree) but the more nodes we add the less efficient local deduplication becomes
 
-  In big setups a dedicated dedup layer might be required, alternatively one might try to simply push overflowing deduplication job to clickhouse by creating more shards
+  In big setups a dedicated dedup layer might be required, alternatively one might try to simply push overflowing deduplication jobs to clickhouse by creating more shards
   
 - Basic politeness
   
