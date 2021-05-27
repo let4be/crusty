@@ -20,7 +20,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
   
   Additional optimizations are possible to further improve this(mostly better html parsing, there are tasks that do not require full DOM parsing, this implementation does full DOM parsing mostly for the sake of extensibility and configurability)
   
-  Additionally, Crusty has small and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory... A gulp of fresh air after languages with GC(hey golang) I have to say 
+  Additionally, `Crusty` has small and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory... A gulp of fresh air after languages with GC(hey golang) I have to say 
   
 - Scalability
   
