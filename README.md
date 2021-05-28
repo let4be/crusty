@@ -61,10 +61,10 @@ that we can observe with [grafana](https://github.com/grafana/grafana) - giving 
 - before you start
 
 install `docker` && `docker-compose`, follow instructions at
-```
+
 https://docs.docker.com/get-docker/
+
 https://docs.docker.com/compose/install/
-```
 
 - get `Crusty` source code
 
