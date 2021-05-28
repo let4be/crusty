@@ -97,7 +97,9 @@ cd crusty
 
 ---
 
-if you decide to build manually via `cargo build`, remember - release build is a lot faster(and default is debug) ;
+if you decide to build manually via `cargo build`, remember - release build is a lot faster(and default is debug)
+
+In the real world usage scenario on high bandwidth channel docker might become too expensive,so it might be a good idea either to run directly or at least in `network_mode = host`
 
 - external service dependencies - clickhouse and grafana
 
