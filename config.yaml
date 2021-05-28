@@ -13,7 +13,7 @@ app_id: crusty # for metrics
 
 # Clickhouse database settings
 clickhouse:
-  url: http://localhost:8123
+  url: http://clickhouse:8123
   username: default
   password: ""
   database: crusty

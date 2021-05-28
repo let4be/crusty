@@ -10,7 +10,10 @@ services:
       nofile:
         soft: 1048576
         hard: 1048576
-    network_mode: host
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9009:9009"
     volumes:
     - clickhouse-volume:/var/lib/clickhouse
     - /etc/localtime:/etc/localtime:ro
@@ -18,11 +21,14 @@ services:
   grafana:
     build:
       context: ./infra/grafana
-    network_mode: host
     volumes:
       - grafana-volume:/var/lib/grafana
       - grafana-plugins:/grafana-plugins
       - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"
+    links:
+      - clickhouse
     environment:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
       - GF_PLUGIN_DIR=/grafana-plugins
@@ -35,7 +41,8 @@ services:
       nofile:
         soft: 1048576
         hard: 1048576
-    network_mode: host
+    links:
+      - clickhouse
     volumes:
       - /etc/localtime:/etc/localtime:ro
     environment:
