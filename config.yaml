@@ -3,7 +3,7 @@ log:
   # fancy some colors?
   ansi: false
   # base-line log level
-  level: info
+  level: warn
   # my_crate=info,my_crate::my_mod=debug,[my_span]=trace
   # see https://tracing.rs/tracing_subscriber/filter/struct.envfilter
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
