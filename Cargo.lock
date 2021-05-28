@@ -212,7 +212,6 @@ dependencies = [
  "once_cell",
  "reflection",
  "reflection_derive",
- "scopeguard",
  "serde",
  "serde_yaml",
  "tokio",

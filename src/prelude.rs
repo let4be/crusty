@@ -6,6 +6,7 @@ pub use tokio::time::{self, Instant, Duration};
 pub use url::Url;
 
 pub use std::{
+    rc::Rc,
     sync::{Arc, Mutex},
     collections::{HashMap, HashSet, LinkedList},
     iter::Iterator,

@@ -9,7 +9,6 @@ use backoff::future::retry;
 use backoff::ExponentialBackoff;
 use clickhouse::{Client, Reflection};
 use serde::Serialize;
-use scopeguard::guard;
 
 #[derive(Clone)]
 pub struct Writer {
@@ -93,12 +92,9 @@ impl Writer {
             .with_max_duration(*self.cfg.force_write_duration);
 
         let mut last_write = Instant::now();
-        let mut notify = guard( state.lock().unwrap().notify.clone(), |notify| {
-            let mut state = state.lock().unwrap();
-            state.notify = notify;
-        });
 
-        for el in notify.clone() {
+        let notify= {state.lock().unwrap().notify.clone()};
+        for el in notify.into_iter() {
             inserter.write(&map(el)).await?;
         }
 
@@ -111,7 +107,7 @@ impl Writer {
                 els = rx.recv_async() => {
                     if let Ok(els) = els {
                         for el in els {
-                            notify.push(el.clone());
+                            state.lock().unwrap().notify.push(el.clone());
                             inserter.write(&map(el)).await.context("error during inserter.write")?;
                         }
                     } else {
@@ -140,11 +136,11 @@ impl Writer {
                         table_name: self.cfg.table_name.clone(),
                         since_last,
                         duration: write_took,
-                        items: notify.clone(),
+                        items: {state.lock().unwrap().notify.clone()},
                     };
                     let _ = notify_tx.send_async(n).await;
                 }
-                notify.clear();
+                state.lock().unwrap().notify.clear();
                 last_write = Instant::now();
             }
         }
