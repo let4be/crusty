@@ -236,6 +236,14 @@ impl JobReader {
         );
     }
 
+    fn handle_read_jobs_err(
+        &self,
+        state: &JobReaderState,
+        shard: u16
+    ) {
+        state.check_shard(shard);
+    }
+
     async fn send_job(&self, tx: &Sender<Job>, job: Domain) {
         let url = job.url.clone()
             .map(|u|u.to_string())
@@ -359,18 +367,21 @@ impl JobReader {
 
                         self.handle_read_jobs(&state, shard.unwrap(), jobs, queried_for);
                         last_read = Instant::now();
-                    },
+                    }
+                    FutureResult::JobsRead(Err(_)) => {
+                        self.handle_read_jobs_err(&state, shard.unwrap());
+                    }
                     FutureResult::JobsSent => {
                         self.handle_sent_job(&state, job.as_ref().unwrap().clone());
-                    },
+                    }
                     FutureResult::Notify(Ok(notification)) => {
                         awaiting_notification = false;
                         self.handle_confirmation(&state, notification.items);
-                    },
+                    }
                     FutureResult::Notify(Err(_)) => {
                         awaiting_notification = false;
-                    },
-                    _ => {}
+                    }
+                     FutureResult::MetricsSent => {}
                 }
 
                 if futures.len() <= 1 && awaiting_notification {

@@ -16,11 +16,11 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1621533198636,
+  "iteration": 1622204336823,
   "links": [],
   "panels": [
     {
-      "datasource": null,
+      "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -83,7 +83,7 @@
       "type": "stat"
     },
     {
-      "datasource": null,
+      "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -150,7 +150,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
           "unit": "decbytes"
@@ -253,7 +253,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "clickhouse",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -383,7 +383,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
           "unit": "ops"
@@ -486,7 +486,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "clickhouse",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -616,7 +616,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
           "unit": "ms"
@@ -719,7 +719,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
+      "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
           "unit": "none"
@@ -859,7 +859,7 @@
         "name": "app_id",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "crusty",
             "value": "crusty"
           }
@@ -881,7 +881,7 @@
         "name": "DB",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "crusty",
             "value": "crusty"
           }
@@ -899,6 +899,6 @@
   "timepicker": {},
   "timezone": "",
   "title": "Crusty",
-  "uid": "cxvqmArMz",
-  "version": 19
+  "uid": "crusty-dashboard",
+  "version": 20
 }

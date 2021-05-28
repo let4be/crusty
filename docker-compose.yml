@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+
+  clickhouse:
+    build:
+      context: ./infra/clickhouse
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    network_mode: host
+    volumes:
+    - clickhouse-volume:/var/lib/clickhouse
+
+  grafana:
+    build:
+      context: ./infra/grafana
+    network_mode: host
+    volumes:
+      - grafana-volume:/var/lib/grafana
+      - grafana-plugins:/grafana-plugins
+    environment:
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
+      - GF_PLUGIN_DIR=/grafana-plugins
+
+  crusty:
+    build:
+      context: .
+      dockerfile: ./infra/crusty/Dockerfile
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    environment:
+      - CRUSTY_SEEDS=${CRUSTY_SEEDS}
+    network_mode: host
+
+volumes:
+  clickhouse-volume:
+  grafana-volume:
+  grafana-plugins:

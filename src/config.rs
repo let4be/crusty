@@ -141,7 +141,7 @@ impl Default for CrustyConfig {
 }
 
 pub fn load() -> Result<()> {
-    let cfg_str = fs::read_to_string("config.yaml")?;
+    let cfg_str = fs::read_to_string("./config.yaml")?;
     let mut config = CONFIG.lock().unwrap();
 
     let mut e = None;

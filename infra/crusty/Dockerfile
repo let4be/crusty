@@ -19,5 +19,6 @@ RUN cargo build --release
 
 FROM rust as runtime
 WORKDIR app
+COPY --from=builder /app/config.yaml .
 COPY --from=builder /app/target/release/crusty /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/crusty"]

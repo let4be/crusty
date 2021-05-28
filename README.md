@@ -64,24 +64,26 @@ that we can observe with [grafana](https://github.com/grafana/grafana) - giving 
 git clone https://github.com/let4be/crusty
 cd crusty
 ```
-and then
+
+then
+
 ```
-docker build -f ./infra/Dockerfile -t crusty .
-docker run -it crusty:latest
+docker-compose build
+docker-compose up -d
+http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
 ```
-or simply
-```
-cargo run
-```
-(you probably want to run/build with `--release` flag though)
+
+if you decide to build manually via `cargo build`, remember - release build is a lot faster(and default is debug) ;
 
 - external service dependencies - clickhouse and grafana
 
-for now see [those notes](./infra/docker.txt), docker compose is coming a bit later
+just use `docker-compose`, it's the recommended way to play with `Crusty`
 
-to create / clean db use [this script](./infra/clean-clickhouse.sh)
+however...
 
-grafana dashboard is exported as [json model](./infra/grafana.json)
+to create / clean db use [this script](infra/clickhouse/clean-clickhouse.sh)(must be executed -in context- of clickhouse docker container)
+
+grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.json)
 
 ## Contributing
 

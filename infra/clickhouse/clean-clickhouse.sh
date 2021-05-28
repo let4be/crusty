@@ -1,6 +1,6 @@
 #!/bin/bash
 DB="crusty"
-docker run -it --rm --network my-net --entrypoint=/bin/bash yandex/clickhouse-client -c "clickhouse client --host clickhouse-server --multiline -n  <<-EOSQL
+clickhouse client --host localhost --multiline -n  <<-EOSQL
 	DROP DATABASE IF EXISTS $DB;
 	CREATE DATABASE $DB;
 	CREATE TABLE $DB.domain_discovery (
@@ -53,4 +53,4 @@ docker run -it --rm --network my-net --entrypoint=/bin/bash yandex/clickhouse-cl
 	) ENGINE = MergeTree() PARTITION BY toYYYYMMDD(created_date) PRIMARY KEY (created_at, host, app_id)
 	ORDER BY
 	  (created_at, host, app_id) SETTINGS index_granularity = 8192;
-EOSQL"
+EOSQL
