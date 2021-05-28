@@ -73,12 +73,18 @@ git clone https://github.com/let4be/crusty
 cd crusty
 ```
 
-- build and run as easy as
+- build `docker-compose build`
+  
+- run `CRUSTY_SEEDS=https://example.com docker-compose up`
 
-```
-docker-compose build
-CRUSTY_SEEDS=https://example.com docker-compose up
-```
+- to run in background
+`CRUSTY_SEEDS=https://example.com docker-compose up -d`
+  
+- to stop and _retain_ crawling data
+`docker-compose down`
+  
+- to stop and _erase_ crawling data(clickhouse/grafana)
+`docker-compose down -v`
 
 see `Crusty` live at `http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s`
 
