@@ -312,7 +312,7 @@ impl JobReader {
         let mut last_read = Instant::now();
         while !rx_sig.is_disconnected() {
             let (shard, job) = state.next_job_and_shard(self.cfg.job_buffer);
-            info!("selected shard {:?} job {:?}", shard, job);
+            trace!("selected shard {:?} job {:?}", shard, job);
 
             if let(Some(shard), false) = (shard, seed_domains.is_empty()) {
                 for i in 0..seed_domains.len() {
