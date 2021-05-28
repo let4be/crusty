@@ -15,8 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
-  "iteration": 1622204336823,
+  "iteration": 1622234972404,
   "links": [],
   "panels": [
     {
@@ -62,7 +61,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -125,7 +124,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -170,11 +169,12 @@
       "legend": {
         "avg": false,
         "current": false,
+        "hideEmpty": true,
         "max": false,
         "min": false,
         "show": true,
-        "total": false,
-        "values": false
+        "total": true,
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -183,7 +183,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -199,7 +199,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(read_size_b) / 5 as rx,\n    sum(write_size_b) / 5 as tx\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(read_size_b) / 5 as rx,\n    sum(write_size_b) / 5 as tx\nFROM $DB.metrics_task\n\nWHERE\n    created_at >= toDateTime(1620735993)\n     AND host = 'crawler-1'   AND app_id = 'rusty-spider' \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(read_size_b) / 5 as rx,\n    sum(write_size_b) / 5 as tx\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622236000)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -254,10 +254,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "clickhouse",
+      "decimals": null,
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "displayName": "Ops",
+          "unit": "short"
         },
         "overrides": []
       },
@@ -272,13 +274,17 @@
       "hiddenSeries": false,
       "id": 7,
       "legend": {
+        "alignAsTable": false,
         "avg": false,
         "current": false,
+        "hideEmpty": true,
+        "hideZero": false,
         "max": false,
         "min": false,
+        "rightSide": false,
         "show": true,
-        "total": false,
-        "values": false
+        "total": true,
+        "values": true
       },
       "lines": true,
       "linewidth": 2,
@@ -287,7 +293,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -303,7 +309,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as inserted\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'insert' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as inserted\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1621346080)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as inserted\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622236359)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -316,7 +322,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as updated\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'update' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as updated\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1621346080)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as updated\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622236359)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -329,7 +335,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 / 100 as read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'read' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 / 100 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1621346080)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 / 100 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622236359)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
@@ -356,7 +362,7 @@
       "yaxes": [
         {
           "$$hashKey": "object:262",
-          "format": "ops",
+          "format": "short",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -401,13 +407,14 @@
       "hiddenSeries": false,
       "id": 3,
       "legend": {
-        "avg": false,
+        "avg": true,
         "current": false,
+        "hideEmpty": true,
         "max": false,
         "min": false,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -416,7 +423,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -432,7 +439,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as pages\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as pages\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1621500376)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as pages\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622235985)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -507,11 +514,12 @@
       "legend": {
         "avg": false,
         "current": false,
-        "max": false,
+        "hideEmpty": true,
+        "max": true,
         "min": false,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -520,7 +528,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -536,7 +544,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as insert\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'insert' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as insert\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1621345953)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as insert\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622236485)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -549,7 +557,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as update\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'update' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as update\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1621345953)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as update\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622236485)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -562,7 +570,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    AND table_name = 'domain_discovery' AND label = 'read' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1621345953)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622236485)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
@@ -636,11 +644,12 @@
       "legend": {
         "avg": false,
         "current": false,
-        "max": false,
+        "hideEmpty": true,
+        "max": true,
         "min": false,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -649,7 +658,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -664,8 +673,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time_per_1mb_of_html\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time_per_1mb_of_html\nFROM $DB.metrics_task\n\nWHERE created_at >= toDateTime(1620735918)  AND host = 'crawler-1'   AND app_id = 'rusty-spider' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "query": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622235970)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -752,7 +761,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.5.1",
+      "pluginVersion": "7.5.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -900,5 +909,5 @@
   "timezone": "",
   "title": "Crusty",
   "uid": "crusty-dashboard",
-  "version": 20
+  "version": 1
 }
