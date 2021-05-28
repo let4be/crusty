@@ -350,7 +350,7 @@ async fn go() -> Result<()> {
     }
 
     let new_fd_lim = fdlimit::raise_fd_limit();
-    info!("New FD limit set: {:?}", new_fd_lim);
+    println!("New FD limit set: {:?}", new_fd_lim);
 
     // ---
     let crusty = Crusty::new(cfg);
