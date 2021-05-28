@@ -86,7 +86,7 @@ cd crusty
 - to stop and _erase_ crawling data(clickhouse/grafana)
 `docker-compose down -v`
 
-see `Crusty` live at `http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s`
+see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
 
 ---
 
