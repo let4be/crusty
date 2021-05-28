@@ -78,15 +78,15 @@ cd crusty
 
 - build `docker-compose build`
   
-- run `CRUSTY_SEEDS=https://example.com docker-compose up`
+- run `CRUSTY_SEEDS=https://example.com docker-compose up` (abortable with ctrl+c)
 
 - to run in background
 `CRUSTY_SEEDS=https://example.com docker-compose up -d`
   
-- to stop and _retain_ crawling data
+- to stop background run and _retain_ crawling data
 `docker-compose down`
   
-- to stop and _erase_ crawling data(clickhouse/grafana)
+- to stop background run and _erase_ crawling data(clickhouse/grafana)
 `docker-compose down -v`
 
 - see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
