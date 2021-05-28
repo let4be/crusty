@@ -3,6 +3,7 @@ version: '3.8'
 services:
 
   clickhouse:
+    container_name: crusty-clickhouse
     build:
       context: ./infra/clickhouse
     ulimits:
@@ -19,6 +20,7 @@ services:
     - /etc/localtime:/etc/localtime:ro
 
   grafana:
+    container_name: crusty-grafana
     build:
       context: ./infra/grafana
     volumes:
@@ -34,6 +36,7 @@ services:
       - GF_PLUGIN_DIR=/grafana-plugins
 
   crusty:
+    container_name: crusty
     build:
       context: .
       dockerfile: ./infra/crusty/Dockerfile

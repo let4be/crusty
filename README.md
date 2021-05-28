@@ -88,6 +88,10 @@ cd crusty
 
 see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
 
+- to see running containers `docker ps`(should be 3 - `crusty-grafana`, `crusty-clickhouse` and `crusty`)
+
+- to see logs: `docker logs crusty`
+
 ---
 
 if you decide to build manually via `cargo build`, remember - release build is a lot faster(and default is debug) ;
