@@ -77,7 +77,7 @@ cd crusty
 
 ```
 docker-compose build
-docker-compose up
+CRUSTY_SEEDS=https://example.com docker-compose up
 ```
 
 see `Crusty` live at `http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s`
