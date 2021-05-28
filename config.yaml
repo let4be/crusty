@@ -78,7 +78,7 @@ networking_profile:
   # leave empty to use N of physical cores
   #parser_concurrency:
   # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
-  #domain_concurrency:
+  #domain_concurrency: 100
 # We select new jobs(domains) from queue-like structure hosted in clickhouse(weird, right? :D)
 # but this structure and the way we access it actually benefits from what db provides
 job_reader:

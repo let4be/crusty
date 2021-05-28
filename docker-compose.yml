@@ -14,7 +14,6 @@ services:
     volumes:
     - clickhouse-volume:/var/lib/clickhouse
     - /etc/localtime:/etc/localtime:ro
-    - /etc/timezone:/etc/timezone:ro
 
   grafana:
     build:
@@ -24,7 +23,6 @@ services:
       - grafana-volume:/var/lib/grafana
       - grafana-plugins:/grafana-plugins
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     environment:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
       - GF_PLUGIN_DIR=/grafana-plugins
@@ -40,7 +38,6 @@ services:
     network_mode: host
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     environment:
       - CRUSTY_SEEDS=${CRUSTY_SEEDS}
 
