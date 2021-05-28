@@ -73,6 +73,9 @@ git clone https://github.com/let4be/crusty
 cd crusty
 ```
 
+- study [config file](config.yaml) and adapt to your needs, 
+  there are sensible defaults for a 100mbit channel, if you have more/less bandwidth or poor cpu you might need to adjust `concurrency_profile`
+
 - build `docker-compose build`
   
 - run `CRUSTY_SEEDS=https://example.com docker-compose up`
