@@ -32,12 +32,36 @@ struct Crusty {
 }
 
 impl Crusty {
-    fn new(cfg: config::CrustyConfig) -> Self {
+    async fn try_connect(cfg: &config::CrustyConfig) -> Result<Client> {
         let client = Client::default()
             .with_url(&cfg.clickhouse.url)
             .with_user(&cfg.clickhouse.username)
             .with_password(&cfg.clickhouse.password)
             .with_database(&cfg.clickhouse.database);
+
+        let r = client.query("SELECT 'ok'").fetch_one::<String>().await?;
+        if r == "ok" {
+            return Ok(client)
+        }
+        Err(anyhow!("something went wrong"))
+    }
+
+    async fn new(cfg: config::CrustyConfig) -> Self {
+        let client : Client = {
+            let client;
+            loop {
+                let r = Self::try_connect(&cfg).await;
+                if let Err(ref err) = r {
+                    warn!("cannot connect to db: {:#}", err);
+                } else if let Ok(c) = r {
+                    client = c;
+                    break
+                }
+
+                time::sleep(Duration::from_secs(1)).await;
+            }
+            client
+        };
 
         Self {
             handles: vec![],
@@ -353,7 +377,7 @@ async fn go() -> Result<()> {
     println!("New FD limit set: {:?}", new_fd_lim);
 
     // ---
-    let crusty = Crusty::new(cfg);
+    let crusty = Crusty::new(cfg).await;
     crusty.go().await
 }
 
