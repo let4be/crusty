@@ -58,20 +58,31 @@ that we can observe with [grafana](https://github.com/grafana/grafana) - giving 
 
 ## Getting started
 
-- building
+- before you start
+
+install `docker` && `docker-compose`, follow instructions at
+```
+https://docs.docker.com/get-docker/
+https://docs.docker.com/compose/install/
+```
+
+- get `Crusty` source code
 
 ```
 git clone https://github.com/let4be/crusty
 cd crusty
 ```
 
-then
+- build and run as easy as
 
 ```
 docker-compose build
-docker-compose up -d
-http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
+docker-compose up
 ```
+
+see `Crusty` live at `http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s`
+
+---
 
 if you decide to build manually via `cargo build`, remember - release build is a lot faster(and default is debug) ;
 
