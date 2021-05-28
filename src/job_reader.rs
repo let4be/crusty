@@ -168,7 +168,8 @@ enum FutureResult {
     JobsRead(Result<Vec<String>>),
     JobsSent,
     MetricsSent,
-    Notify(core::result::Result<chu::Notification<Domain>, RecvError>)
+    Notify(core::result::Result<chu::Notification<Domain>, RecvError>),
+    IdleCheckTimeout
 }
 
 impl JobReader {
@@ -311,6 +312,7 @@ impl JobReader {
         let mut last_read = Instant::now();
         while !rx_sig.is_disconnected() {
             let (shard, job) = state.next_job_and_shard(self.cfg.job_buffer);
+            info!("selected shard {:?} job {:?}", shard, job);
 
             if let(Some(shard), false) = (shard, seed_domains.is_empty()) {
                 for i in 0..seed_domains.len() {
@@ -345,6 +347,13 @@ impl JobReader {
             futures.push(Box::pin(async move {
                 FutureResult::Notify(read_notification.await)
             }));
+
+            if futures.len() <= 1 {
+                futures.push(Box::pin(async move {
+                    time::sleep(Duration::from_secs(1)).await;
+                    FutureResult::IdleCheckTimeout
+                }));
+            }
 
             let t = Instant::now();
             while let Some(r) = futures.next().await {
@@ -381,7 +390,8 @@ impl JobReader {
                     FutureResult::Notify(Err(_)) => {
                         awaiting_notification = false;
                     }
-                     FutureResult::MetricsSent => {}
+                    FutureResult::MetricsSent => {}
+                    FutureResult::IdleCheckTimeout => {}
                 }
 
                 if futures.len() <= 1 && awaiting_notification {
