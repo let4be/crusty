@@ -133,7 +133,7 @@ impl Writer {
             let s = s?;
 
             if s.entries > 0 {
-                warn!("Clickhouse write to {}/{}({} rows, {} transactions, {}ms since last) finished for {}ms.", &self.cfg.table_name, &self.cfg.label, s.entries, s.transactions, since_last.as_millis(), write_took.as_millis());
+                info!("Clickhouse write to {}/{}({} rows, {} transactions, {}ms since last) finished for {}ms.", &self.cfg.table_name, &self.cfg.label, s.entries, s.transactions, since_last.as_millis(), write_took.as_millis());
                 if let Some(notify_tx) = &notify_tx {
                     let n = Notification {
                         label: self.cfg.label.clone(),

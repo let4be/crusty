@@ -120,11 +120,10 @@ job_reader:
     # custom headers are supported
     custom_headers:
       user-agent:
-        - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36"
+        - "Crusty Broad Web Crawler"
       accept:
         - "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
       accept-encoding:
         - "gzip, deflate" # compression is supported
-  # initial list of seed URLs to start the broad crawling from
-  seeds:
-    - "https://bash.im"
+  # initial list of seed URLs to start the broad crawling from, additionally we also read seeds from CRUSTY_SEEDS env. variable
+  seeds: []

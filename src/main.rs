@@ -53,7 +53,7 @@ impl Crusty {
         let state = self.state.clone();
         let cfg = self.cfg.clone();
         let (tx, rx) = bounded_ch::<Vec<QueueMeasurement>>(cfg.concurrency_profile.transit_buffer_size());
-        self.spawn(TracingTask::new(span!(Level::ERROR), async move {
+        self.spawn(TracingTask::new(span!(), async move {
             let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_queue);
             writer.go_with_retry(state.client, rx, None, QueueMeasurementDBEntry::from).await
         }));
@@ -64,7 +64,7 @@ impl Crusty {
         let state = self.state.clone();
         let cfg = self.cfg.clone();
         let (tx, rx) = bounded_ch::<Vec<chu::GenericNotification>>(cfg.concurrency_profile.transit_buffer_size());
-        self.spawn(TracingTask::new(span!(Level::ERROR), async move {
+        self.spawn(TracingTask::new(span!(), async move {
             let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_db);
             writer.go_with_retry(state.client, rx, None, DBRWNotificationDBEntry::from).await
         }));
@@ -75,7 +75,7 @@ impl Crusty {
         let state = self.state.clone();
         let cfg = self.cfg.clone();
         let (tx, rx) = bounded_ch::<Vec<TaskMeasurement>>(cfg.concurrency_profile.transit_buffer_size());
-        self.spawn(TracingTask::new(span!(Level::ERROR), async move {
+        self.spawn(TracingTask::new(span!(), async move {
             let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_task);
             writer.go_with_retry(state.client, rx, None, TaskMeasurementDBEntry::from).await
         }));
@@ -86,7 +86,7 @@ impl Crusty {
         let state = self.state.clone();
         let cfg = self.cfg.clone();
         let (tx, rx) = bounded_ch::<Vec<Domain>>(cfg.concurrency_profile.transit_buffer_size());
-        self.spawn(TracingTask::new(span!(Level::ERROR), async move {
+        self.spawn(TracingTask::new(span!(), async move {
             let writer = clickhouse_utils::Writer::new(cfg.clickhouse.domain_discovery_insert);
             writer.go_with_retry(state.client, rx, Some(tx_notify), DomainDBEntry::from).await
         }));
@@ -97,7 +97,7 @@ impl Crusty {
         let state = self.state.clone();
         let cfg = self.cfg.clone();
         let (tx, rx) = bounded_ch::<Vec<Domain>>(cfg.concurrency_profile.transit_buffer_size());
-        self.spawn(TracingTask::new(span!(Level::ERROR), async move {
+        self.spawn(TracingTask::new(span!(), async move {
             let writer = clickhouse_utils::Writer::new(cfg.clickhouse.domain_discovery_update);
             writer.go_with_retry(state.client, rx, Some(tx_notify), DomainDBEntry::from).await
         }));
@@ -123,7 +123,7 @@ impl Crusty {
         tx_domain_update: Sender<Vec<Domain>>,
         rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
     ) -> TracingTask<'static> {
-        TracingTask::new(span!(Level::ERROR), async move {
+        TracingTask::new(span!(), async move {
             let mut ddc: TtlCache<String, ()> = TtlCache::new(cfg.ddc_cap);
 
             while let Ok(r) = rx_job_state_update.recv_async().await {
@@ -131,9 +131,11 @@ impl Crusty {
 
                 let task_domain = r.task.link.host().unwrap();
                 match r.status {
-                    rt::JobStatus::Processing(ref jp) => {
+                    rt::JobStatus::Processing(Ok(ref jp)) => {
                         let domains: Vec<Domain> = jp.links.iter()
-                            .filter_map(|lnk| Crusty::domain_filter_map(Arc::clone(lnk), &task_domain, &mut ddc, &cfg)).collect();
+                            .filter_map(|lnk|
+                                Crusty::domain_filter_map(Arc::clone(lnk), &task_domain, &mut ddc, &cfg))
+                            .collect();
 
                         let _ = tokio::join!(
                             async{ if !domains.is_empty() {
@@ -141,6 +143,9 @@ impl Crusty {
                             }},
                             tx_metrics.send_async(vec![TaskMeasurement::from(r)])
                         );
+                    }
+                    rt::JobStatus::Processing(Err(_)) => {
+                        let _ = tx_metrics.send_async(vec![TaskMeasurement::from(r)]).await;
                     }
                     rt::JobStatus::Finished(ref _jd) => {
                         let selected_domain = {
@@ -162,7 +167,7 @@ impl Crusty {
         tx_metrics_db: Sender<Vec<chu::GenericNotification>>,
         tx_domain_update_notify: Sender<chu::Notification<Domain>>,
     ) -> TracingTask<'static> {
-        TracingTask::new(span!(Level::ERROR), async move {
+        TracingTask::new(span!(), async move {
             loop {
                 tokio::select! {
                     Ok(r) = rx_domain_insert_notify.recv_async() => {
@@ -195,7 +200,7 @@ impl Crusty {
     }
 
     fn monitor_queues(state: CrustyState, cfg: config::CrustyConfig, rx_sig: Receiver<()>, tx_metrics_queue: Sender<Vec<QueueMeasurement>>) -> TracingTask<'static> {
-        TracingTask::new(span!(Level::ERROR), async move {
+        TracingTask::new(span!(), async move {
             while !rx_sig.is_disconnected() {
                 let ms = state.queue_measurements.iter().map(
                     |measure|measure()).collect();
@@ -209,7 +214,7 @@ impl Crusty {
     }
 
     fn signal_handler(tx_sig: Sender<()>) -> TracingTask<'static> {
-        TracingTask::new(span!(Level::ERROR), async move {
+        TracingTask::new(span!(), async move {
             while !tx_sig.is_disconnected() {
                 let timeout = tokio::time::sleep(Duration::from_millis(100));
 
@@ -227,7 +232,7 @@ impl Crusty {
     }
 
     fn job_reader(state: CrustyState, cfg: config::CrustyConfig, tx_job: Sender<Job>, rx_sig: Receiver<()>, tx_metrics_db: Sender<Vec<chu::GenericNotification>>, rx_domain_update_notify_p: Receiver<chu::Notification<Domain>>) -> TracingTask<'static> {
-        TracingTask::new(span!(Level::ERROR), async move {
+        TracingTask::new(span!(), async move {
             let job_reader = job_reader::JobReader::new(cfg.job_reader);
             job_reader.go(state.client.clone(), tx_job, rx_sig, tx_metrics_db, rx_domain_update_notify_p).await?;
             Ok(())
@@ -240,7 +245,7 @@ impl Crusty {
     }
 
     fn go(mut self) -> PinnedFut<'static, ()> {
-        TracingTask::new(span!(Level::ERROR), async move {
+        TracingTask::new(span!(), async move {
             info!("Creating parser processor...");
             let pp= crusty_core::ParserProcessor::spawn(self.cfg.concurrency_profile.clone(), *self.cfg.parser_processor_stack_size);
 
@@ -316,10 +321,9 @@ impl Crusty {
 
 async fn go() -> Result<()> {
     let cr = config::load();
-    if cr.is_ok() {
-        println!("Loading config: ok");
-    } else {
-        println!("Loading config err: '{:?}' - using defaults", cr.err().unwrap())
+    match cr {
+        Ok(_) => { println!("Loading config: ok"); }
+        Err(err) => { println!("Loading config err: '{:?}' - using defaults", err) }
     }
     let cfg = { config::CONFIG.lock().unwrap().clone() };
 
@@ -338,11 +342,17 @@ async fn go() -> Result<()> {
         .finish();
 
     tracing::subscriber::set_global_default(collector)?;
-    info!("Log system configured...: {}", *cfg.log.level);
-    info!("{:#?}", &cfg);
+    println!("Log system configured...: {} with filtering: {:?}", *cfg.log.level, cfg.log.filter);
+    println!("{:#?}", &cfg);
+
+    if cfg.job_reader.seeds.len() < 1 {
+        return Err(anyhow!("Consider specifying one or more seed URLs in config.toml, see job_reader.seeds property"));
+    }
 
     let new_fd_lim = fdlimit::raise_fd_limit();
     info!("New FD limit set: {:?}", new_fd_lim);
+
+    // ---
     let crusty = Crusty::new(cfg);
     crusty.go().await
 }

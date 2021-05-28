@@ -299,7 +299,7 @@ impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 }
 impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurement {
     fn from(r: ct::JobUpdate<JS, TS>) -> Self {
-        if let ct::JobStatus::Processing(ref load_data) = r.status {
+        if let ct::JobStatus::Processing(Ok(ref load_data)) = r.status {
             let parse_time_ms =
                 if let ct::FollowResult::Ok(ref follow_data) = load_data.follow_data {
                     follow_data.metrics.parse_dur.as_millis() as u32

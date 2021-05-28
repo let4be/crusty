@@ -7,7 +7,7 @@ use crate::{
 
 use crusty_core::config as rc;
 
-use std::{fs};
+use std::{fs, env};
 
 use serde::{Deserialize};
 use once_cell::sync::Lazy;
@@ -142,6 +142,22 @@ impl Default for CrustyConfig {
 
 pub fn load() -> Result<()> {
     let cfg_str = fs::read_to_string("config.yaml")?;
-    *CONFIG.lock().unwrap() = serde_yaml::from_str(&cfg_str)?;
+    let mut config = CONFIG.lock().unwrap();
+
+    let mut e = None;
+    match serde_yaml::from_str(&cfg_str) {
+        Ok(cfg) => {*config = cfg}
+        Err(err) => {e = Some(err)}
+    }
+
+    if let Ok(seeds) = env::var("CRUSTY_SEEDS") {
+        config.job_reader.seeds.extend(
+            seeds.split(",").map(|s|String::from(s)).collect::<Vec<_>>()
+        );
+    }
+
+    if let Some(err) = e {
+        return Err(err.into())
+    }
     Ok(())
 }

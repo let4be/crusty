@@ -223,9 +223,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.2.3"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d358978b7c7b886916a2d00793e6c2f11e866bf2f8b77dc1a9c49e5af2a03fd8"
+checksum = "dcf6d59e22a92c7f379d589b092090bb613ff85199d9f4e7676b15a8d3fbf875"
 dependencies = [
  "anyhow",
  "bytes",
@@ -237,6 +237,7 @@ dependencies = [
  "humansize",
  "hyper",
  "hyper-tls",
+ "ipnet",
  "lazy_static",
  "num_cpus",
  "pin-project",
@@ -1808,9 +1809,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-tools"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08e173c9ce03bd4959959a5638c94b566b6313ce1c847e9f37b87004cdddf0c0"
+checksum = "66700424f2a313fc20e625ded94fdbbe7a1c860aa410ada2546596b93fdd10f6"
 dependencies = [
  "anyhow",
  "futures-lite",

@@ -47,7 +47,7 @@ impl Default for JobReaderConfig {
             job_buffer: 100_000,
             default_crawling_settings: rc::CrawlingSettings::default(),
 
-            seeds: vec![String::from("https://bash.im")]
+            seeds: vec![]
         }
     }
 }
@@ -185,7 +185,7 @@ impl JobReader {
         client: &'a clickhouse::Client,
         shard: u16,
     ) -> TracingTask<'a, Vec<String>> {
-        TracingTask::new_short_lived(span!(Level::ERROR), async move {
+        TracingTask::new_short_lived(span!(), async move {
             let r = client
                 .query(format!(
                     "SELECT domain, groupArray(?)(domain_tail) as tails FROM (
