@@ -132,8 +132,8 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
         vec![
             Box::new(crusty_core::status_filters::ContentType::new(vec![
                 String::from("text/html"),
-            ], true)),
-            Box::new(crusty_core::status_filters::Redirect::new(true))
+            ])),
+            Box::new(crusty_core::status_filters::Redirect::new())
         ]
     }
 

@@ -225,9 +225,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.3.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf6d59e22a92c7f379d589b092090bb613ff85199d9f4e7676b15a8d3fbf875"
+checksum = "567503541e73af62379e9feff0bf5a5197208e3c01e18a9236e3aa2722acc84e"
 dependencies = [
  "anyhow",
  "bytes",
