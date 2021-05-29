@@ -369,7 +369,7 @@ async fn go() -> Result<()> {
     println!("Log system configured...: {} with filtering: {:?}", *cfg.log.level, cfg.log.filter);
     println!("{:#?}", &cfg);
 
-    if cfg.job_reader.seeds.len() < 1 {
+    if cfg.job_reader.seeds.is_empty() {
         return Err(anyhow!("Consider specifying one or more seed URLs in config.toml, see job_reader.seeds property"));
     }
 

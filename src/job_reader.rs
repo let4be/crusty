@@ -360,7 +360,7 @@ impl JobReader {
                 match r {
                     FutureResult::JobsRead(Ok(jobs)) => {
                         let queried_for = t.elapsed();
-                        if jobs.len() > 0 {
+                        if !jobs.is_empty() {
                             let notification = chu::GenericNotification {
                                 table_name: self.cfg.domain_table_name.clone(),
                                 label: String::from("read"),
