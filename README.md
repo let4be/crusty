@@ -14,13 +14,13 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
   
   see a typical [config file](config.yaml) with some explanations regarding available options
   
-- Blazing fast single node performance
+- Fast single node performance
   
   Crusty is written in `Rust` on top of green threads running on [tokio](https://github.com/tokio-rs/tokio), so it can achieve quite impressive single-node performance even on a moderate PC
   
   Additional optimizations are possible to further improve this(mostly better html parsing, there are tasks that do not require full DOM parsing, this implementation does full DOM parsing mostly for the sake of extensibility and configurability)
   
-  Additionally, `Crusty` has small and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory... A gulp of fresh air after languages with GC(hey golang) I have to say 
+  Additionally, `Crusty` has small and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory. 
   
 - Scalability
   
@@ -113,4 +113,6 @@ grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.
 
 ## Contributing
 
-I'm open to discussions/contributions, use github issues, pull requests are welcomed ;)
+I'm open to discussions/contributions, - use github issues,
+
+pull requests are welcomed ;)
