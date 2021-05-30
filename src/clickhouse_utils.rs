@@ -100,22 +100,10 @@ impl Writer {
 
         let mut done = false;
         while !done {
-            let timeout = time::sleep(*self.cfg.check_for_force_write_duration);
-            tokio::pin!(timeout);
-
-            tokio::select! {
-                els = rx.recv_async() => {
-                    if let Ok(els) = els {
-                        for el in els {
-                            state.lock().unwrap().notify.push(el.clone());
-                            inserter.write(&map(el)).await.context("error during inserter.write")?;
-                        }
-                    } else {
-                        done = true
-                    }
-                }
-
-                _ = &mut timeout => {
+            if let Ok(r) = timeout(*self.cfg.check_for_force_write_duration, rx.recv_async()).await {
+                for el in r.unwrap_or_else(|_| {done = true; vec![]}) {
+                    state.lock().unwrap().notify.push(el.clone());
+                    inserter.write(&map(el)).await.context("error during inserter.write")?;
                 }
             }
 
