@@ -258,8 +258,8 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 					url:  r.task.link.url.to_string(),
 					md:   Some(TaskMeasurementData {
 						status_code: status.status_code as u16,
-						wait_time_ms: status.status_metrics.wait_dur.as_millis() as u32,
-						status_time_ms: status.status_metrics.status_dur.as_millis() as u32,
+						wait_time_ms: status.metrics.wait_dur.as_millis() as u32,
+						status_time_ms: status.metrics.status_dur.as_millis() as u32,
 						load_time_ms,
 						write_size_b,
 						read_size_b,
