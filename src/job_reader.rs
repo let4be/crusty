@@ -11,17 +11,17 @@ use crate::{clickhouse_utils as chu, types::*};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct JobReaderConfig {
-	pub re_after_days: usize,
-	pub shard_min_last_read: rc::CDuration,
-	pub shard_min: usize,
-	pub shard_max: usize,
-	pub shard_total: usize,
-	pub shard_select_limit: usize,
-	pub job_buffer: usize,
-	pub domain_tail_top_n: usize,
-	pub domain_table_name: String,
+	pub re_after_days:             usize,
+	pub shard_min_last_read:       rc::CDuration,
+	pub shard_min:                 usize,
+	pub shard_max:                 usize,
+	pub shard_total:               usize,
+	pub shard_select_limit:        usize,
+	pub job_buffer:                usize,
+	pub domain_tail_top_n:         usize,
+	pub domain_table_name:         String,
 	pub default_crawling_settings: rc::CrawlingSettings,
-	pub seeds: Vec<String>,
+	pub seeds:                     Vec<String>,
 }
 
 impl Default for JobReaderConfig {
@@ -51,10 +51,10 @@ pub struct JobReader {
 
 struct JobReaderState {
 	shard_min_last_read: Duration,
-	shard_last_read: RefCell<HashMap<u16, Instant>>,
-	free_shards: RefCell<LinkedList<u16>>,
-	busy_shards: RefCell<HashMap<u16, HashSet<String>>>,
-	jobs: RefCell<LinkedList<Domain>>,
+	shard_last_read:     RefCell<HashMap<u16, Instant>>,
+	free_shards:         RefCell<LinkedList<u16>>,
+	busy_shards:         RefCell<HashMap<u16, HashSet<String>>>,
+	jobs:                RefCell<LinkedList<Domain>>,
 }
 
 impl JobReaderState {
@@ -78,7 +78,7 @@ impl JobReaderState {
 			for _ in 0..free_shards.len() {
 				shard = free_shards.pop_front();
 				if shard.is_none() || self.reserve_busy_shard(shard.unwrap()) {
-					break;
+					break
 				}
 				free_shards.push_back(shard.unwrap());
 				shard = None
@@ -108,7 +108,7 @@ impl JobReaderState {
 
 		if let Some(last_read) = shard_last_read.get(&shard) {
 			if last_read.elapsed() < self.shard_min_last_read {
-				return false;
+				return false
 			}
 		}
 		shard_last_read.insert(shard, Instant::now());
@@ -153,7 +153,7 @@ impl JobReaderState {
 #[derive(Reflection, Deserialize)]
 struct JobReaderRow<'a> {
 	domain: &'a str,
-	tails: Vec<&'a str>,
+	tails:  Vec<&'a str>,
 }
 
 #[derive(Debug)]
@@ -272,7 +272,7 @@ impl JobReader {
 					if shard == d.shard {
 						state.add_job(d.shard, d.clone());
 						seed_domains.remove(i);
-						break;
+						break
 					}
 				}
 			}
@@ -313,10 +313,10 @@ impl JobReader {
 						if !jobs.is_empty() {
 							let notification = chu::GenericNotification {
 								table_name: self.cfg.domain_table_name.clone(),
-								label: String::from("read"),
+								label:      String::from("read"),
 								since_last: last_read.elapsed(),
-								duration: queried_for,
-								items: jobs.len(),
+								duration:   queried_for,
+								items:      jobs.len(),
 							};
 							futures.push(Box::pin(async {
 								let _ = tx_metrics_db.send_async(vec![notification]).await;
@@ -345,7 +345,7 @@ impl JobReader {
 				}
 
 				if futures.len() <= 1 && awaiting_notification {
-					break;
+					break
 				}
 			}
 		}
