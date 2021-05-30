@@ -29,7 +29,11 @@ struct Crusty {
 
 impl Crusty {
 	async fn try_connect(cfg: &config::CrustyConfig) -> Result<Client> {
-		let client = Client::default().with_url(&cfg.clickhouse.url).with_user(&cfg.clickhouse.username).with_password(&cfg.clickhouse.password).with_database(&cfg.clickhouse.database);
+		let client = Client::default()
+			.with_url(&cfg.clickhouse.url)
+			.with_user(&cfg.clickhouse.username)
+			.with_password(&cfg.clickhouse.password)
+			.with_database(&cfg.clickhouse.database);
 
 		let r = client.query("SELECT 'ok'").fetch_one::<String>().await?;
 		if r == "ok" {
@@ -113,7 +117,12 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_filter_map(lnk: Arc<rt::Link>, task_domain: &str, ddc: &mut TtlCache<String, ()>, cfg: &CrustyConfig) -> Option<Domain> {
+	fn domain_filter_map(
+		lnk: Arc<rt::Link>,
+		task_domain: &str,
+		ddc: &mut TtlCache<String, ()>,
+		cfg: &CrustyConfig,
+	) -> Option<Domain> {
 		let domain = lnk.host()?;
 
 		if domain.len() < 3 || !domain.contains('.') || domain == *task_domain || ddc.contains_key(&domain) {
@@ -141,7 +150,11 @@ impl Crusty {
 				let task_domain = r.task.link.host().unwrap();
 				match r.status {
 					rt::JobStatus::Processing(Ok(ref jp)) => {
-						let domains: Vec<Domain> = jp.links.iter().filter_map(|lnk| Crusty::domain_filter_map(Arc::clone(lnk), &task_domain, &mut ddc, &cfg)).collect();
+						let domains: Vec<Domain> = jp
+							.links
+							.iter()
+							.filter_map(|lnk| Crusty::domain_filter_map(Arc::clone(lnk), &task_domain, &mut ddc, &cfg))
+							.collect();
 
 						let _ = tokio::join!(
 							async {
@@ -194,10 +207,18 @@ impl Crusty {
 	}
 
 	fn add_queue_measurement<F: Fn() -> usize + Send + Sync + 'static>(&mut self, kind: QueueKind, len_getter: F) {
-		self.state.queue_measurements.push(Arc::new(Box::new(move || QueueMeasurement { kind: kind.clone(), stats: QueueStats { len: len_getter(), time: now() } })))
+		self.state.queue_measurements.push(Arc::new(Box::new(move || QueueMeasurement {
+			kind:  kind.clone(),
+			stats: QueueStats { len: len_getter(), time: now() },
+		})))
 	}
 
-	fn monitor_queues(state: CrustyState, cfg: config::CrustyConfig, rx_sig: Receiver<()>, tx_metrics_queue: Sender<Vec<QueueMeasurement>>) -> TracingTask<'static> {
+	fn monitor_queues(
+		state: CrustyState,
+		cfg: config::CrustyConfig,
+		rx_sig: Receiver<()>,
+		tx_metrics_queue: Sender<Vec<QueueMeasurement>>,
+	) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
 			while !rx_sig.is_disconnected() {
 				let ms = state.queue_measurements.iter().map(|measure| measure()).collect();
@@ -246,21 +267,28 @@ impl Crusty {
 	fn go(mut self) -> PinnedFut<'static, ()> {
 		TracingTask::new(span!(), async move {
 			info!("Creating parser processor...");
-			let pp = crusty_core::ParserProcessor::spawn(self.cfg.concurrency_profile.clone(), *self.cfg.parser_processor_stack_size);
+			let pp = crusty_core::ParserProcessor::spawn(
+				self.cfg.concurrency_profile.clone(),
+				*self.cfg.parser_processor_stack_size,
+			);
 
 			let network_profile = self.cfg.networking_profile.clone().resolve()?;
 			info!("Resolved Network Profile: {:?}", network_profile);
 
 			info!("Creating crawler instance...");
-			let (crawler, tx_job, rx_job_state_update) = crusty_core::MultiCrawler::new(&pp, self.cfg.concurrency_profile.clone(), network_profile);
+			let (crawler, tx_job, rx_job_state_update) =
+				crusty_core::MultiCrawler::new(&pp, self.cfg.concurrency_profile.clone(), network_profile);
 
 			let (tx_sig, rx_sig) = bounded_ch(1);
 
 			self.spawn(Crusty::signal_handler(tx_sig));
 
-			let (tx_domain_insert_notify, rx_domain_insert_notify) = bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
-			let (tx_domain_update_notify, rx_domain_update_notify) = bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
-			let (tx_domain_update_notify_p, rx_domain_update_notify_p) = bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
+			let (tx_domain_insert_notify, rx_domain_insert_notify) =
+				bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
+			let (tx_domain_update_notify, rx_domain_update_notify) =
+				bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
+			let (tx_domain_update_notify_p, rx_domain_update_notify_p) =
+				bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
 
 			let tx_metrics_task = self.metrics_task_handler();
 			let tx_metrics_queue = self.metrics_queue_handler();
@@ -293,11 +321,29 @@ impl Crusty {
 				self.add_queue_measurement(QueueKind::JobUpdate, move || rx_job_state_update.len());
 			}
 
-			self.spawn(Crusty::result_handler(self.cfg.clone(), tx_metrics_task, tx_domain_insert, tx_domain_update, rx_job_state_update));
+			self.spawn(Crusty::result_handler(
+				self.cfg.clone(),
+				tx_metrics_task,
+				tx_domain_insert,
+				tx_domain_update,
+				rx_job_state_update,
+			));
 
-			self.spawn(Crusty::job_reader(self.state.clone(), self.cfg.clone(), tx_job, rx_sig.clone(), tx_metrics_db.clone(), rx_domain_update_notify_p));
+			self.spawn(Crusty::job_reader(
+				self.state.clone(),
+				self.cfg.clone(),
+				tx_job,
+				rx_sig.clone(),
+				tx_metrics_db.clone(),
+				rx_domain_update_notify_p,
+			));
 
-			self.spawn(Crusty::domain_notification_plex(rx_domain_insert_notify, rx_domain_update_notify, tx_metrics_db, tx_domain_update_notify_p));
+			self.spawn(Crusty::domain_notification_plex(
+				rx_domain_insert_notify,
+				rx_domain_update_notify,
+				tx_metrics_db,
+				tx_domain_update_notify_p,
+			));
 
 			self.spawn(Crusty::monitor_queues(self.state.clone(), self.cfg.clone(), rx_sig, tx_metrics_queue));
 			drop(self.state);
@@ -333,7 +379,8 @@ async fn go() -> Result<()> {
 		}
 	}
 
-	let collector = tracing_subscriber::fmt().with_env_filter(filter).with_target(false).with_ansi(cfg.log.ansi).finish();
+	let collector =
+		tracing_subscriber::fmt().with_env_filter(filter).with_target(false).with_ansi(cfg.log.ansi).finish();
 
 	tracing::subscriber::set_global_default(collector)?;
 	println!("Log system configured...: {} with filtering: {:?}", *cfg.log.level, cfg.log.filter);

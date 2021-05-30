@@ -35,7 +35,13 @@ pub struct GenericNotification {
 
 impl<A: Clone + Send> From<Notification<A>> for GenericNotification {
 	fn from(s: Notification<A>) -> Self {
-		GenericNotification { table_name: s.table_name, label: s.label, since_last: s.since_last, duration: s.duration, items: s.items.len() }
+		GenericNotification {
+			table_name: s.table_name,
+			label:      s.label,
+			since_last: s.since_last,
+			duration:   s.duration,
+			items:      s.items.len(),
+		}
 	}
 }
 
@@ -72,7 +78,10 @@ impl Writer {
 		map: &F,
 		state: Arc<Mutex<WriterState<A>>>,
 	) -> Result<()> {
-		let mut inserter = client.inserter(self.cfg.table_name.as_str())?.with_max_entries(self.cfg.buffer_capacity as u64).with_max_duration(*self.cfg.force_write_duration);
+		let mut inserter = client
+			.inserter(self.cfg.table_name.as_str())?
+			.with_max_entries(self.cfg.buffer_capacity as u64)
+			.with_max_duration(*self.cfg.force_write_duration);
 
 		let mut last_write = Instant::now();
 
@@ -113,7 +122,13 @@ impl Writer {
 					write_took.as_millis()
 				);
 				if let Some(notify_tx) = &notify_tx {
-					let n = Notification { label: self.cfg.label.clone(), table_name: self.cfg.table_name.clone(), since_last, duration: write_took, items: { state.lock().unwrap().notify.clone() } };
+					let n = Notification {
+						label: self.cfg.label.clone(),
+						table_name: self.cfg.table_name.clone(),
+						since_last,
+						duration: write_took,
+						items: { state.lock().unwrap().notify.clone() },
+					};
 					let _ = notify_tx.send_async(n).await;
 				}
 				state.lock().unwrap().notify.clear();

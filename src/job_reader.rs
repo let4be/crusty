@@ -39,7 +39,10 @@ impl Default for JobReaderConfig {
 			re_after_days: 3,
 			shard_select_limit: 100_000,
 			job_buffer: 100_000,
-			default_crawling_settings: rc::CrawlingSettings { user_agent: Some(String::from("crusty/0.5.0")), ..rc::CrawlingSettings::default() },
+			default_crawling_settings: rc::CrawlingSettings {
+				user_agent: Some(String::from("crusty/0.5.0")),
+				..rc::CrawlingSettings::default()
+			},
 
 			seeds: vec![],
 		}
@@ -143,7 +146,11 @@ impl JobReaderState {
 					panic!("Got notification about finished job '{domain}' but couldn't locate it inside the shard {shard}", shard = domain.shard, domain = &domain.domain);
 				}
 			} else {
-				panic!("Got notification about finished job '{domain}' but couldn't locate shard {shard}", shard = domain.shard, domain = &domain.domain);
+				panic!(
+					"Got notification about finished job '{domain}' but couldn't locate shard {shard}",
+					shard = domain.shard,
+					domain = &domain.domain
+				);
 			}
 		}
 
@@ -223,7 +230,12 @@ impl JobReader {
 
 	async fn send_job(&self, tx: &Sender<Job>, job: Domain) {
 		let url = job.url.clone().map(|u| u.to_string()).unwrap_or_else(|| format!("http://{}", &job.domain));
-		let job_obj = Job::new(&url, self.cfg.default_crawling_settings.clone(), CrawlingRules {}, JobState { selected_domain: job.clone() });
+		let job_obj = Job::new(
+			&url,
+			self.cfg.default_crawling_settings.clone(),
+			CrawlingRules {},
+			JobState { selected_domain: job.clone() },
+		);
 
 		if let Ok(job_obj) = job_obj {
 			let _ = tx.send_async(job_obj).await;
@@ -234,7 +246,13 @@ impl JobReader {
 	}
 
 	fn handle_sent_job(&self, state: &JobReaderState, job: Domain) {
-		info!("->new task sent for {}, jobs left: {}, free shards: {}, busy shards: {}", job.domain, state.jobs.borrow().len(), state.free_shards.borrow().len(), state.busy_shards.borrow().len());
+		info!(
+			"->new task sent for {}, jobs left: {}, free shards: {}, busy shards: {}",
+			job.domain,
+			state.jobs.borrow().len(),
+			state.free_shards.borrow().len(),
+			state.busy_shards.borrow().len()
+		);
 	}
 
 	fn handle_confirmation(&self, state: &JobReaderState, domains: Vec<Domain>) {
@@ -246,7 +264,13 @@ impl JobReader {
 		for shard in shards {
 			state.check_shard(shard);
 		}
-		info!("<-{} tasks completed, jobs left: {}, free shards: {}, busy shards: {}", domains.len(), state.jobs.borrow().len(), state.free_shards.borrow().len(), state.busy_shards.borrow().len());
+		info!(
+			"<-{} tasks completed, jobs left: {}, free shards: {}, busy shards: {}",
+			domains.len(),
+			state.jobs.borrow().len(),
+			state.free_shards.borrow().len(),
+			state.busy_shards.borrow().len()
+		);
 	}
 
 	pub async fn go(
@@ -259,8 +283,13 @@ impl JobReader {
 	) -> Result<()> {
 		let state = JobReaderState::new(self.cfg.shard_min, self.cfg.shard_max, *self.cfg.shard_min_last_read);
 
-		let mut seed_domains: Vec<_> =
-			self.cfg.seeds.iter().filter_map(|seed| Url::parse(seed).ok()).map(|seed| Domain::new(seed.domain().unwrap().into(), self.cfg.shard_total, Some(seed.clone()), false)).collect();
+		let mut seed_domains: Vec<_> = self
+			.cfg
+			.seeds
+			.iter()
+			.filter_map(|seed| Url::parse(seed).ok())
+			.map(|seed| Domain::new(seed.domain().unwrap().into(), self.cfg.shard_total, Some(seed.clone()), false))
+			.collect();
 
 		let mut last_read = Instant::now();
 		while !rx_sig.is_disconnected() {
