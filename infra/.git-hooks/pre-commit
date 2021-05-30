@@ -4,3 +4,4 @@ echo "linting code..."
 cargo +nightly clippy -- -Dwarnings
 echo "formatting the code..."
 cargo +nightly fmt
+git add -A .
