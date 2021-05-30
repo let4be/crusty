@@ -1,3 +1,6 @@
+![crates.io](https://img.shields.io/crates/v/crusty.svg)
+[![Dependency status](https://deps.rs/repo/github/let4be/crusty/status.svg)](https://deps.rs/repo/github/let4be/crusty)
+
 # Crusty - polite && scalable broad web crawler
 
 ## Introduction
