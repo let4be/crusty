@@ -39,7 +39,7 @@ impl Default for JobReaderConfig {
 			re_after_days: 3,
 			shard_select_limit: 100_000,
 			job_buffer: 100_000,
-			default_crawling_settings: rc::CrawlingSettings { user_agent: Some(String::from("crusty/0.1.3")), ..rc::CrawlingSettings::default() },
+			default_crawling_settings: rc::CrawlingSettings { user_agent: Some(String::from("crusty/0.3.0")), ..rc::CrawlingSettings::default() },
 
 			seeds: vec![],
 		}
