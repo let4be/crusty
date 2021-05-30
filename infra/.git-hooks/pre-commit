@@ -2,5 +2,5 @@
 
 echo "linting code..."
 cargo +nightly clippy -- -Dwarnings
-echo "validation code formatting..."
-cargo +nightly fmt --all -- --check
+echo "formatting the code..."
+cargo +nightly fmt

@@ -1,4 +1,4 @@
-max_width = 100
+max_width = 200
 hard_tabs = true
 tab_spaces = 4
 newline_style = "Auto"
@@ -59,8 +59,8 @@ skip_children = false
 hide_parse_errors = false
 error_on_line_overflow = false
 error_on_unformatted = false
-report_todo = "Never"
-report_fixme = "Never"
+report_todo = "Unnumbered"
+report_fixme = "Unnumbered"
 ignore = []
 emit_mode = "Files"
 make_backup = false

@@ -26,48 +26,16 @@ impl Domain {
 		let split: Vec<String> = domain.split('.').map(String::from).collect();
 
 		if split.len() < 2 {
-			return Domain {
-				is_discovery,
-				shard: 0,
-				shards_total,
-
-				url,
-				domain: domain.clone(),
-				head: domain,
-				tail: "".into(),
-			}
+			return Domain { is_discovery, shard: 0, shards_total, url, domain: domain.clone(), head: domain, tail: "".into() }
 		}
 		if split.len() == 2 {
-			return Domain {
-				is_discovery,
-				shard: 0,
-				shards_total,
-
-				url,
-				domain,
-				head: split.join("."),
-				tail: "".into(),
-			}
+			return Domain { is_discovery, shard: 0, shards_total, url, domain, head: split.join("."), tail: "".into() }
 		}
 
-		Domain {
-			is_discovery,
-			shard: 0,
-			shards_total,
-
-			url,
-			domain,
-			head: split[split.len() - 2..].join("."),
-			tail: split[..split.len() - 2].join("."),
-		}
+		Domain { is_discovery, shard: 0, shards_total, url, domain, head: split[split.len() - 2..].join("."), tail: split[..split.len() - 2].join(".") }
 	}
 
-	pub fn new(
-		domain: String,
-		shards_total: usize,
-		url: Option<Url>,
-		is_discovery: bool,
-	) -> Domain {
+	pub fn new(domain: String, shards_total: usize, url: Option<Url>, is_discovery: bool) -> Domain {
 		let mut domain = Domain::_new(domain, shards_total, url, is_discovery);
 		domain.calc_shard();
 		domain
@@ -93,13 +61,7 @@ impl From<Domain> for DomainDBEntry {
 	fn from(s: Domain) -> Self {
 		let now = now();
 
-		Self {
-			shard:       s.shard,
-			domain:      s.head,
-			domain_tail: s.tail,
-			created_at:  now,
-			updated_at:  if s.is_discovery { 644616000 } else { now },
-		}
+		Self { shard: s.shard, domain: s.head, domain_tail: s.tail, created_at: now, updated_at: if s.is_discovery { 644616000 } else { now } }
 	}
 }
 
@@ -126,12 +88,7 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 	}
 
 	fn status_filters(&self) -> ct::StatusFilters<JobState, TaskState> {
-		vec![
-			Box::new(crusty_core::status_filters::ContentType::new(vec![String::from(
-				"text/html",
-			)])),
-			Box::new(crusty_core::status_filters::Redirect::new()),
-		]
+		vec![Box::new(crusty_core::status_filters::ContentType::new(vec![String::from("text/html")])), Box::new(crusty_core::status_filters::Redirect::new())]
 	}
 
 	fn load_filters(&self) -> ct::LoadFilters<JobState, TaskState> {
@@ -281,37 +238,19 @@ pub struct QueueMeasurementDBEntry {
 impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 	fn from(s: QueueMeasurement) -> Self {
 		let c = CONFIG.lock().unwrap();
-		Self {
-			host:       c.host.clone(),
-			app_id:     c.app_id.clone(),
-			name:       format!("{:?}", s.kind),
-			updated_at: s.stats.time,
-			len:        s.stats.len as u32,
-		}
+		Self { host: c.host.clone(), app_id: c.app_id.clone(), name: format!("{:?}", s.kind), updated_at: s.stats.time, len: s.stats.len as u32 }
 	}
 }
-impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>>
-	for TaskMeasurement
-{
+impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurement {
 	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
 		if let ct::JobStatus::Processing(Ok(ref load_data)) = r.status {
-			let parse_time_ms = if let ct::FollowResult::Ok(ref follow_data) = load_data.follow_data
-			{
-				follow_data.metrics.parse_dur.as_millis() as u32
-			} else {
-				0
-			};
+			let parse_time_ms = if let ct::FollowResult::Ok(ref follow_data) = load_data.follow_data { follow_data.metrics.parse_dur.as_millis() as u32 } else { 0 };
 
-			let (load_time_ms, write_size_b, read_size_b) =
-				if let ct::LoadResult::Ok(ref load_data) = load_data.load_data {
-					(
-						load_data.metrics.load_dur.as_millis() as u32,
-						load_data.metrics.write_size as u32,
-						load_data.metrics.read_size as u32,
-					)
-				} else {
-					(0, 0, 0)
-				};
+			let (load_time_ms, write_size_b, read_size_b) = if let ct::LoadResult::Ok(ref load_data) = load_data.load_data {
+				(load_data.metrics.load_dur.as_millis() as u32, load_data.metrics.write_size as u32, load_data.metrics.read_size as u32)
+			} else {
+				(0, 0, 0)
+			};
 
 			if let StatusResult::Ok(status) = &load_data.status {
 				return TaskMeasurement {

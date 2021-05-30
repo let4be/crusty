@@ -11,17 +11,17 @@ use crate::{clickhouse_utils as chu, types::*};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct JobReaderConfig {
-	pub re_after_days:             usize,
-	pub shard_min_last_read:       rc::CDuration,
-	pub shard_min:                 usize,
-	pub shard_max:                 usize,
-	pub shard_total:               usize,
-	pub shard_select_limit:        usize,
-	pub job_buffer:                usize,
-	pub domain_tail_top_n:         usize,
-	pub domain_table_name:         String,
+	pub re_after_days: usize,
+	pub shard_min_last_read: rc::CDuration,
+	pub shard_min: usize,
+	pub shard_max: usize,
+	pub shard_total: usize,
+	pub shard_select_limit: usize,
+	pub job_buffer: usize,
+	pub domain_tail_top_n: usize,
+	pub domain_table_name: String,
 	pub default_crawling_settings: rc::CrawlingSettings,
-	pub seeds:                     Vec<String>,
+	pub seeds: Vec<String>,
 }
 
 impl Default for JobReaderConfig {
@@ -51,10 +51,10 @@ pub struct JobReader {
 
 struct JobReaderState {
 	shard_min_last_read: Duration,
-	shard_last_read:     RefCell<HashMap<u16, Instant>>,
-	free_shards:         RefCell<LinkedList<u16>>,
-	busy_shards:         RefCell<HashMap<u16, HashSet<String>>>,
-	jobs:                RefCell<LinkedList<Domain>>,
+	shard_last_read: RefCell<HashMap<u16, Instant>>,
+	free_shards: RefCell<LinkedList<u16>>,
+	busy_shards: RefCell<HashMap<u16, HashSet<String>>>,
+	jobs: RefCell<LinkedList<Domain>>,
 }
 
 impl JobReaderState {
@@ -78,7 +78,7 @@ impl JobReaderState {
 			for _ in 0..free_shards.len() {
 				shard = free_shards.pop_front();
 				if shard.is_none() || self.reserve_busy_shard(shard.unwrap()) {
-					break
+					break;
 				}
 				free_shards.push_back(shard.unwrap());
 				shard = None
@@ -108,7 +108,7 @@ impl JobReaderState {
 
 		if let Some(last_read) = shard_last_read.get(&shard) {
 			if last_read.elapsed() < self.shard_min_last_read {
-				return false
+				return false;
 			}
 		}
 		shard_last_read.insert(shard, Instant::now());
@@ -153,7 +153,7 @@ impl JobReaderState {
 #[derive(Reflection, Deserialize)]
 struct JobReaderRow<'a> {
 	domain: &'a str,
-	tails:  Vec<&'a str>,
+	tails: Vec<&'a str>,
 }
 
 #[derive(Debug)]
@@ -170,23 +170,19 @@ impl JobReader {
 		Self { cfg }
 	}
 
-	fn read_jobs<'a>(
-		&'a self,
-		client: &'a clickhouse::Client,
-		shard: u16,
-	) -> TracingTask<'a, Vec<String>> {
+	fn read_jobs<'a>(&'a self, client: &'a clickhouse::Client, shard: u16) -> TracingTask<'a, Vec<String>> {
 		TracingTask::new_short_lived(span!(), async move {
 			let r = client
 				.query(
 					format!(
 						"SELECT domain, groupArray(?)(domain_tail) as tails FROM (
-                    SELECT domain, domain_tail FROM {}
-                    WHERE shard = ?
-                    GROUP BY shard, domain, domain_tail
-                    HAVING max(updated_at) <= date_sub(DAY, ?, NOW())
-                )
-                GROUP BY domain
-                LIMIT ?",
+							SELECT domain, domain_tail FROM {}
+							WHERE shard = ?
+							GROUP BY shard, domain, domain_tail
+							HAVING max(updated_at) <= date_sub(DAY, ?, NOW())
+						)
+						GROUP BY domain
+						LIMIT ?",
 						self.cfg.domain_table_name.as_str()
 					)
 					.as_str(),
@@ -200,15 +196,9 @@ impl JobReader {
 			let mut cursor = r.context("cannot get cursor for domain_discovery")?;
 
 			let mut domains = vec![];
-			while let Some(row) =
-				cursor.next().await.context("cannot read from domain_discovery")?
-			{
+			while let Some(row) = cursor.next().await.context("cannot read from domain_discovery")? {
 				row.tails.iter().fold(&mut domains, |domains, t| {
-					domains.push(if t.is_empty() {
-						String::from(row.domain)
-					} else {
-						format!("{}.{}", t, row.domain)
-					});
+					domains.push(if t.is_empty() { String::from(row.domain) } else { format!("{}.{}", t, row.domain) });
 					domains
 				});
 			}
@@ -217,23 +207,13 @@ impl JobReader {
 		})
 	}
 
-	fn handle_read_jobs(
-		&self,
-		state: &JobReaderState,
-		shard: u16,
-		jobs: Vec<String>,
-		queried_for: Duration,
-	) {
+	fn handle_read_jobs(&self, state: &JobReaderState, shard: u16, jobs: Vec<String>, queried_for: Duration) {
 		for domain in jobs {
 			state.add_job(shard, Domain::new(domain, self.cfg.shard_total, None, false));
 		}
 
 		state.check_shard(shard);
-		trace!(
-			"->jobs present: {}, query took: {}ms",
-			state.jobs.borrow().len(),
-			queried_for.as_millis()
-		);
+		trace!("->jobs present: {}, query took: {}ms", state.jobs.borrow().len(), queried_for.as_millis());
 	}
 
 	fn handle_read_jobs_err(&self, state: &JobReaderState, shard: u16) {
@@ -241,17 +221,8 @@ impl JobReader {
 	}
 
 	async fn send_job(&self, tx: &Sender<Job>, job: Domain) {
-		let url = job
-			.url
-			.clone()
-			.map(|u| u.to_string())
-			.unwrap_or_else(|| format!("http://{}", &job.domain));
-		let job_obj = Job::new(
-			&url,
-			self.cfg.default_crawling_settings.clone(),
-			CrawlingRules {},
-			JobState { selected_domain: job.clone() },
-		);
+		let url = job.url.clone().map(|u| u.to_string()).unwrap_or_else(|| format!("http://{}", &job.domain));
+		let job_obj = Job::new(&url, self.cfg.default_crawling_settings.clone(), CrawlingRules {}, JobState { selected_domain: job.clone() });
 
 		if let Ok(job_obj) = job_obj {
 			let _ = tx.send_async(job_obj).await;
@@ -262,13 +233,7 @@ impl JobReader {
 	}
 
 	fn handle_sent_job(&self, state: &JobReaderState, job: Domain) {
-		info!(
-			"->new task sent for {}, jobs left: {}, free shards: {}, busy shards: {}",
-			job.domain,
-			state.jobs.borrow().len(),
-			state.free_shards.borrow().len(),
-			state.busy_shards.borrow().len()
-		);
+		info!("->new task sent for {}, jobs left: {}, free shards: {}, busy shards: {}", job.domain, state.jobs.borrow().len(), state.free_shards.borrow().len(), state.busy_shards.borrow().len());
 	}
 
 	fn handle_confirmation(&self, state: &JobReaderState, domains: Vec<Domain>) {
@@ -280,13 +245,7 @@ impl JobReader {
 		for shard in shards {
 			state.check_shard(shard);
 		}
-		info!(
-			"<-{} tasks completed, jobs left: {}, free shards: {}, busy shards: {}",
-			domains.len(),
-			state.jobs.borrow().len(),
-			state.free_shards.borrow().len(),
-			state.busy_shards.borrow().len()
-		);
+		info!("<-{} tasks completed, jobs left: {}, free shards: {}, busy shards: {}", domains.len(), state.jobs.borrow().len(), state.free_shards.borrow().len(), state.busy_shards.borrow().len());
 	}
 
 	pub async fn go(
@@ -297,26 +256,10 @@ impl JobReader {
 		tx_metrics_db: Sender<Vec<chu::GenericNotification>>,
 		rx_confirmation: Receiver<chu::Notification<Domain>>,
 	) -> Result<()> {
-		let state = JobReaderState::new(
-			self.cfg.shard_min,
-			self.cfg.shard_max,
-			*self.cfg.shard_min_last_read,
-		);
+		let state = JobReaderState::new(self.cfg.shard_min, self.cfg.shard_max, *self.cfg.shard_min_last_read);
 
-		let mut seed_domains: Vec<_> = self
-			.cfg
-			.seeds
-			.iter()
-			.filter_map(|seed| Url::parse(seed).ok())
-			.map(|seed| {
-				Domain::new(
-					seed.domain().unwrap().into(),
-					self.cfg.shard_total,
-					Some(seed.clone()),
-					false,
-				)
-			})
-			.collect();
+		let mut seed_domains: Vec<_> =
+			self.cfg.seeds.iter().filter_map(|seed| Url::parse(seed).ok()).map(|seed| Domain::new(seed.domain().unwrap().into(), self.cfg.shard_total, Some(seed.clone()), false)).collect();
 
 		let mut last_read = Instant::now();
 		while !rx_sig.is_disconnected() {
@@ -329,7 +272,7 @@ impl JobReader {
 					if shard == d.shard {
 						state.add_job(d.shard, d.clone());
 						seed_domains.remove(i);
-						break
+						break;
 					}
 				}
 			}
@@ -370,10 +313,10 @@ impl JobReader {
 						if !jobs.is_empty() {
 							let notification = chu::GenericNotification {
 								table_name: self.cfg.domain_table_name.clone(),
-								label:      String::from("read"),
+								label: String::from("read"),
 								since_last: last_read.elapsed(),
-								duration:   queried_for,
-								items:      jobs.len(),
+								duration: queried_for,
+								items: jobs.len(),
 							};
 							futures.push(Box::pin(async {
 								let _ = tx_metrics_db.send_async(vec![notification]).await;
@@ -402,7 +345,7 @@ impl JobReader {
 				}
 
 				if futures.len() <= 1 && awaiting_notification {
-					break
+					break;
 				}
 			}
 		}
