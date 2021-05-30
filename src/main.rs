@@ -240,7 +240,7 @@ impl Crusty {
     fn signal_handler(tx_sig: Sender<()>) -> TracingTask<'static> {
         TracingTask::new(span!(), async move {
             while !tx_sig.is_disconnected() {
-                if let Ok(_) = timeout(Duration::from_millis(100),tokio::signal::ctrl_c()).await {
+                if timeout(Duration::from_millis(100),tokio::signal::ctrl_c()).await.is_ok() {
                     warn!("Ctrl-C detected - no more accepting new tasks");
                     break
                 }

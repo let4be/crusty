@@ -101,6 +101,7 @@ impl JobReaderState {
         let mut busy_shards = self.busy_shards.borrow_mut();
         let sh = busy_shards.get_mut(&shard);
         if let Some(sh) = sh {
+
             if sh.is_empty() {
                 busy_shards.remove(&shard);
                 self.free_shards.borrow_mut().push_back(shard);
