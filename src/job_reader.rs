@@ -28,6 +28,7 @@ impl Default for JobReaderConfig {
 	fn default() -> Self {
 		let shard_min = 1;
 		let shard_max = 25;
+
 		Self {
 			domain_table_name: String::from("domain_discovery"),
 			domain_tail_top_n: 3,
@@ -38,7 +39,7 @@ impl Default for JobReaderConfig {
 			re_after_days: 3,
 			shard_select_limit: 100_000,
 			job_buffer: 100_000,
-			default_crawling_settings: rc::CrawlingSettings::default(),
+			default_crawling_settings: rc::CrawlingSettings { user_agent: Some(String::from("crusty/0.1.3")), ..rc::CrawlingSettings::default() },
 
 			seeds: vec![],
 		}
