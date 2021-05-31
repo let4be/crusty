@@ -10,17 +10,17 @@ repository = "https://github.com/let4be/crusty"
 keywords = ["broad", "crawler", "rust", "async", "multi-threaded"]
 
 [profile.dev]
-panic = "abort"
+panic = "unwind"
 debug-assertions = false
 
 [profile.release]
-panic = "abort"
+panic = "unwind"
 debug-assertions = false
 opt-level = 3
 
 [dependencies]
 tracing-tools = "~0.1.0"
-crusty-core = "~0.14.0"
+crusty-core = "~0.15.0"
 
 futures-lite = "~1.11.3"
 futures = "~0.3.14"
