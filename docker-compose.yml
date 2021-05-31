@@ -49,7 +49,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
     environment:
-      - CRUSTY_SEEDS=${CRUSTY_SEEDS}
+      - CRUSTY_SEEDS=${CRUSTY_SEEDS:-}
 
 volumes:
   clickhouse-volume:

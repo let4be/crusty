@@ -142,7 +142,10 @@ pub fn load() -> Result<()> {
 	}
 
 	if let Ok(seeds) = env::var("CRUSTY_SEEDS") {
-		config.job_reader.seeds.extend(seeds.split(',').map(String::from).collect::<Vec<_>>());
+		config
+			.job_reader
+			.seeds
+			.extend(seeds.split(',').filter(|v| !v.is_empty()).map(String::from).collect::<Vec<_>>());
 	}
 
 	if let Some(err) = e {
