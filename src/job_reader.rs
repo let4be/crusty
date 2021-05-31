@@ -138,20 +138,22 @@ impl JobReaderState {
 	}
 
 	fn finish_job(&self, domain: &Domain) {
-		{
-			let mut busy_shards = self.busy_shards.borrow_mut();
+		let mut busy_shards = self.busy_shards.borrow_mut();
 
-			if let Some(busy_shard) = busy_shards.get_mut(&domain.shard) {
-				if !busy_shard.remove(&domain.domain) {
-					panic!("Got notification about finished job '{domain}' but couldn't locate it inside the shard {shard}", shard = domain.shard, domain = &domain.domain);
-				}
-			} else {
+		if let Some(busy_shard) = busy_shards.get_mut(&domain.shard) {
+			if !busy_shard.remove(&domain.domain) {
 				panic!(
-					"Got notification about finished job '{domain}' but couldn't locate shard {shard}",
+					"Got notification about finished job '{domain}' but couldn't locate it inside the shard {shard}",
 					shard = domain.shard,
 					domain = &domain.domain
 				);
 			}
+		} else {
+			panic!(
+				"Got notification about finished job '{domain}' but couldn't locate shard {shard}",
+				shard = domain.shard,
+				domain = &domain.domain
+			);
 		}
 
 		info!("Job {}/{} is finished!", domain.shard, &domain.domain);

@@ -58,14 +58,11 @@ impl Writer {
 		map: F,
 	) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
-		retry(ExponentialBackoff::default(), || {
-			let client = client.clone();
-			let rx = rx.clone();
-			let notify_tx = notify_tx.clone();
-			async {
-				self.go(client, rx, notify_tx, &map, state.clone()).await.map_err(backoff::Error::Transient)?;
-				Ok(())
-			}
+		retry(ExponentialBackoff::default(), || async {
+			self.go(client.clone(), rx.clone(), notify_tx.clone(), &map, state.clone())
+				.await
+				.map_err(backoff::Error::Transient)?;
+			Ok(())
 		})
 		.await
 	}
@@ -104,12 +101,10 @@ impl Writer {
 
 			let t = Instant::now();
 
-			let s = inserter.commit().await.context("error during inserter.commit");
+			let s = inserter.commit().await.context("error during inserter.commit")?;
 
 			let since_last = last_write.elapsed();
 			let write_took = t.elapsed();
-
-			let s = s?;
 
 			if s.entries > 0 {
 				info!(
