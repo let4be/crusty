@@ -169,7 +169,7 @@ impl Crusty {
 						let _ = tx_metrics.send_async(vec![TaskMeasurement::from(r)]).await;
 					}
 					rt::JobStatus::Finished(ref _jd) => {
-						let selected_domain = { r.context.job_state.lock().unwrap().selected_domain.clone() };
+						let selected_domain = { r.ctx.job_state.lock().unwrap().selected_domain.clone() };
 						let _ = tx_domain_update.send_async(vec![selected_domain]).await;
 					}
 				}

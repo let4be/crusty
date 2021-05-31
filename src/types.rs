@@ -275,31 +275,30 @@ impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurement {
 	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
 		if let ct::JobStatus::Processing(Ok(ref load_data)) = r.status {
-			let parse_time_ms = if let ct::FollowResult::Ok(ref follow_data) = load_data.follow_data {
-				follow_data.metrics.parse_dur.as_millis() as u32
+			let parse_time_ms = if let ct::FollowResult::Ok(ref follow) = load_data.follow {
+				follow.metrics.duration.as_millis() as u32
 			} else {
 				0
 			};
 
-			let (load_time_ms, write_size_b, read_size_b) =
-				if let ct::LoadResult::Ok(ref load_data) = load_data.load_data {
-					(
-						load_data.metrics.load_dur.as_millis() as u32,
-						load_data.metrics.write_size as u32,
-						load_data.metrics.read_size as u32,
-					)
-				} else {
-					(0, 0, 0)
-				};
+			let (load_time_ms, write_size_b, read_size_b) = if let ct::LoadResult::Ok(ref load) = load_data.load {
+				(
+					load.metrics.duration.as_millis() as u32,
+					load.metrics.write_size as u32,
+					load.metrics.read_size as u32,
+				)
+			} else {
+				(0, 0, 0)
+			};
 
 			if let StatusResult::Ok(status) = &load_data.status {
 				return TaskMeasurement {
 					time: now(),
 					url:  r.task.link.url.to_string(),
 					md:   Some(TaskMeasurementData {
-						status_code: status.status_code as u16,
-						wait_time_ms: status.metrics.wait_dur.as_millis() as u32,
-						status_time_ms: status.metrics.status_dur.as_millis() as u32,
+						status_code: status.code as u16,
+						wait_time_ms: status.metrics.wait_duration.as_millis() as u32,
+						status_time_ms: status.metrics.duration.as_millis() as u32,
 						load_time_ms,
 						write_size_b,
 						read_size_b,

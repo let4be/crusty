@@ -84,9 +84,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.6.1"
+version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63396b8a4b9de3f4fdfb320ab6080762242f66a8ef174c49d8e19b674db4cdbe"
+checksum = "9c59e7af012c713f529e7a3ee57ce9b31ddd858d4b512923602f74608b009631"
 
 [[package]]
 name = "byteorder"
@@ -127,9 +127,9 @@ dependencies = [
 
 [[package]]
 name = "clickhouse"
-version = "0.6.5"
+version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f2b33c54b9ca7f175d65c5d380c94c90a0406105ac2b391e1659fe2a496ccea"
+checksum = "1a04fbfb0837497f87bef70ec9338acd93a5745dbee5f330c688e235d30ab91e"
 dependencies = [
  "bytes",
  "clickhouse-rs-cityhash-sys",
@@ -225,9 +225,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "132193cf92fd74b713016d471e7e7c2d8ef3c8cf016cf83c6309a682bb10d96f"
+checksum = "b4b055e15405966e69e4f045e173187e6792c0570fbed2c62d57458cf4fcad24"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1668,9 +1668,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd3076b5c8cc18138b8f8814895c11eb4de37114a5d127bafdc5e55798ceef37"
+checksum = "0a38d31d7831c6ed7aad00aa4c12d9375fd225a6dd77da1d25b707346319a975"
 dependencies = [
  "autocfg",
  "bytes",
@@ -1909,9 +1909,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-normalization"
-version = "0.1.17"
+version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07fbfce1c8a97d547e8b5334978438d9d6ec8c20e38f56d4a4374d181493eaef"
+checksum = "33717dca7ac877f497014e10d73f3acf948c342bee31b5ca7892faf94ccc6b49"
 dependencies = [
  "tinyvec",
 ]
