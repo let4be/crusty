@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 #[allow(unused_imports)]
 use crate::prelude::*;
-use crate::{clickhouse_utils as chu, types::*};
+use crate::{clickhouse_utils as chu, rules::*, types::*};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct JobReaderConfig {

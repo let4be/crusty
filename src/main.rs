@@ -2,6 +2,7 @@ mod clickhouse_utils;
 mod config;
 mod job_reader;
 mod prelude;
+mod rules;
 mod types;
 
 use clickhouse::Client;
@@ -12,7 +13,7 @@ use ttl_cache::TtlCache;
 #[allow(unused_imports)]
 use crate::{
 	prelude::*,
-	{clickhouse_utils as chu, config::CrustyConfig, types::*},
+	{clickhouse_utils as chu, config::CrustyConfig, rules::*, types::*},
 };
 
 #[derive(Clone)]
@@ -43,20 +44,13 @@ impl Crusty {
 	}
 
 	async fn new(cfg: config::CrustyConfig) -> Self {
-		let client: Client = {
-			let client;
-			loop {
-				let r = Self::try_connect(&cfg).await;
-				if let Err(ref err) = r {
-					warn!("cannot connect to db: {:#}", err);
-				} else if let Ok(c) = r {
-					client = c;
-					break
-				}
-
-				time::sleep(Duration::from_secs(1)).await;
+		let client = loop {
+			match Self::try_connect(&cfg).await {
+				Err(ref err) => warn!("cannot connect to db: {:#}", err),
+				Ok(c) => break c,
 			}
-			client
+
+			time::sleep(Duration::from_secs(1)).await;
 		};
 
 		Self { handles: vec![], state: CrustyState { client, queue_measurements: vec![] }, cfg }
@@ -162,11 +156,11 @@ impl Crusty {
 									let _ = tx_domain_insert.send_async(domains).await;
 								}
 							},
-							tx_metrics.send_async(vec![TaskMeasurement::from(r)])
+							tx_metrics.send_async(vec![r.into()])
 						);
 					}
 					rt::JobStatus::Processing(Err(_)) => {
-						let _ = tx_metrics.send_async(vec![TaskMeasurement::from(r)]).await;
+						let _ = tx_metrics.send_async(vec![r.into()]).await;
 					}
 					rt::JobStatus::Finished(ref _jd) => {
 						let selected_domain = { r.ctx.job_state.lock().unwrap().selected_domain.clone() };

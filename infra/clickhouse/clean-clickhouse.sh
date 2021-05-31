@@ -3,6 +3,13 @@ DB="crusty"
 clickhouse client --host localhost --multiline -n  <<-EOSQL
 	DROP DATABASE IF EXISTS $DB;
 	CREATE DATABASE $DB;
+	CREATE TABLE $DB.top_domains (
+	  domain String,
+	  linked_from_domain String,
+	  set(100) GRANULARITY 1
+	) ENGINE = MergeTree() PARTITION BY shard PRIMARY KEY (domain)
+	ORDER BY
+	  (domain) SETTINGS index_granularity = 8192;
 	CREATE TABLE $DB.domain_discovery (
 	  shard UInt16,
 	  domain String,
