@@ -65,7 +65,8 @@ ddc_lifetime: 1h
 # We monitor various internal queues and persist their status to db
 queue_monitor_interval: 1s
 # We parse HTML in a separate thread pool, stack size is configurable
-parser_processor_stack_size: 32mib
+# apparently even 32mib is not enough given max_response_size of 2mib...
+parser_processor_stack_size: 128mib
 # Fancy local address binding for monster setups with several NICs(local port limitation)
 networking_profile:
   values:
