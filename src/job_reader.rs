@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use clickhouse::Reflection;
+use clickhouse::Row;
 use crusty_core::config as rc;
 use futures::{stream::FuturesUnordered, StreamExt};
 use serde::Deserialize;
@@ -160,7 +160,7 @@ impl JobReaderState {
 	}
 }
 
-#[derive(Reflection, Deserialize)]
+#[derive(Deserialize, Row)]
 struct JobReaderRow<'a> {
 	domain: &'a str,
 	tails:  Vec<&'a str>,

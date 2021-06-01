@@ -1,5 +1,5 @@
 use backoff::{future::retry, ExponentialBackoff};
-use clickhouse::{Client, Reflection};
+use clickhouse::{Client, Row};
 use serde::Serialize;
 
 #[allow(unused_imports)]
@@ -50,7 +50,7 @@ impl Writer {
 		Self { cfg }
 	}
 
-	pub async fn go_with_retry<A: Clone + std::fmt::Debug + Send, R: Reflection + Serialize, F: Fn(A) -> R>(
+	pub async fn go_with_retry<A: Clone + std::fmt::Debug + Send, R: Row + Serialize, F: Fn(A) -> R>(
 		&self,
 		client: Client,
 		rx: Receiver<Vec<A>>,
@@ -67,7 +67,7 @@ impl Writer {
 		.await
 	}
 
-	pub async fn go<A: Clone + std::fmt::Debug + Send, R: Reflection + Serialize, F: Fn(A) -> R>(
+	pub async fn go<A: Clone + std::fmt::Debug + Send, R: Row + Serialize, F: Fn(A) -> R>(
 		&self,
 		client: Client,
 		rx: Receiver<Vec<A>>,

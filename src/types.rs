@@ -1,4 +1,4 @@
-use clickhouse::Reflection;
+use clickhouse::Row;
 use crusty_core::{types as ct, types::StatusResult};
 use serde::{Deserialize, Serialize};
 
@@ -63,7 +63,7 @@ impl Domain {
 	}
 }
 
-#[derive(Clone, Debug, Reflection, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DomainDBEntry {
 	pub shard:       u16,
 	pub domain:      String,
@@ -86,7 +86,7 @@ impl From<Domain> for DomainDBEntry {
 	}
 }
 
-#[derive(Clone, Debug, Reflection, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DBRWNotificationDBEntry {
 	host:          String,
 	app_id:        String,
@@ -132,7 +132,7 @@ pub struct TaskMeasurement {
 	pub md:   Option<TaskMeasurementData>,
 }
 
-#[derive(Clone, Debug, Serialize, Reflection, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct TaskMeasurementDBEntry {
 	host:           String,
 	app_id:         String,
@@ -212,7 +212,7 @@ pub struct QueueMeasurement {
 	pub stats: QueueStats,
 }
 
-#[derive(Debug, Serialize, Deserialize, Reflection)]
+#[derive(Debug, Serialize, Deserialize, Row)]
 pub struct QueueMeasurementDBEntry {
 	host:           String,
 	app_id:         String,

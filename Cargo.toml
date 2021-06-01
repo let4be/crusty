@@ -28,7 +28,7 @@ serde_yaml = "~0.8.17"
 serde = {version = "~1.0.125", features = ["derive"] }
 tokio = { version = "~1.6.0", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
 
-clickhouse = "~0.6.2"
+clickhouse = "~0.7.0"
 http = "~0.2.3"
 tracing = "~0.1.25"
 tracing-subscriber = "~0.2.17"

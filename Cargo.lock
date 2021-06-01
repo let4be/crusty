@@ -127,17 +127,16 @@ dependencies = [
 
 [[package]]
 name = "clickhouse"
-version = "0.6.8"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a04fbfb0837497f87bef70ec9338acd93a5745dbee5f330c688e235d30ab91e"
+checksum = "95aef4c8e8f5bf092c1b4f297d7b3f27cdb7f845a5f57f4cdb80bb34328d4b67"
 dependencies = [
  "bytes",
+ "clickhouse-derive",
  "clickhouse-rs-cityhash-sys",
  "futures",
  "hyper",
  "lz4-sys",
- "reflection",
- "reflection_derive",
  "serde",
  "sha-1",
  "smallvec",
@@ -146,6 +145,18 @@ dependencies = [
  "thiserror",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "clickhouse-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9a8f9b3bf99c63ac95b858616a12bc0337f7a8e8c1a571f591b45b7d45168db"
+dependencies = [
+ "proc-macro2 1.0.27",
+ "quote 1.0.9",
+ "serde_derive_internals 0.26.0",
+ "syn 1.0.72",
 ]
 
 [[package]]
@@ -1291,7 +1302,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b420cc74a3c074892142c8a11dbc97273c00983e0ea63119eec45cf188be7729"
 dependencies = [
  "quote 0.4.2",
- "serde_derive_internals",
+ "serde_derive_internals 0.21.0",
  "syn 0.12.15",
 ]
 
@@ -1423,6 +1434,17 @@ checksum = "370aa477297975243dc914d0b0e1234927520ec311de507a560fbd1c80f7ab8c"
 dependencies = [
  "proc-macro2 0.2.3",
  "syn 0.12.15",
+]
+
+[[package]]
+name = "serde_derive_internals"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85bf8229e7920a9f636479437026331ce11aa132b4dde37d121944a44d6e5f3c"
+dependencies = [
+ "proc-macro2 1.0.27",
+ "quote 1.0.9",
+ "syn 1.0.72",
 ]
 
 [[package]]
