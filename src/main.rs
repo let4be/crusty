@@ -18,14 +18,14 @@ use crate::{
 
 #[derive(Clone)]
 struct CrustyState {
-	client: Client,
+	client:             Client,
 	queue_measurements: Vec<Arc<Box<dyn Fn() -> QueueMeasurement + Send + Sync>>>,
 }
 
 struct Crusty {
 	handles: Vec<tokio::task::JoinHandle<Result<()>>>,
-	state: CrustyState,
-	cfg: config::CrustyConfig,
+	state:   CrustyState,
+	cfg:     config::CrustyConfig,
 }
 
 impl Crusty {
@@ -38,7 +38,7 @@ impl Crusty {
 
 		let r = client.query("SELECT 'ok'").fetch_one::<String>().await?;
 		if r == "ok" {
-			return Ok(client);
+			return Ok(client)
 		}
 		Err(anyhow!("something went wrong"))
 	}
@@ -120,7 +120,7 @@ impl Crusty {
 		let domain = lnk.host()?;
 
 		if domain.len() < 3 || !domain.contains('.') || domain == *task_domain || ddc.contains_key(&domain) {
-			return None;
+			return None
 		}
 		ddc.insert(domain.clone(), (), *cfg.ddc_lifetime);
 
@@ -202,7 +202,7 @@ impl Crusty {
 
 	fn add_queue_measurement<F: Fn() -> usize + Send + Sync + 'static>(&mut self, kind: QueueKind, len_getter: F) {
 		self.state.queue_measurements.push(Arc::new(Box::new(move || QueueMeasurement {
-			kind: kind.clone(),
+			kind:  kind.clone(),
 			stats: QueueStats { len: len_getter(), time: now() },
 		})))
 	}
@@ -230,7 +230,7 @@ impl Crusty {
 			while !tx_sig.is_disconnected() {
 				if timeout(Duration::from_millis(100), tokio::signal::ctrl_c()).await.is_ok() {
 					warn!("Ctrl-C detected - no more accepting new tasks");
-					break;
+					break
 				}
 			}
 
@@ -381,7 +381,7 @@ async fn go() -> Result<()> {
 	println!("{:#?}", &cfg);
 
 	if cfg.job_reader.seeds.is_empty() {
-		return Err(anyhow!("Consider specifying one or more seed URLs in config.toml, see job_reader.seeds property"));
+		return Err(anyhow!("Consider specifying one or more seed URLs in config.toml, see job_reader.seeds property"))
 	}
 
 	let new_fd_lim = fdlimit::raise_fd_limit();
