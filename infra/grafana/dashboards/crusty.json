@@ -69,8 +69,8 @@
           "format": "table",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    sum(parse_time_ms)  / 1000 as parsing_time\nFROM $DB.metrics_task\n",
-          "rawQuery": "SELECT\n    sum(parse_time_ms)  / 1000 as parsing_time\nFROM crusty.metrics_task",
+          "query": "SELECT count(created_at) as tasks\n\nFROM $DB.metrics_task\n\nWHERE\n    created_at >= $from $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error = 0",
+          "rawQuery": "SELECT count(created_at) as tasks\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= 1622659858  AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error = 0",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
