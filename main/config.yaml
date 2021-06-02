@@ -1,6 +1,6 @@
 ---
 log:
-  # fancy some colors?
+  # fancy some colors? - disable if redirect to file is intended
   ansi: false
   # base-line log level
   level: info

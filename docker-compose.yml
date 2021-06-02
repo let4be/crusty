@@ -32,7 +32,7 @@ services:
     links:
       - clickhouse
     environment:
-      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 2.3.1
       - GF_PLUGIN_DIR=/grafana-plugins
 
   crusty:
