@@ -69,8 +69,8 @@
           "format": "table",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    count(created_at) as tasks\n    \nFROM $DB.metrics_task\n\nWHERE\n    created_at >= $from\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id) AND error = 0\n",
-          "rawQuery": "SELECT\n    count(created_at) as tasks\n    \nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1621354694)\n     AND host = 'crawler-1'   AND app_id = 'crusty'  AND error = 0",
+          "query": "SELECT\n    sum(parse_time_ms)  / 1000 as parsing_time\nFROM $DB.metrics_task\n",
+          "rawQuery": "SELECT\n    sum(parse_time_ms)  / 1000 as parsing_time\nFROM crusty.metrics_task",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -644,10 +644,10 @@
         "avg": true,
         "current": false,
         "hideEmpty": true,
-        "max": false,
+        "max": true,
         "min": false,
         "show": true,
-        "total": true,
+        "total": false,
         "values": true
       },
       "lines": true,
@@ -673,7 +673,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM $DB.metrics_task\n\nWHERE created_at >= $from $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622240115)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM crusty.metrics_task\n\nWHERE created_at >= 1622659660  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
