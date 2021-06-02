@@ -18,29 +18,29 @@ pub struct WriterState<A: Clone + Send> {
 #[derive(Debug, Clone)]
 pub struct Notification<A: Clone + Send> {
 	pub table_name: String,
-	pub label:      String,
+	pub label: String,
 	pub since_last: Duration,
-	pub duration:   Duration,
-	pub items:      Vec<A>,
+	pub duration: Duration,
+	pub items: Vec<A>,
 }
 
 #[derive(Debug, Clone)]
 pub struct GenericNotification {
 	pub table_name: String,
-	pub label:      String,
+	pub label: String,
 	pub since_last: Duration,
-	pub duration:   Duration,
-	pub items:      usize,
+	pub duration: Duration,
+	pub items: usize,
 }
 
 impl<A: Clone + Send> From<Notification<A>> for GenericNotification {
 	fn from(s: Notification<A>) -> Self {
 		GenericNotification {
 			table_name: s.table_name,
-			label:      s.label,
+			label: s.label,
 			since_last: s.since_last,
-			duration:   s.duration,
-			items:      s.items.len(),
+			duration: s.duration,
+			items: s.items.len(),
 		}
 	}
 }

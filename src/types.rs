@@ -10,14 +10,14 @@ pub type Result<T> = anyhow::Result<T>;
 
 #[derive(Debug, Clone)]
 pub struct Domain {
-	is_discovery:     bool,
-	pub shard:        u16,
+	is_discovery: bool,
+	pub shard: u16,
 	pub shards_total: usize,
 
-	pub url:    Option<Url>,
+	pub url: Option<Url>,
 	pub domain: String,
-	pub head:   String,
-	pub tail:   String,
+	pub head: String,
+	pub tail: String,
 }
 
 impl Domain {
@@ -33,10 +33,18 @@ impl Domain {
 				domain: domain.clone(),
 				head: domain,
 				tail: "".into(),
-			}
+			};
 		}
 		if split.len() == 2 {
-			return Domain { is_discovery, shard: 0, shards_total, url, domain, head: split.join("."), tail: "".into() }
+			return Domain {
+				is_discovery,
+				shard: 0,
+				shards_total,
+				url,
+				domain,
+				head: split.join("."),
+				tail: "".into(),
+			};
 		}
 
 		Domain {
@@ -65,11 +73,11 @@ impl Domain {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DomainDBEntry {
-	pub shard:       u16,
-	pub domain:      String,
+	pub shard: u16,
+	pub domain: String,
 	pub domain_tail: String,
-	pub created_at:  u32,
-	pub updated_at:  u32,
+	pub created_at: u32,
+	pub updated_at: u32,
 }
 
 impl From<Domain> for DomainDBEntry {
@@ -77,75 +85,75 @@ impl From<Domain> for DomainDBEntry {
 		let now = now();
 
 		Self {
-			shard:       s.shard,
-			domain:      s.head,
+			shard: s.shard,
+			domain: s.head,
 			domain_tail: s.tail,
-			created_at:  now,
-			updated_at:  if s.is_discovery { 644616000 } else { now },
+			created_at: now,
+			updated_at: if s.is_discovery { 644616000 } else { now },
 		}
 	}
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DBRWNotificationDBEntry {
-	host:          String,
-	app_id:        String,
-	created_at:    u32,
-	table_name:    String,
-	label:         String,
-	took_ms:       u32,
+	host: String,
+	app_id: String,
+	created_at: u32,
+	table_name: String,
+	label: String,
+	took_ms: u32,
 	since_last_ms: u32,
-	items:         u32,
+	items: u32,
 }
 
 impl From<chu::GenericNotification> for DBRWNotificationDBEntry {
 	fn from(s: chu::GenericNotification) -> Self {
 		let c = CONFIG.lock().unwrap();
 		DBRWNotificationDBEntry {
-			host:          c.host.clone(),
-			app_id:        c.app_id.clone(),
-			created_at:    now(),
-			table_name:    s.table_name,
-			label:         s.label,
-			took_ms:       s.duration.as_millis() as u32,
+			host: c.host.clone(),
+			app_id: c.app_id.clone(),
+			created_at: now(),
+			table_name: s.table_name,
+			label: s.label,
+			took_ms: s.duration.as_millis() as u32,
 			since_last_ms: s.since_last.as_millis() as u32,
-			items:         s.items as u32,
+			items: s.items as u32,
 		}
 	}
 }
 
 #[derive(Debug, Clone)]
 pub struct TaskMeasurementData {
-	pub status_code:    u16,
-	pub wait_time_ms:   u32,
+	pub status_code: u16,
+	pub wait_time_ms: u32,
 	pub status_time_ms: u32,
-	pub load_time_ms:   u32,
-	pub parse_time_ms:  u32,
-	pub write_size_b:   u32,
-	pub read_size_b:    u32,
+	pub load_time_ms: u32,
+	pub parse_time_ms: u32,
+	pub write_size_b: u32,
+	pub read_size_b: u32,
 }
 
 #[derive(Clone, Debug)]
 pub struct TaskMeasurement {
 	pub time: u32,
-	pub url:  String,
-	pub md:   Option<TaskMeasurementData>,
+	pub url: String,
+	pub md: Option<TaskMeasurementData>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct TaskMeasurementDBEntry {
-	host:           String,
-	app_id:         String,
-	created_at:     u32,
-	url:            String,
-	error:          u8,
-	status_code:    u16,
-	wait_time_ms:   u32,
+	host: String,
+	app_id: String,
+	created_at: u32,
+	url: String,
+	error: u8,
+	status_code: u16,
+	wait_time_ms: u32,
 	status_time_ms: u32,
-	load_time_ms:   u32,
-	parse_time_ms:  u32,
-	write_size_b:   u32,
-	read_size_b:    u32,
+	load_time_ms: u32,
+	parse_time_ms: u32,
+	write_size_b: u32,
+	read_size_b: u32,
 }
 
 impl From<TaskMeasurement> for TaskMeasurementDBEntry {
@@ -153,41 +161,41 @@ impl From<TaskMeasurement> for TaskMeasurementDBEntry {
 		let c = CONFIG.lock().unwrap();
 		if s.md.is_none() {
 			return Self {
-				host:           c.host.clone(),
-				app_id:         c.app_id.clone(),
-				created_at:     s.time,
-				url:            s.url,
-				error:          1,
-				status_code:    0,
-				wait_time_ms:   0,
+				host: c.host.clone(),
+				app_id: c.app_id.clone(),
+				created_at: s.time,
+				url: s.url,
+				error: 1,
+				status_code: 0,
+				wait_time_ms: 0,
 				status_time_ms: 0,
-				load_time_ms:   0,
-				parse_time_ms:  0,
-				write_size_b:   0,
-				read_size_b:    0,
-			}
+				load_time_ms: 0,
+				parse_time_ms: 0,
+				write_size_b: 0,
+				read_size_b: 0,
+			};
 		}
 		let md = s.md.unwrap();
 		Self {
-			host:           c.host.clone(),
-			app_id:         c.app_id.clone(),
-			created_at:     s.time,
-			url:            s.url,
-			error:          0,
-			status_code:    md.status_code,
-			wait_time_ms:   md.wait_time_ms,
+			host: c.host.clone(),
+			app_id: c.app_id.clone(),
+			created_at: s.time,
+			url: s.url,
+			error: 0,
+			status_code: md.status_code,
+			wait_time_ms: md.wait_time_ms,
 			status_time_ms: md.status_time_ms,
-			load_time_ms:   md.load_time_ms,
-			parse_time_ms:  md.parse_time_ms,
-			write_size_b:   md.write_size_b,
-			read_size_b:    md.read_size_b,
+			load_time_ms: md.load_time_ms,
+			parse_time_ms: md.parse_time_ms,
+			write_size_b: md.write_size_b,
+			read_size_b: md.read_size_b,
 		}
 	}
 }
 
 #[derive(Debug, Clone)]
 pub struct QueueStats {
-	pub len:  usize,
+	pub len: usize,
 	pub time: u32,
 }
 
@@ -208,28 +216,28 @@ pub enum QueueKind {
 
 #[derive(Debug, Clone)]
 pub struct QueueMeasurement {
-	pub kind:  QueueKind,
+	pub kind: QueueKind,
 	pub stats: QueueStats,
 }
 
 #[derive(Debug, Serialize, Deserialize, Row)]
 pub struct QueueMeasurementDBEntry {
-	host:           String,
-	app_id:         String,
-	pub name:       String,
+	host: String,
+	app_id: String,
+	pub name: String,
 	pub updated_at: u32,
-	pub len:        u32,
+	pub len: u32,
 }
 
 impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 	fn from(s: QueueMeasurement) -> Self {
 		let c = CONFIG.lock().unwrap();
 		Self {
-			host:       c.host.clone(),
-			app_id:     c.app_id.clone(),
-			name:       format!("{:?}", s.kind),
+			host: c.host.clone(),
+			app_id: c.app_id.clone(),
+			name: format!("{:?}", s.kind),
 			updated_at: s.stats.time,
-			len:        s.stats.len as u32,
+			len: s.stats.len as u32,
 		}
 	}
 }
@@ -255,8 +263,8 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 			if let StatusResult::Ok(status) = &load_data.status {
 				return TaskMeasurement {
 					time: now(),
-					url:  r.task.link.url.to_string(),
-					md:   Some(TaskMeasurementData {
+					url: r.task.link.url.to_string(),
+					md: Some(TaskMeasurementData {
 						status_code: status.code as u16,
 						wait_time_ms: status.metrics.wait_duration.as_millis() as u32,
 						status_time_ms: status.metrics.duration.as_millis() as u32,
@@ -265,7 +273,7 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 						read_size_b,
 						parse_time_ms,
 					}),
-				}
+				};
 			}
 		}
 
