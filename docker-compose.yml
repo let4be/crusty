@@ -9,8 +9,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 100m
+        max-file: "5"
+        max-size: "10m"
     ulimits:
       nproc: 65535
       nofile:
@@ -31,8 +31,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 100m
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - grafana-volume:/var/lib/grafana
       - grafana-plugins:/grafana-plugins
@@ -53,8 +53,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 100m
+        max-file: "5"
+        max-size: "10m"
     ulimits:
       nofile:
         soft: 1048576
