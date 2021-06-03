@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1622657452563,
+  "iteration": 1622712551630,
   "links": [],
   "panels": [
     {
@@ -23,7 +23,100 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 2,
+        "x": 5,
+        "y": 0
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.0.0-beta3",
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "table",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\r\n    sum(read_size_b) as \"RX Total\",\r\n    sum(write_size_b) as \"TX Total\"\r\nFROM $DB.metrics_task\r\n\r\nWHERE\r\n    $timeFilterByColumn(created_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)",
+          "rawQuery": "SELECT\r\n    sum(read_size_b) as \"RX Total\",\r\n    sum(write_size_b) as \"TX Total\"\r\nFROM crusty.metrics_task\r\n\r\nWHERE\r\n    created_at >= toDateTime(1622715700) AND created_at <= toDateTime(1622717502)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' ",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "type": "piechart"
+    },
+    {
+      "datasource": "clickhouse",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -32,45 +125,64 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
               }
             ]
           },
-          "unit": "none"
+          "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 2,
-        "w": 2,
-        "x": 0,
+        "h": 5,
+        "w": 10,
+        "x": 7,
         "y": 0
       },
-      "id": 8,
+      "id": 4,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
+        "legend": {
           "calcs": [
-            "lastNotNull"
+            "mean",
+            "max"
           ],
-          "fields": "",
-          "values": false
+          "displayMode": "list",
+          "placement": "bottom"
         },
-        "text": {},
-        "textMode": "auto"
+        "tooltip": {
+          "mode": "single"
+        }
       },
-      "pluginVersion": "7.5.7",
+      "pluginVersion": "8.0.0-beta3",
       "targets": [
         {
           "dateTimeType": "DATETIME",
-          "extrapolate": true,
-          "format": "table",
+          "extrapolate": false,
+          "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT count(created_at) as tasks\n\nFROM $DB.metrics_task\n\nWHERE\n    created_at >= $from $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error = 0",
-          "rawQuery": "SELECT count(created_at) as tasks\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= 1622659858  AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error = 0",
+          "query": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(parse_time_ms) / sum(read_size_b) / $interval * 1024 * 1024 as parsing_time\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622709346) AND created_at <= toDateTime(1622720148)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -78,42 +190,107 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Tasks processed",
-      "type": "stat"
+      "title": "Parsing time / 1mb of HTML",
+      "type": "timeseries"
     },
     {
       "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
               {
-                "color": "red",
-                "value": null
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
               }
             ]
           },
-          "unit": "none"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "OK tasks"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tasks with errors"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 2,
+        "h": 5,
         "w": 2,
-        "x": 22,
+        "x": 17,
         "y": 0
       },
-      "id": 9,
+      "id": 8,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "values": [
+            "percent"
+          ]
+        },
+        "pieType": "donut",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -121,10 +298,11 @@
           "fields": "",
           "values": false
         },
-        "text": {},
-        "textMode": "auto"
+        "tooltip": {
+          "mode": "single"
+        }
       },
-      "pluginVersion": "7.5.7",
+      "pluginVersion": "8.0.0-beta3",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -132,65 +310,178 @@
           "format": "table",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    count(created_at) as tasks\n    \nFROM $DB.metrics_task\n\nWHERE\n    created_at >= $from\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id) AND error = 1\n",
-          "rawQuery": "SELECT\n    count(created_at) as tasks\n    \nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1621354689)\n     AND host = 'crawler-1'   AND app_id = 'crusty'  AND error = 1",
+          "query": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=0",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622715689) AND created_at <= toDateTime(1622717491)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=0",
           "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT 'total' as p, count(created_at) as \"Tasks with errors\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=1",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Tasks with errors\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622715689) AND created_at <= toDateTime(1622717491)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=1",
+          "refId": "B",
           "round": "0s",
           "skip_comments": true
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Tasks with errors",
-      "type": "stat"
+      "transformations": [],
+      "type": "piechart"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "decbytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rx -"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tx -"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 2
+        "y": 5
       },
-      "hiddenSeries": false,
       "id": 2,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "hideEmpty": true,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": true,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.0.0-beta3",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -198,343 +489,123 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(read_size_b) / 5 as rx,\n    sum(write_size_b) / 5 as tx\nFROM $DB.metrics_task\n\nWHERE\n    created_at >= $from\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(read_size_b) / 5 as rx,\n    sum(write_size_b) / 5 as tx\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622236000)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "query": "SELECT\n    max(toUnixTimestamp(created_at)*1000) as time,\n    sum(read_size_b) / greatest($interval, 5) as rx,\n    sum(write_size_b) / greatest($interval, 5) as tx\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 5))\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at)*1000) as time,\n    sum(read_size_b) / greatest(5, 5) as rx,\n    sum(write_size_b) / greatest(5, 5) as tx\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622709266) AND created_at <= toDateTime(1622720068)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(5, 5))\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "RX/TX",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:80",
-          "format": "decbytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:81",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "transformations": [],
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "clickhouse",
-      "decimals": 0,
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 2
-      },
-      "hiddenSeries": false,
-      "id": 7,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "hideEmpty": true,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": true,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 2,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "dateTimeType": "DATETIME",
-          "extrapolate": false,
-          "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as inserted\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= $from\n    AND table_name = 'domain_discovery' AND label = 'insert' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as inserted\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622239071)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
-          "refId": "A",
-          "round": "0s",
-          "skip_comments": true
-        },
-        {
-          "dateTimeType": "DATETIME",
-          "extrapolate": true,
-          "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "hide": false,
-          "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as updated\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= $from\n    AND table_name = 'domain_discovery' AND label = 'update' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 as updated\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622239071)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
-          "refId": "B",
-          "round": "0s",
-          "skip_comments": true
-        },
-        {
-          "dateTimeType": "DATETIME",
-          "extrapolate": false,
-          "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "hide": false,
-          "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 / 100 as read\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= $from\n    AND table_name = 'domain_discovery' AND label = 'read' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(items) / 5 / 100 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622239071)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
-          "refId": "C",
-          "round": "0s",
-          "skip_comments": true
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Job Q Throughput",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:262",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:263",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "clickhouse",
-      "fieldConfig": {
-        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "right",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "ops"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "read"
+            },
+            "properties": [
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 11
-      },
-      "hiddenSeries": false,
-      "id": 3,
-      "legend": {
-        "avg": true,
-        "current": false,
-        "hideEmpty": true,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "dateTimeType": "DATETIME",
-          "extrapolate": true,
-          "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as pages\nFROM $DB.metrics_task\n\nWHERE created_at >= $from $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as pages\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622235985)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
-          "refId": "A",
-          "round": "0s",
-          "skip_comments": true
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Tasks/sec",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:213",
-          "format": "ops",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:214",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "clickhouse",
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 5
       },
-      "hiddenSeries": false,
-      "id": 6,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "hideEmpty": true,
-        "max": true,
-        "min": false,
-        "show": true,
-        "total": true,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
+      "id": 7,
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.0.0-beta3",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -542,8 +613,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as insert\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= $from\n    AND table_name = 'domain_discovery' AND label = 'insert' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as insert\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622240130)\n    AND table_name = 'domain_discovery' AND label = 'insert'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / $interval as inserted\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'insert'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / 5 as inserted\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622709641) AND created_at <= toDateTime(1622720443)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'insert'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -555,8 +626,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as update\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= $from\n    AND table_name = 'domain_discovery' AND label = 'update' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as update\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622240130)\n    AND table_name = 'domain_discovery' AND label = 'update'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / $interval as updated\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'update'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / 5 as updated\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622709641) AND created_at <= toDateTime(1622720443)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'update'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -568,206 +639,230 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as read\nFROM $DB.metrics_db\n\nWHERE\n    created_at >= $from\n    AND table_name = 'domain_discovery' AND label = 'read' $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(took_ms) / 5 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622240130)\n    AND table_name = 'domain_discovery' AND label = 'read'  AND host = 'crawler-1'   AND app_id = 'crusty' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / $interval as read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'read'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / 5 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622709641) AND created_at <= toDateTime(1622720443)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'read'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
-      "title": "Job Q Latencies",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:640",
-          "format": "ms",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:641",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Job Q Throughput",
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "clickhouse",
       "fieldConfig": {
         "defaults": {
-          "unit": "ms"
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 20
+        "y": 14
       },
-      "hiddenSeries": false,
-      "id": 4,
-      "legend": {
-        "avg": true,
-        "current": false,
-        "hideEmpty": true,
-        "max": true,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
+      "id": 3,
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.0.0-beta3",
       "targets": [
         {
           "dateTimeType": "DATETIME",
-          "extrapolate": false,
+          "extrapolate": true,
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM $DB.metrics_task\n\nWHERE created_at >= $from $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(created_at) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM crusty.metrics_task\n\nWHERE created_at >= 1622659660  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "query": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(error) / $interval as error,\n    count(created_at) / $interval as total\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as total\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622709024) AND created_at <= toDateTime(1622719826)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
-      "title": "Parsing time / 1mb of HTML",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:320",
-          "format": "ms",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:321",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Tasks/sec",
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "clickhouse",
+      "description": "",
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "right",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "read"
+            },
+            "properties": [
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 14
       },
-      "hiddenSeries": false,
-      "id": 5,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
+      "id": 6,
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       },
-      "percentage": false,
-      "pluginVersion": "7.5.7",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.0.0-beta3",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -775,57 +870,47 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    updated_at as time,\n    len as jobs\nFROM $DB.metrics_queue\n\nWHERE\n    time >= $from\n    AND name = 'Job' $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\nORDER BY time\n",
-          "rawQuery": "SELECT\n    updated_at as time,\n    len as jobs\nFROM crusty.metrics_queue\n\nWHERE\n    time >= 1622656827\n    AND name = 'Job'  AND host = 'crawler-1'   AND app_id = 'crusty' \nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / $interval as insert\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'insert' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / 5 as insert\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622709546) AND created_at <= toDateTime(1622720348)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'insert' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
           "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / $interval as update\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'update' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / 5 as update\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622709546) AND created_at <= toDateTime(1622720348)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'update' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "B",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / $interval as read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'read' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / 5 as read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622709546) AND created_at <= toDateTime(1622720348)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'read' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n    \nORDER BY time",
+          "refId": "C",
           "round": "0s",
           "skip_comments": true
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
-      "title": "Queue Filling",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Job Q Latencies",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 27,
+  "schemaVersion": 30,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -843,7 +928,7 @@
         "name": "host",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "Crawler-1",
             "value": "Crawler-1"
           }
@@ -865,7 +950,7 @@
         "name": "app_id",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "crusty",
             "value": "crusty"
           }
@@ -887,7 +972,7 @@
         "name": "DB",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "crusty",
             "value": "crusty"
           }
@@ -899,7 +984,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
