@@ -4,11 +4,12 @@
 # Crusty - polite && scalable broad web crawler
 
 ## Introduction
-Broad web crawling is an activity of going through practically boundless web by starting from a set of locations(urls) and following outgoing links
+Broad web crawling is an activity of going through practically boundless web by starting from a set of locations(urls) and following outgoing links.
+Usually it doesn't matter where you start from as long as it has outgoing links to external domains.
 
-It presents a unique set of challenges one must overcome to get a stable and scalable system, `Crusty` is an attempt to tackle on some of those challenges to see what's out here while having fun with `Rust` ;)
+It presents unique set of challenges one must overcome to get a stable and scalable system, `Crusty` is an attempt to tackle on some of those challenges to see what's out here while having fun with `Rust` ;)
 
-This particular implementation could be used to quickly fetch a subset of all observable internet, discover most popular domains/links
+This particular implementation could be used to quickly fetch a subset of all observable internet and for example, discover most popular domains/links
 
 Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handles all low-level aspects of web crawling
 
@@ -23,17 +24,17 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   Additional optimizations are possible to further improve this(mostly better html parsing, there are tasks that do not require full DOM parsing, this implementation does full DOM parsing mostly for the sake of extensibility and configurability)
 
-  Additionally, `Crusty` has small and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory.
+  `Crusty` has small, stable and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory.
 
 - Scalability
 
   Each `Crusty` node is essentially an independent unit which we can run hundreds of in parallel(on different machines of course),
   the tricky part is job delegation and domain discovery which is solved by a high performance sharded queue-like structure built on top of clickhouse(huh!).
 
-  One might think, "clickhouse? wtf?!" but this DB is so darn fast while providing rich querying capabilities, indexing, filtering.
+  One might think "clickhouse? wtf?!" but this DB is so darn fast(while providing rich querying capabilities, indexing, filtering), so it seems like a good fit.
 
-  The idea is basically a huge sharded table where each domain belongs to some shard(`crc32(domain_name) % number_of_shards`), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so called domain discovery).
-  I.e. each shard is readable by only one `Crusty` instance by a single thread(it's important, to avoid interference in multi-node setups).
+  The idea is basically a huge sharded table where each domain belongs to some shard(`crc32(domain_name) % number_of_shards`), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so-called domain discovery).
+
   On moderate installments(~ <16 nodes) such systems is viable as this, although if someone tries to take this to a mega-scale dynamic shard manager might be required...
 
   There is additional challenge of domain discovery deduplication in multi-node setups, - right now we dedup locally and on clickhouse(AggregatingMergeTree) but the more nodes we add the less efficient local deduplication becomes
@@ -81,7 +82,11 @@ cd crusty
 
 - build `docker-compose build`
 
-- run `CRUSTY_SEEDS=https://example.com docker-compose up` (abortable with ctrl+c)
+- run `CRUSTY_SEEDS=https://example.com docker-compose up` (can abort with ctrl+c)
+
+- see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
+
+additionally
 
 - to run in background
 `CRUSTY_SEEDS=https://example.com docker-compose up -d`
@@ -92,25 +97,23 @@ cd crusty
 - to stop background run and _erase_ crawling data(clickhouse/grafana)
 `docker-compose down -v`
 
-- see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
-
 - to see running containers `docker ps`(should be 3 - `crusty-grafana`, `crusty-clickhouse` and `crusty`)
 
 - to see logs: `docker logs crusty`
 
 ---
 
-if you decide to build manually via `cargo build`, remember - release build is a lot faster(and default is debug)
+if you decide to build manually via `cargo build`, remember - `release` build is a lot faster(and default is `debug`)
 
-In the real world usage scenario on high bandwidth channel docker might become too expensive,so it might be a good idea either to run directly or at least in `network_mode = host`
+In the real world usage scenario on high bandwidth channel docker might become a bit too expensive, so it might be a good idea either to run directly or at least in `network_mode = host`
 
-- external service dependencies - clickhouse and grafana
+### External service dependencies - clickhouse and grafana
 
 just use `docker-compose`, it's the recommended way to play with `Crusty`
 
 however...
 
-to create / clean db use [this script](infra/clickhouse/init.sh)(must be executed -in context- of clickhouse docker container)
+to create / clean db use [this sql](./infra/clickhouse/init.sql)(must be fed to `clickhouse client` -in context- of clickhouse docker container)
 
 grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.json)
 
