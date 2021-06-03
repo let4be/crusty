@@ -120,7 +120,11 @@ grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.
 
 - make sure `pre-commit` is installed: https://pre-commit.com/
 
-- run `setup.sh`
+- run `./go setup`
+
+- run `./go check` to run all pre-commit hooks and ensure everything is ready to go for git
+
+- run `./go release minor` to release a next minor version for crates.io
 
 ## Contributing
 
