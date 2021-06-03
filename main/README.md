@@ -83,19 +83,19 @@ CRUSTY_SEEDS=https://example.com docker-compose up -d
 
 - see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
 
+- to stop background run and _erase_ crawling data(clickhouse/grafana)
+  `docker-compose down -v`
+
 additionally
 
 - study [config file](./main/config.yaml) and adapt to your needs,
   there are sensible defaults for a 100mbit channel, if you have more/less bandwidth or poor cpu you might need to adjust `concurrency_profile`
 
-- to run && attach and see live logs from all containers
-`CRUSTY_SEEDS=https://example.com docker-compose up`
-
 - to stop background run and _retain_ crawling data
 `docker-compose down`
 
-- to stop background run and _erase_ crawling data(clickhouse/grafana)
-`docker-compose down -v`
+- to run && attach and see live logs from all containers (can abort with ctrl+c)
+  `CRUSTY_SEEDS=https://example.com docker-compose up`
 
 - to see running containers `docker ps`(should be 3 - `crusty-grafana`, `crusty-clickhouse` and `crusty`)
 
