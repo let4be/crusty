@@ -1,6 +1,6 @@
 #!/bin/bash
 DB="crusty"
-clickhouse client --host localhost --multiline -n  <<-EOSQL
+envsubst < init.sql | clickhouse client --host localhost --multiline --multiquery <<-EOSQL
 	DROP DATABASE IF EXISTS $DB;
 	CREATE DATABASE $DB;
 	CREATE TABLE $DB.domain_discovery (

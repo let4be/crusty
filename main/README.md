@@ -110,7 +110,7 @@ just use `docker-compose`, it's the recommended way to play with `Crusty`
 
 however...
 
-to create / clean db use [this script](./infra/clickhouse/clean-clickhouse.sh)(must be executed -in context- of clickhouse docker container)
+to create / clean db use [this script](infra/clickhouse/init.sh)(must be executed -in context- of clickhouse docker container)
 
 grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.json)
 
