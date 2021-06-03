@@ -70,26 +70,24 @@ https://docs.docker.com/get-docker/
 
 https://docs.docker.com/compose/install/
 
-- get `Crusty` source code
+- play with it ;)
 
 ```
 git clone https://github.com/let4be/crusty
 cd crusty
+docker-compose build
+CRUSTY_SEEDS=https://example.com docker-compose up -d
 ```
-
-- study [config file](./main/config.yaml) and adapt to your needs,
-  there are sensible defaults for a 100mbit channel, if you have more/less bandwidth or poor cpu you might need to adjust `concurrency_profile`
-
-- build `docker-compose build`
-
-- run `CRUSTY_SEEDS=https://example.com docker-compose up` (can abort with ctrl+c)
 
 - see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
 
 additionally
 
-- to run in background
-`CRUSTY_SEEDS=https://example.com docker-compose up -d`
+- study [config file](./main/config.yaml) and adapt to your needs,
+  there are sensible defaults for a 100mbit channel, if you have more/less bandwidth or poor cpu you might need to adjust `concurrency_profile`
+
+- to run && attach and see live logs from all containers
+`CRUSTY_SEEDS=https://example.com docker-compose up`
 
 - to stop background run and _retain_ crawling data
 `docker-compose down`
