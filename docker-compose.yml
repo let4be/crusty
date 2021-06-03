@@ -6,6 +6,11 @@ services:
     container_name: crusty-clickhouse
     build:
       context: ./infra/clickhouse
+    logging:
+      driver: "json-file"
+      options:
+        max-file: 5
+        max-size: 100m
     ulimits:
       nproc: 65535
       nofile:
@@ -23,6 +28,11 @@ services:
     container_name: crusty-grafana
     build:
       context: ./infra/grafana
+    logging:
+      driver: "json-file"
+      options:
+        max-file: 5
+        max-size: 100m
     volumes:
       - grafana-volume:/var/lib/grafana
       - grafana-plugins:/grafana-plugins
@@ -40,6 +50,11 @@ services:
     build:
       context: .
       dockerfile: ./infra/crusty/Dockerfile
+    logging:
+      driver: "json-file"
+      options:
+        max-file: 5
+        max-size: 100m
     ulimits:
       nofile:
         soft: 1048576
