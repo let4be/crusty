@@ -118,7 +118,7 @@ job_reader:
     job_soft_timeout: 30s
     # after hard timeout elapses we forcibly stop the crawling job for this domain
     job_hard_timeout: 60s
-    user_agent: "crusty/0.7.0"
+    user_agent: "crusty/0.8.0"
     compression: true
     # custom headers are supported
     custom_headers:
