@@ -8,6 +8,9 @@ repos:
     -   id: end-of-file-fixer
     -   id: check-yaml
     -   id: check-added-large-files
+    -   id: check-executables-have-shebangs
+    -   id: check-merge-conflict
+    -   id: check-symlinks
 -   repo: local
     hooks:
         -   id: fmt
