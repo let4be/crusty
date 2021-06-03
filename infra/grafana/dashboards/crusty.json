@@ -254,8 +254,9 @@
               "viz": false
             }
           },
+          "decimals": 2,
           "mappings": [],
-          "unit": "none"
+          "unit": "short"
         },
         "overrides": [
           {
@@ -349,7 +350,7 @@
           "displayMode": "list",
           "placement": "bottom",
           "values": [
-            "percent"
+            "value"
           ]
         },
         "pieType": "donut",
@@ -373,7 +374,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=0",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622710579) AND created_at <= toDateTime(1622721381)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=0",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622722097) AND created_at <= toDateTime(1622722999)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=0",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -386,7 +387,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT 'total' as p, count(created_at) as \"ERR tasks\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=1",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"ERR tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622710579) AND created_at <= toDateTime(1622721381)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=1",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"ERR tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622722097) AND created_at <= toDateTime(1622722999)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=1",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
