@@ -1,8 +1,10 @@
-DROP DATABASE IF EXISTS $DB;
+DROP DATABASE IF EXISTS crusty;
 
-CREATE DATABASE $DB;
+CREATE DATABASE crusty;
 
-CREATE TABLE $DB.domain_discovery (
+USE crusty;
+
+CREATE TABLE domain_discovery (
     shard UInt16,
     domain String,
     domain_tail String,
@@ -15,7 +17,7 @@ CREATE TABLE $DB.domain_discovery (
     PRIMARY KEY (shard, domain, domain_tail)
 	ORDER BY (shard, domain, domain_tail) SETTINGS index_granularity = 8192;
 
-CREATE TABLE $DB.metrics_db (
+CREATE TABLE metrics_db (
     created_date Date DEFAULT now(),
     host String,
     app_id String,
@@ -29,7 +31,7 @@ CREATE TABLE $DB.metrics_db (
     PARTITION BY toYYYYMMDD(created_date)
 	ORDER BY(created_at, host, app_id) SETTINGS index_granularity = 8192;
 
-CREATE TABLE $DB.metrics_queue (
+CREATE TABLE metrics_queue (
     updated_at DateTime,
     host String,
     app_id String,
@@ -39,7 +41,7 @@ CREATE TABLE $DB.metrics_queue (
     PARTITION BY name
 	ORDER BY (updated_at, host, app_id) SETTINGS index_granularity = 8192;
 
-CREATE TABLE $DB.metrics_task (
+CREATE TABLE metrics_task (
     created_date Date DEFAULT now(),
     created_at DateTime,
     host String,
