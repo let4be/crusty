@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1622721308245,
+  "iteration": 1622721931930,
   "links": [],
   "panels": [
     {
@@ -137,7 +137,8 @@
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
-              "type": "linear"
+              "log": 2,
+              "type": "log"
             },
             "showPoints": "never",
             "spanNulls": true,
@@ -228,7 +229,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(parse_time_ms) / sum(read_size_b) / $interval * 1024 * 1024 as parsing_time\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 5 * 1024 * 1024 as parsing_time\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622709346) AND created_at <= toDateTime(1622720148)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(parse_time_ms) / sum(read_size_b) / 1 * 1024 * 1024 as parsing_time\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622721239) AND created_at <= toDateTime(1622722141)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 1)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -1090,7 +1091,7 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
