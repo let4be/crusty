@@ -70,7 +70,7 @@ https://docs.docker.com/get-docker/
 
 https://docs.docker.com/compose/install/
 
-- play with it ;)
+- play with it
 
 ```
 git clone https://github.com/let4be/crusty
@@ -133,4 +133,4 @@ grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.
 
 I'm open to discussions/contributions, - use github issues,
 
-pull requests are welcomed ;)
+pull requests are welcomed
