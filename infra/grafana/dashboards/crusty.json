@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1622712551630,
+  "iteration": 1622721308245,
   "links": [],
   "panels": [
     {
@@ -35,7 +35,38 @@
           "mappings": [],
           "unit": "decbytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RX Total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TX Total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 5,
@@ -147,6 +178,21 @@
                   "legend": true,
                   "tooltip": true,
                   "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "parsing_time"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -272,6 +318,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ERR tasks"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -311,7 +372,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=0",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622715689) AND created_at <= toDateTime(1622717491)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=0",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622710579) AND created_at <= toDateTime(1622721381)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=0",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -323,8 +384,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"Tasks with errors\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=1",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Tasks with errors\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622715689) AND created_at <= toDateTime(1622717491)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=1",
+          "query": "SELECT 'total' as p, count(created_at) as \"ERR tasks\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=1",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"ERR tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622710579) AND created_at <= toDateTime(1622721381)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=1",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -399,7 +460,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "light-orange",
+                  "fixedColor": "green",
                   "mode": "fixed"
                 }
               }
@@ -459,6 +520,21 @@
                 "value": "right"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RX"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -489,8 +565,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    max(toUnixTimestamp(created_at)*1000) as time,\n    sum(read_size_b) / greatest($interval, 5) as rx,\n    sum(write_size_b) / greatest($interval, 5) as tx\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 5))\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at)*1000) as time,\n    sum(read_size_b) / greatest(5, 5) as rx,\n    sum(write_size_b) / greatest(5, 5) as tx\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622709266) AND created_at <= toDateTime(1622720068)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(5, 5))\n\nORDER BY time",
+          "query": "SELECT\n    max(toUnixTimestamp(created_at)*1000) as time,\n    sum(read_size_b) / greatest($interval, 5) as RX,\n    sum(write_size_b) / greatest($interval, 5) as TX\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 5))\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at)*1000) as time,\n    sum(read_size_b) / greatest(5, 5) as RX,\n    sum(write_size_b) / greatest(5, 5) as TX\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622710551) AND created_at <= toDateTime(1622721353)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(5, 5))\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -718,6 +794,36 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -748,8 +854,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(error) / $interval as error,\n    count(created_at) / $interval as total\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    sum(error) / 5 as error,\n    count(created_at) / 5 as total\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622709024) AND created_at <= toDateTime(1622719826)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
+          "query": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    count(created_at) / $interval as total,\n    sum(error) / $interval as error\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), $interval)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    count(created_at) / 5 as total,\n    sum(error) / 5 as error\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622710822) AND created_at <= toDateTime(1622721624)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), 5)\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
