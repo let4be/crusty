@@ -75,7 +75,9 @@ https://docs.docker.com/compose/install/
 ```
 git clone https://github.com/let4be/crusty
 cd crusty
+# might take some time
 docker-compose build
+# can use ANY seed or even several(separated by a comma), example.com works too but has just one external link ;)
 CRUSTY_SEEDS=https://example.com docker-compose up -d
 ```
 
