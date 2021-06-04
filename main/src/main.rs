@@ -509,6 +509,15 @@ async fn go() -> Result<()> {
 }
 
 fn main() -> Result<()> {
+	println!("Starting Crusty...");
+	println!(
+		"Built {} on {} with {} rustc(profile: {}) for target {}",
+		env!("VERGEN_GIT_SHA"),
+		env!("VERGEN_BUILD_TIMESTAMP"),
+		env!("VERGEN_RUSTC_SEMVER"),
+		env!("VERGEN_CARGO_PROFILE"),
+		env!("VERGEN_CARGO_TARGET_TRIPLE"),
+	);
 	let rt = tokio::runtime::Runtime::new().unwrap();
 	rt.block_on(go())
 }
