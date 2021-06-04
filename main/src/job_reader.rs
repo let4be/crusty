@@ -130,13 +130,10 @@ impl JobReaderState {
 	fn add_job(&self, shard: u16, domain: Domain) {
 		let mut busy_shards = self.busy_shards.borrow_mut();
 		let busy_shard = busy_shards.get_mut(&shard).unwrap();
-		if !busy_shard.insert(domain.domain.clone()) {
-			panic!("Shard {} already contains a job for {}!", shard, &domain.domain)
+		if busy_shard.insert(domain.domain.clone()) {
+			self.jobs.borrow_mut().push_back(domain.clone());
+			info!("Job {}/{} added!", shard, &domain.domain);
 		}
-
-		self.jobs.borrow_mut().push_back(domain.clone());
-
-		info!("Job {}/{} added!", shard, &domain.domain);
 	}
 
 	fn finish_job(&self, domain: &Domain) {
