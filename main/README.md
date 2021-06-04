@@ -33,9 +33,9 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   One might think "clickhouse? wtf?!" but this DB is so darn fast(while providing rich querying capabilities, indexing, filtering), so it seems like a good fit.
 
-  The idea is basically a huge sharded table where each domain belongs to some shard(`crc32(domain_name) % number_of_shards`), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so-called domain discovery).
+  The idea is basically a huge sharded table where each domain(actually IP derivative it was resolved to) belongs to some shard(`crc32(addr) % number_of_shards`), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so-called domain discovery).
 
-  On moderate installments(~ <16 nodes) such systems is viable as is, although if someone tries to take this to a mega-scale dynamic shard manager might be required...
+  On moderate installments(~ <16 nodes) such system is viable as is, although if someone tries to take this to a mega-scale dynamic shard manager might be required...
 
   There is additional challenge of domain discovery deduplication in multi-node setups, - right now we dedup locally and on clickhouse(AggregatingMergeTree) but the more nodes we add the less efficient local deduplication becomes
 
@@ -45,12 +45,11 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   While we can crawl thousands of domains in parallel - we should absolutely limit concurrency on per-domain level
   to avoid any stress to crawled sites, see `job_reader.default_crawler_settings.concurrency`.
+  More over testing shows that A LOT of totally different domains can live on the same physical IP... so we never try to fetch more than `job_reader.domain_top_n` domains from the same IP
+
   It's also a good practice to introduce delays between visiting pages, see `job_reader.default_crawler_settings.delay`.
 
-  Additionally, there are massive sites with millions of sub-domains(usually blogs) such as tumblr.com.
-  Special care should be taken when crawling them, as such we implement a sub-domain concurrency limitation as well, see `job_reader.domain_tail_top_n` setting which defaults to 3 - no more than 3 sub-domains can be crawled concurrently
-
-  Currently, there's no `robots.txt` support but this can be added easily(and will be)
+  Currently, there's no `robots.txt` support(rust lacks good robots.txt implementation) but this can be added easily(and will be with time)
 
 - Observability
 

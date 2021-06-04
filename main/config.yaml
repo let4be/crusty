@@ -60,7 +60,8 @@ clickhouse:
 # leave empty for auto-conf
 resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
-  concurrency: 40
+  # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
+  concurrency: 64
 # domain discovery cache capacity, this cache helps to ease load on clickhouse(so we do not insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new crawler nodes
 # so if one were to try running this on google scale it would most likely require a dedicated dedup layer before hitting clickhouse
