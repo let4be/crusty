@@ -16,60 +16,40 @@ pub struct Domain {
 
 	pub url:    Option<Url>,
 	pub domain: String,
-	pub head:   String,
-	pub tail:   String,
+	addr:       String,
 }
 
 impl Domain {
-	fn _new(domain: String, shards_total: usize, url: Option<Url>, is_discovery: bool) -> Domain {
-		let split: Vec<String> = domain.split('.').map(String::from).collect();
+	pub fn new(
+		domain: String,
+		addrs: Vec<String>,
+		shards_total: usize,
+		url: Option<Url>,
+		is_discovery: bool,
+	) -> Domain {
+		let mut addrs = addrs;
+		addrs.sort();
+		let addr = addrs.into_iter().next().unwrap_or_else(|| String::from(""));
 
-		if split.len() < 2 {
-			return Domain {
-				is_discovery,
-				shard: 0,
-				shards_total,
-				url,
-				domain: domain.clone(),
-				head: domain,
-				tail: "".into(),
-			}
-		}
-		if split.len() == 2 {
-			return Domain { is_discovery, shard: 0, shards_total, url, domain, head: split.join("."), tail: "".into() }
-		}
-
-		Domain {
-			is_discovery,
-			shard: 0,
-			shards_total,
-			url,
-			domain,
-			head: split[split.len() - 2..].join("."),
-			tail: split[..split.len() - 2].join("."),
-		}
-	}
-
-	pub fn new(domain: String, shards_total: usize, url: Option<Url>, is_discovery: bool) -> Domain {
-		let mut domain = Domain::_new(domain, shards_total, url, is_discovery);
+		let mut domain = Domain { addr, is_discovery, shard: 0, shards_total, url, domain };
 		domain.calc_shard();
 		domain
 	}
 
 	fn calc_shard(&mut self) {
 		let mut hasher = crc32fast::Hasher::new();
-		hasher.update(self.head.as_bytes());
+		hasher.update(self.addr.as_bytes());
 		self.shard = (hasher.finalize() % self.shards_total as u32 + 1) as u16;
 	}
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DomainDBEntry {
-	pub shard:       u16,
-	pub domain:      String,
-	pub domain_tail: String,
-	pub created_at:  u32,
-	pub updated_at:  u32,
+	pub shard:      u16,
+	pub addr:       String,
+	pub domain:     String,
+	pub created_at: u32,
+	pub updated_at: u32,
 }
 
 impl From<Domain> for DomainDBEntry {
@@ -77,11 +57,11 @@ impl From<Domain> for DomainDBEntry {
 		let now = now();
 
 		Self {
-			shard:       s.shard,
-			domain:      s.head,
-			domain_tail: s.tail,
-			created_at:  now,
-			updated_at:  if s.is_discovery { 644616000 } else { now },
+			shard:      s.shard,
+			addr:       s.addr,
+			domain:     s.domain,
+			created_at: now,
+			updated_at: if s.is_discovery { 644616000 } else { now },
 		}
 	}
 }

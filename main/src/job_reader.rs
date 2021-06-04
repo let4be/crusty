@@ -18,7 +18,7 @@ pub struct JobReaderConfig {
 	pub shard_total:               usize,
 	pub shard_select_limit:        usize,
 	pub job_buffer:                usize,
-	pub domain_tail_top_n:         usize,
+	pub domain_top_n:              usize,
 	pub domain_table_name:         String,
 	pub default_crawling_settings: rc::CrawlingSettings,
 	pub seeds:                     Vec<String>,
@@ -31,7 +31,7 @@ impl Default for JobReaderConfig {
 
 		Self {
 			domain_table_name: String::from("domain_discovery"),
-			domain_tail_top_n: 3,
+			domain_top_n: 3,
 			shard_min_last_read: rc::CDuration::from_secs(1),
 			shard_min,
 			shard_max,
@@ -161,14 +161,14 @@ impl JobReaderState {
 }
 
 #[derive(Deserialize, Row)]
-struct JobReaderRow<'a> {
-	domain: &'a str,
-	tails:  Vec<&'a str>,
+struct JobReaderRow {
+	addr:    String,
+	domains: Vec<String>,
 }
 
 #[derive(Debug)]
 enum FutureResult {
-	JobsRead(Result<Vec<String>>),
+	JobsRead(Result<Vec<Domain>>),
 	JobsSent,
 	MetricsSent,
 	Notify(core::result::Result<chu::Notification<Domain>, RecvError>),
@@ -180,35 +180,44 @@ impl JobReader {
 		Self { cfg }
 	}
 
-	fn read_jobs<'a>(&'a self, client: &'a clickhouse::Client, shard: u16) -> TracingTask<'a, Vec<String>> {
+	fn read_jobs<'a>(&'a self, client: &'a clickhouse::Client, shard: u16) -> TracingTask<'a, Vec<Domain>> {
 		TracingTask::new_short_lived(span!(), async move {
 			let r = client
 				.query(
 					format!(
-						"SELECT domain, groupArray(?)(domain_tail) as tails FROM (
-							SELECT domain, domain_tail FROM {}
+						"SELECT addr, groupArray(?)(domain) as domains FROM (
+							SELECT addr, domain FROM {}
 							WHERE shard = ?
-							GROUP BY shard, domain, domain_tail
+							GROUP BY shard, addr, domain
 							HAVING max(updated_at) <= date_sub(DAY, ?, NOW())
 						)
-						GROUP BY domain
+						GROUP BY addr
 						LIMIT ?",
 						self.cfg.domain_table_name.as_str()
 					)
 					.as_str(),
 				)
-				.bind(self.cfg.domain_tail_top_n as u32)
+				.bind(self.cfg.domain_top_n as u32)
 				.bind(shard)
 				.bind(self.cfg.re_after_days as u32)
 				.bind(self.cfg.shard_select_limit as u32)
-				.fetch::<JobReaderRow<'_>>();
+				.fetch::<JobReaderRow>();
 
 			let mut cursor = r.context("cannot get cursor for domain_discovery")?;
 
 			let mut domains = vec![];
 			while let Some(row) = cursor.next().await.context("cannot read from domain_discovery")? {
-				row.tails.iter().fold(&mut domains, |domains, t| {
-					domains.push(if t.is_empty() { String::from(row.domain) } else { format!("{}.{}", t, row.domain) });
+				let addr = row.addr;
+				row.domains.into_iter().fold(&mut domains, |domains, t| {
+					let domain = Domain::new(t, vec![addr.clone()], self.cfg.shard_total, None, false);
+					if domain.shard != shard {
+						panic!(
+							"domain calced shard {} mismatch to selection shard {} for {:?}",
+							domain.shard, shard, &domain.domain
+						)
+					}
+
+					domains.push(domain);
 					domains
 				});
 			}
@@ -217,9 +226,9 @@ impl JobReader {
 		})
 	}
 
-	fn handle_read_jobs(&self, state: &JobReaderState, shard: u16, jobs: Vec<String>, queried_for: Duration) {
+	fn handle_read_jobs(&self, state: &JobReaderState, shard: u16, jobs: Vec<Domain>, queried_for: Duration) {
 		for domain in jobs {
-			state.add_job(shard, Domain::new(domain, self.cfg.shard_total, None, false));
+			state.add_job(shard, domain);
 		}
 
 		state.check_shard(shard);
@@ -290,7 +299,9 @@ impl JobReader {
 			.seeds
 			.iter()
 			.filter_map(|seed| Url::parse(seed).ok())
-			.map(|seed| Domain::new(seed.domain().unwrap().into(), self.cfg.shard_total, Some(seed.clone()), false))
+			.map(|seed| {
+				Domain::new(seed.domain().unwrap().into(), vec![], self.cfg.shard_total, Some(seed.clone()), false)
+			})
 			.collect();
 
 		let mut last_read = Instant::now();

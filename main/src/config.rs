@@ -101,6 +101,7 @@ pub struct CrustyConfig {
 	pub log:        LogConfig,
 	pub clickhouse: ClickhouseConfig,
 
+	pub resolver:                    ResolverConfig,
 	pub ddc_cap:                     usize,
 	pub ddc_lifetime:                rc::CDuration,
 	pub queue_monitor_interval:      rc::CDuration,
@@ -111,6 +112,18 @@ pub struct CrustyConfig {
 	pub job_reader:          job_reader::JobReaderConfig,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct ResolverConfig {
+	pub concurrency: usize,
+}
+
+impl Default for ResolverConfig {
+	fn default() -> Self {
+		let physical_cores = num_cpus::get_physical();
+		Self { concurrency: physical_cores * 4 }
+	}
+}
+
 impl Default for CrustyConfig {
 	fn default() -> Self {
 		Self {
@@ -119,6 +132,7 @@ impl Default for CrustyConfig {
 			log:        LogConfig::default(),
 			clickhouse: ClickhouseConfig::default(),
 
+			resolver:                    ResolverConfig::default(),
 			ddc_cap:                     25_000_000,
 			ddc_lifetime:                rc::CDuration::from_secs(60 * 60),
 			queue_monitor_interval:      rc::CDuration::from_secs(1),

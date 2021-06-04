@@ -6,7 +6,7 @@ mod rules;
 mod types;
 
 use clickhouse::Client;
-use crusty_core::{self, types as rt};
+use crusty_core::{self, prelude::AsyncHyperResolver, resolver::Resolver, types as rt};
 use tracing_subscriber::EnvFilter;
 use ttl_cache::TtlCache;
 
@@ -116,7 +116,7 @@ impl Crusty {
 		task_domain: &str,
 		ddc: &mut TtlCache<String, ()>,
 		cfg: &CrustyConfig,
-	) -> Option<Domain> {
+	) -> Option<String> {
 		let domain = lnk.host()?;
 
 		if domain.len() < 3 || !domain.contains('.') || domain == *task_domain || ddc.contains_key(&domain) {
@@ -125,13 +125,13 @@ impl Crusty {
 		ddc.insert(domain.clone(), (), *cfg.ddc_lifetime);
 
 		info!("new domain discovered: {}", &domain);
-		Some(Domain::new(domain, cfg.job_reader.shard_total, None, true))
+		Some(domain)
 	}
 
 	fn result_handler(
 		cfg: config::CrustyConfig,
 		tx_metrics: Sender<Vec<TaskMeasurement>>,
-		tx_domain_insert: Sender<Vec<Domain>>,
+		tx_domain_insert: Sender<String>,
 		tx_domain_update: Sender<Vec<Domain>>,
 		rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
 	) -> TracingTask<'static> {
@@ -144,7 +144,7 @@ impl Crusty {
 				let task_domain = r.task.link.host().unwrap();
 				match r.status {
 					rt::JobStatus::Processing(Ok(ref jp)) => {
-						let domains: Vec<Domain> = jp
+						let domains: Vec<_> = jp
 							.links
 							.iter()
 							.filter_map(|lnk| Crusty::domain_filter_map(Arc::clone(lnk), &task_domain, &mut ddc, &cfg))
@@ -152,8 +152,8 @@ impl Crusty {
 
 						let _ = tokio::join!(
 							async {
-								if !domains.is_empty() {
-									let _ = tx_domain_insert.send_async(domains).await;
+								for domain in domains {
+									let _ = tx_domain_insert.send_async(domain).await;
 								}
 							},
 							tx_metrics.send_async(vec![r.into()])
@@ -253,6 +253,89 @@ impl Crusty {
 		})
 	}
 
+	fn domain_resolver_worker(
+		cfg: config::CrustyConfig,
+		resolver: Arc<AsyncHyperResolver>,
+		rx: Receiver<String>,
+		tx_domain_insert: Sender<Vec<Domain>>,
+		rx_sig: Receiver<()>,
+	) -> TracingTask<'static> {
+		TracingTask::new(span!(), async move {
+			while !rx_sig.is_disconnected() {
+				if let Ok(domain_str) = rx.recv_async().await {
+					match resolver.resolve(&domain_str).await {
+						Ok(addrs) => {
+							let addrs = addrs
+								.filter(|a| {
+									for net in crusty_core::resolver::RESERVED_SUBNETS.iter() {
+										if net.contains(&a.ip()) {
+											return false
+										}
+									}
+									true
+								})
+								.map(|a| a.ip().to_string())
+								.collect::<Vec<_>>();
+
+							let domain = Domain::new(domain_str, addrs, cfg.job_reader.shard_total, None, true);
+							let _ = tx_domain_insert.send_async(vec![domain]).await;
+						}
+						Err(_) => {
+							let domain = Domain::new(domain_str, vec![], cfg.job_reader.shard_total, None, true);
+							let _ = tx_domain_insert.send_async(vec![domain]).await;
+						}
+					}
+				}
+			}
+			Ok(())
+		})
+	}
+
+	fn domain_resolver_aggregator(
+		cfg: config::CrustyConfig,
+		rx: Receiver<String>,
+		tx: Sender<String>,
+		tx_domain_insert: Sender<Vec<Domain>>,
+		rx_sig: Receiver<()>,
+	) -> TracingTask<'static> {
+		TracingTask::new(span!(), async move {
+			while !rx_sig.is_disconnected() {
+				if let Ok(domain_str) = rx.recv_async().await {
+					if tx.try_send(domain_str.clone()).is_err() {
+						// send overflow to db persistence under not-resolved section... no ideal, but works for now
+						let domain = Domain::new(domain_str, vec![], cfg.job_reader.shard_total, None, true);
+						let _ = tx_domain_insert.send_async(vec![domain]).await;
+					}
+				}
+			}
+			Ok(())
+		})
+	}
+
+	fn domain_resolver(
+		&mut self,
+		resolver: Arc<AsyncHyperResolver>,
+		tx_domain_insert: Sender<Vec<Domain>>,
+		rx_sig: Receiver<()>,
+	) -> Sender<String> {
+		let cfg = self.cfg.clone();
+		let (tx, rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size() * 10);
+		let (out_tx, out_rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
+
+		for _ in 0..cfg.resolver.concurrency {
+			self.spawn(Crusty::domain_resolver_worker(
+				self.cfg.clone(),
+				resolver.clone(),
+				rx.clone(),
+				tx_domain_insert.clone(),
+				rx_sig.clone(),
+			));
+		}
+		self.spawn(Crusty::domain_resolver_aggregator(self.cfg.clone(), out_rx, tx, tx_domain_insert, rx_sig));
+
+		out_tx
+	}
+
 	pub fn spawn(&mut self, task: TracingTask<'static, ()>) {
 		let h = tokio::spawn(task.instrument());
 		self.handles.push(h);
@@ -267,7 +350,9 @@ impl Crusty {
 			);
 
 			let network_profile = self.cfg.networking_profile.clone().resolve()?;
-			info!("Resolved Network Profile: {:?}", network_profile);
+			info!("Resolved Network Profile: {:?}", &network_profile);
+
+			let resolver = Arc::clone(&network_profile.resolver);
 
 			info!("Creating crawler instance...");
 			let (crawler, tx_job, rx_job_state_update) =
@@ -290,6 +375,8 @@ impl Crusty {
 			let tx_domain_insert = self.domain_insert_handler(tx_domain_insert_notify.clone());
 			let tx_domain_update = self.domain_update_handler(tx_domain_update_notify.clone());
 
+			let domain_resolve_tx = self.domain_resolver(resolver, tx_domain_insert.clone(), rx_sig.clone());
+
 			{
 				let tx_domain_insert_notify = tx_domain_insert_notify;
 				let tx_domain_update_notify = tx_domain_update_notify;
@@ -298,7 +385,7 @@ impl Crusty {
 				let tx_metrics_task = tx_metrics_task.clone();
 				let tx_metrics_queue = tx_metrics_queue.clone();
 				let tx_metrics_db = tx_metrics_db.clone();
-				let tx_domain_insert = tx_domain_insert.clone();
+				let tx_domain_insert = tx_domain_insert;
 				let tx_domain_update = tx_domain_update.clone();
 				let tx_job = tx_job.clone();
 				let rx_job_state_update = rx_job_state_update.clone();
@@ -318,7 +405,7 @@ impl Crusty {
 			self.spawn(Crusty::result_handler(
 				self.cfg.clone(),
 				tx_metrics_task,
-				tx_domain_insert,
+				domain_resolve_tx,
 				tx_domain_update,
 				rx_job_state_update,
 			));

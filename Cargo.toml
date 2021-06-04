@@ -1,9 +1,9 @@
 [profile.dev]
-panic = "unwind"
+panic = "abort"
 debug-assertions = false
 
 [profile.release]
-panic = "unwind"
+panic = "abort"
 debug-assertions = false
 opt-level = 3
 

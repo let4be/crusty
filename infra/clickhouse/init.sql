@@ -6,16 +6,16 @@ USE crusty;
 
 CREATE TABLE domain_discovery (
     shard UInt16,
+    addr String,
     domain String,
-    domain_tail String,
     updated_at SimpleAggregateFunction(max, DateTime),
     created_at SimpleAggregateFunction(min, DateTime),
     INDEX updated_at_index updated_at TYPE
     set(100) GRANULARITY 1
 ) ENGINE = AggregatingMergeTree()
     PARTITION BY shard
-    PRIMARY KEY (shard, domain, domain_tail)
-	ORDER BY (shard, domain, domain_tail) SETTINGS index_granularity = 8192;
+    PRIMARY KEY (shard, addr, domain)
+	ORDER BY (shard, addr, domain) SETTINGS index_granularity = 8192;
 
 CREATE TABLE metrics_db (
     created_date Date DEFAULT now(),

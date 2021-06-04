@@ -56,6 +56,11 @@ clickhouse:
     buffer_capacity: 10000
     check_for_force_write_duration: 500ms
     force_write_duration: 2500ms
+# resolver settings
+# leave empty for auto-conf
+resolver:
+  # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
+  concurrency: 40
 # domain discovery cache capacity, this cache helps to ease load on clickhouse(so we do not insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new crawler nodes
 # so if one were to try running this on google scale it would most likely require a dedicated dedup layer before hitting clickhouse
@@ -98,8 +103,8 @@ job_reader:
   shard_select_limit: 100000
   # buffer up to N domains and do not try to fetch new if we have enough
   job_buffer: 100000
-  # select up to N sub-domains, (a.tumblr.com, b.tumblr.com, c.tumblr.com but not d.tumblr.com)
-  domain_tail_top_n: 3
+  # select up to N domains belonging to the same IP, (a.tumblr.com, b.tumblr.com, c.tumblr.com but not d.tumblr.com)
+  domain_top_n: 3
   # those settings relate to a crawler running on some particular domain
   default_crawling_settings:
     # up to N pages concurrently, keep this number low to avoid excess stress
