@@ -88,7 +88,7 @@ CRUSTY_SEEDS=https://example.com docker-compose up -d
 additionally
 
 - study [config file](./main/config.yaml) and adapt to your needs,
-  there are sensible defaults for a 100mbit channel, if you have more/less bandwidth or poor cpu you might need to adjust `concurrency_profile`
+  there are sensible defaults for a 100mbit channel, if you have more/less bandwidth/cpu you might need to adjust `concurrency_profile`
 
 - to stop background run and _retain_ crawling data
 `docker-compose down`
