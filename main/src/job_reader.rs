@@ -133,6 +133,8 @@ impl JobReaderState {
 		if busy_shard.insert(domain.domain.clone()) {
 			self.jobs.borrow_mut().push_back(domain.clone());
 			info!("Job {}/{} added!", shard, &domain.domain);
+		} else {
+			// todo: consider marking this job(domain) as finished to avoid "lingering poisoning"
 		}
 	}
 
