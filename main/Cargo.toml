@@ -1,6 +1,6 @@
 [package]
 name = "crusty"
-version = "0.9.0"
+version = "0.9.1"
 authors = ["Sergey F. <let4be@gmail.com>"]
 edition = "2018"
 description = "Fast && scalable Broad Web Crawler developed on top of crusty-core"
