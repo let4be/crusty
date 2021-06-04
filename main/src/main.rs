@@ -5,6 +5,8 @@ mod prelude;
 mod rules;
 mod types;
 
+use std::net::IpAddr;
+
 use clickhouse::Client;
 use crusty_core::{self, prelude::AsyncHyperResolver, resolver::Resolver, types as rt};
 use tracing_subscriber::EnvFilter;
@@ -272,9 +274,15 @@ impl Crusty {
 											return false
 										}
 									}
-									true
+									a.ip().is_ipv4()
 								})
-								.map(|a| a.ip().to_string())
+								.map(|a| {
+									if let IpAddr::V4(ip) = a.ip() {
+										ip.octets()
+									} else {
+										panic!("not supposed to happen")
+									}
+								})
 								.collect::<Vec<_>>();
 
 							let domain = Domain::new(domain_str, addrs, cfg.job_reader.shard_total, None, true);

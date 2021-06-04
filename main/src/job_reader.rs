@@ -162,8 +162,8 @@ impl JobReaderState {
 
 #[derive(Deserialize, Row)]
 struct JobReaderRow {
-	addr:    String,
-	domains: Vec<String>,
+	addr_key: [u8; 4],
+	domains:  Vec<String>,
 }
 
 #[derive(Debug)]
@@ -185,13 +185,13 @@ impl JobReader {
 			let r = client
 				.query(
 					format!(
-						"SELECT addr, groupArray(?)(domain) as domains FROM (
-							SELECT addr, domain FROM {}
+						"SELECT addr_key, groupArray(?)(domain) as domains FROM (
+							SELECT addr_key, domain FROM {}
 							WHERE shard = ?
-							GROUP BY shard, addr, domain
+							GROUP BY shard, addr_key, domain
 							HAVING max(updated_at) <= date_sub(DAY, ?, NOW())
 						)
-						GROUP BY addr
+						GROUP BY addr_key
 						LIMIT ?",
 						self.cfg.domain_table_name.as_str()
 					)
@@ -207,9 +207,9 @@ impl JobReader {
 
 			let mut domains = vec![];
 			while let Some(row) = cursor.next().await.context("cannot read from domain_discovery")? {
-				let addr = row.addr;
+				let addr = row.addr_key;
 				row.domains.into_iter().fold(&mut domains, |domains, t| {
-					let domain = Domain::new(t, vec![addr.clone()], self.cfg.shard_total, None, false);
+					let domain = Domain::new(t, vec![addr], self.cfg.shard_total, None, false);
 					if domain.shard != shard {
 						panic!(
 							"domain calced shard {} mismatch to selection shard {} for {:?}",

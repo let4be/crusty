@@ -16,29 +16,29 @@ pub struct Domain {
 
 	pub url:    Option<Url>,
 	pub domain: String,
-	addr:       String,
+	addr_key:   [u8; 4],
 }
 
 impl Domain {
 	pub fn new(
 		domain: String,
-		addrs: Vec<String>,
+		addrs: Vec<[u8; 4]>,
 		shards_total: usize,
 		url: Option<Url>,
 		is_discovery: bool,
 	) -> Domain {
 		let mut addrs = addrs;
-		addrs.sort();
-		let addr = addrs.into_iter().next().unwrap_or_else(|| String::from(""));
+		addrs.sort_unstable();
+		let addr = addrs.into_iter().next().unwrap_or_else(|| [255, 255, 255, 255]);
 
-		let mut domain = Domain { addr, is_discovery, shard: 0, shards_total, url, domain };
+		let mut domain = Domain { addr_key: addr, is_discovery, shard: 0, shards_total, url, domain };
 		domain.calc_shard();
 		domain
 	}
 
 	fn calc_shard(&mut self) {
 		let mut hasher = crc32fast::Hasher::new();
-		hasher.update(self.addr.as_bytes());
+		hasher.update(&self.addr_key);
 		self.shard = (hasher.finalize() % self.shards_total as u32 + 1) as u16;
 	}
 }
@@ -46,7 +46,7 @@ impl Domain {
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DomainDBEntry {
 	pub shard:      u16,
-	pub addr:       String,
+	pub addr_key:   [u8; 4],
 	pub domain:     String,
 	pub created_at: u32,
 	pub updated_at: u32,
@@ -58,7 +58,7 @@ impl From<Domain> for DomainDBEntry {
 
 		Self {
 			shard:      s.shard,
-			addr:       s.addr,
+			addr_key:   s.addr_key,
 			domain:     s.domain,
 			created_at: now,
 			updated_at: if s.is_discovery { 644616000 } else { now },
