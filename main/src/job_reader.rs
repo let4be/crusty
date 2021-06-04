@@ -33,7 +33,7 @@ impl Default for JobReaderConfig {
 		Self {
 			domain_table_name: String::from("domain_discovery"),
 			addr_key_mask: 24,
-			domain_top_n: 3,
+			domain_top_n: 2,
 			shard_min_last_read: rc::CDuration::from_secs(1),
 			shard_min,
 			shard_max,

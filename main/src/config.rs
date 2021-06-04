@@ -120,7 +120,7 @@ pub struct ResolverConfig {
 impl Default for ResolverConfig {
 	fn default() -> Self {
 		let physical_cores = num_cpus::get_physical();
-		Self { concurrency: physical_cores * 4 }
+		Self { concurrency: physical_cores * 6 }
 	}
 }
 

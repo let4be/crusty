@@ -3,7 +3,7 @@ log:
   # fancy some colors? - disable if redirect to file is intended
   ansi: false
   # base-line log level
-  level: info
+  level: warn
   # my_crate=info,my_crate::my_mod=debug,[my_span]=trace
   # see https://tracing.rs/tracing_subscriber/filter/struct.envfilter
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
@@ -58,10 +58,10 @@ clickhouse:
     force_write_duration: 2500ms
 # resolver settings
 # leave empty for auto-conf
-resolver:
+#resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  concurrency: 64
+  #concurrency: 64
 # domain discovery cache capacity, this cache helps to ease load on clickhouse(so we do not insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new crawler nodes
 # so if one were to try running this on google scale it would most likely require a dedicated dedup layer before hitting clickhouse
@@ -81,13 +81,13 @@ networking_profile:
     socket_read_buffer_size: 32kib
     socket_write_buffer_size: 32kib
     connect_timeout: 5s
+#leave commented for auto-conf
 #concurrency_profile:
-  # leave empty to use N of physical cores
+  #= N of physical cores by default
   #parser_concurrency:
   # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
   #domain_concurrency: 100
-# We select new jobs(domains) from queue-like structure hosted in clickhouse(weird, right? :D)
-# but this structure and the way we access it actually benefits from what db provides
+# We select new jobs(domains) from queue-like structure hosted in clickhouse
 job_reader:
   domain_table_name: domain_discovery
   #we resolve IP of all discovered domains and calculate addr_key
@@ -113,7 +113,7 @@ job_reader:
   # buffer up to N domains and do not try to fetch new if we have enough
   job_buffer: 100000
   # select up to N domains belonging to the same IP, (a.tumblr.com, b.tumblr.com, c.tumblr.com but not d.tumblr.com)
-  domain_top_n: 3
+  domain_top_n: 2
   # those settings relate to a crawler running on some particular domain
   default_crawling_settings:
     # up to N pages concurrently, keep this number low to avoid excess stress
