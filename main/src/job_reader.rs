@@ -13,6 +13,7 @@ use crate::{clickhouse_utils as chu, rules::*, types::*};
 pub struct JobReaderConfig {
 	pub re_after_days:             usize,
 	pub shard_min_last_read:       rc::CDuration,
+	pub addr_key_mask:             u8,
 	pub shard_min:                 usize,
 	pub shard_max:                 usize,
 	pub shard_total:               usize,
@@ -31,6 +32,7 @@ impl Default for JobReaderConfig {
 
 		Self {
 			domain_table_name: String::from("domain_discovery"),
+			addr_key_mask: 24,
 			domain_top_n: 3,
 			shard_min_last_read: rc::CDuration::from_secs(1),
 			shard_min,
@@ -209,7 +211,7 @@ impl JobReader {
 			while let Some(row) = cursor.next().await.context("cannot read from domain_discovery")? {
 				let addr = row.addr_key;
 				row.domains.into_iter().fold(&mut domains, |domains, t| {
-					let domain = Domain::new(t, vec![addr], self.cfg.shard_total, None, false);
+					let domain = Domain::new(t, vec![addr], self.cfg.shard_total, self.cfg.addr_key_mask, None, false);
 					if domain.shard != shard {
 						panic!(
 							"domain calced shard {} mismatch to selection shard {} for {:?}",
@@ -300,7 +302,14 @@ impl JobReader {
 			.iter()
 			.filter_map(|seed| Url::parse(seed).ok())
 			.map(|seed| {
-				Domain::new(seed.domain().unwrap().into(), vec![], self.cfg.shard_total, Some(seed.clone()), false)
+				Domain::new(
+					seed.domain().unwrap().into(),
+					vec![],
+					self.cfg.shard_total,
+					self.cfg.addr_key_mask,
+					Some(seed.clone()),
+					false,
+				)
 			})
 			.collect();
 

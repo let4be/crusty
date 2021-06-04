@@ -285,11 +285,25 @@ impl Crusty {
 								})
 								.collect::<Vec<_>>();
 
-							let domain = Domain::new(domain_str, addrs, cfg.job_reader.shard_total, None, true);
+							let domain = Domain::new(
+								domain_str,
+								addrs,
+								cfg.job_reader.shard_total,
+								cfg.job_reader.addr_key_mask,
+								None,
+								true,
+							);
 							let _ = tx_domain_insert.send_async(vec![domain]).await;
 						}
 						Err(_) => {
-							let domain = Domain::new(domain_str, vec![], cfg.job_reader.shard_total, None, true);
+							let domain = Domain::new(
+								domain_str,
+								vec![],
+								cfg.job_reader.shard_total,
+								cfg.job_reader.addr_key_mask,
+								None,
+								true,
+							);
 							let _ = tx_domain_insert.send_async(vec![domain]).await;
 						}
 					}
@@ -311,7 +325,14 @@ impl Crusty {
 				if let Ok(domain_str) = rx.recv_async().await {
 					if tx.try_send(domain_str.clone()).is_err() {
 						// send overflow to db persistence under not-resolved section... no ideal, but works for now
-						let domain = Domain::new(domain_str, vec![], cfg.job_reader.shard_total, None, true);
+						let domain = Domain::new(
+							domain_str,
+							vec![],
+							cfg.job_reader.shard_total,
+							cfg.job_reader.addr_key_mask,
+							None,
+							true,
+						);
 						let _ = tx_domain_insert.send_async(vec![domain]).await;
 					}
 				}

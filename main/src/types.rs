@@ -24,12 +24,26 @@ impl Domain {
 		domain: String,
 		addrs: Vec<[u8; 4]>,
 		shards_total: usize,
+		addr_key_mask: u8,
 		url: Option<Url>,
 		is_discovery: bool,
 	) -> Domain {
 		let mut addrs = addrs;
 		addrs.sort_unstable();
-		let addr = addrs.into_iter().next().unwrap_or_else(|| [255, 255, 255, 255]);
+		let mut addr = addrs.into_iter().next().unwrap_or([255, 255, 255, 255]);
+
+		let mut left = addr_key_mask;
+		for a in &mut addr {
+			if left >= 8 {
+				left -= 8;
+			} else {
+				let mut mask = 0;
+				for k in 0..left {
+					mask |= 1 << k;
+				}
+				*a &= mask;
+			}
+		}
 
 		let mut domain = Domain { addr_key: addr, is_discovery, shard: 0, shards_total, url, domain };
 		domain.calc_shard();

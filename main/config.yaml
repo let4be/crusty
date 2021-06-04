@@ -90,6 +90,14 @@ networking_profile:
 # but this structure and the way we access it actually benefits from what db provides
 job_reader:
   domain_table_name: domain_discovery
+  #we resolve IP of all discovered domains and calculate addr_key
+  #1. Take only ipv4
+  #2. Sort
+  #3. Take first IP and apply addr_key_mask masking
+  #4. addr_key = addr_key | addr_key_4_mask;
+  #we now use addr_key in shard calculation, we never select more than domain_top_n domains from a given addr_key
+  #this ensures we are being polite to websites with different domains hosted on the same IP(or subnet, depending on addr_key_4_mask)
+  addr_key_mask: 24 #read as /24 meaning first 24 bits are significant while last 8 are not(will be masked)
   # re-select checked domains after some time
   re_after_days: 3
   # queue is sharded, do not ask the same shard for job unless duration has passed since last time we asked
