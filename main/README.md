@@ -57,7 +57,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 [clickhouse](https://github.com/ClickHouse/ClickHouse)
 that we can observe with [grafana](https://github.com/grafana/grafana) - giving a real-time insight in crawling performance
 
-![example](./resources/grafana.png)
+![example](./resources/grafana.png "this is a screenshot of an actual broad web crawling run done on i9 10900k and 100mbit fiber optic channel, crusty takes about 2,5-3,5 cores on average while saturating 100mbit channel")
 
 ## Getting started
 
