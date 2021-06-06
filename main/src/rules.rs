@@ -18,6 +18,7 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 	fn task_filters(&self) -> ct::TaskFilters<JobState, TaskState> {
 		vec![
 			Box::new(crusty_core::task_filters::MaxRedirect::new(5)),
+			Box::new(crusty_core::task_filters::SkipNoFollowLinks::new()),
 			Box::new(crusty_core::task_filters::SameDomain::new(true)),
 			Box::new(crusty_core::task_filters::TotalPageBudget::new(50)),
 			Box::new(crusty_core::task_filters::LinkPerPageBudget::new(10)),
