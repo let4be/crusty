@@ -49,7 +49,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   It's also a good practice to introduce delays between visiting pages, see `job_reader.default_crawler_settings.delay`.
 
-  Currently, there's no `robots.txt` support(rust lacks good robots.txt implementation) but this can be added easily(and will be with time)
+  Currently, there's no `robots.txt` support(rust lacks good robots.txt implementation) but this is in the process of being added(based on https://github.com/Folyd/robotstxt)
 
 - Observability
 
@@ -57,7 +57,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 [clickhouse](https://github.com/ClickHouse/ClickHouse)
 that we can observe with [grafana](https://github.com/grafana/grafana) - giving a real-time insight in crawling performance
 
-![example](./resources/grafana.png)
+![example](./resources/grafana.png "this is a screenshot of an actual broad web crawling run done on i9 10900k and 100mbit fiber optic channel, crusty takes about 2,5-3,5 cores on average while saturating 100mbit channel")
 
 ## Getting started
 
