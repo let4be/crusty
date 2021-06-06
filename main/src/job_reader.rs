@@ -42,7 +42,7 @@ impl Default for JobReaderConfig {
 			shard_select_limit: 100_000,
 			job_buffer: 100_000,
 			default_crawling_settings: rc::CrawlingSettings {
-				user_agent: Some(String::from("crusty/0.10.0")),
+				user_agent: Some(String::from("crusty/0.11.0")),
 				..rc::CrawlingSettings::default()
 			},
 
