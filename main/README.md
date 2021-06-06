@@ -49,7 +49,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   It's also a good practice to introduce delays between visiting pages, see `job_reader.default_crawler_settings.delay`.
 
-  Currently, there's no `robots.txt` support(rust lacks good robots.txt implementation) but this is in the process of being added(based on https://github.com/Folyd/robotstxt)
+  `robots.txt` is supported!
 
 - Observability
 
