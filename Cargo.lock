@@ -235,9 +235,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.24.0"
+version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4aeb68c0122e865a6faf45ad296d71909c5efaf1ba760db1a496b4df9edb534c"
+checksum = "753efe0686e2c82b88e5bfa27318d7bfed6dbfd3cac77364b6f93375b9d6e5bf"
 dependencies = [
  "anyhow",
  "bytes",
@@ -254,6 +254,7 @@ dependencies = [
  "num_cpus",
  "pin-project",
  "rand 0.8.3",
+ "robotstxt-with-cache",
  "select",
  "serde",
  "thiserror",
@@ -1421,6 +1422,12 @@ dependencies = [
  "hostname",
  "quick-error",
 ]
+
+[[package]]
+name = "robotstxt-with-cache"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413592c1c83b4657fd53561be2e58dc4d739caa90c954d7799b827312f6a3fe8"
 
 [[package]]
 name = "rustc_version"

@@ -23,18 +23,22 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 			Box::new(crusty_core::task_filters::LinkPerPageBudget::new(10)),
 			Box::new(crusty_core::task_filters::PageLevel::new(10)),
 			Box::new(crusty_core::task_filters::HashSetDedup::new()),
+			Box::new(crusty_core::task_filters::RobotsTxt::new()),
 		]
 	}
 
 	fn status_filters(&self) -> ct::StatusFilters<JobState, TaskState> {
 		vec![
-			Box::new(crusty_core::status_filters::ContentType::new(vec![String::from("text/html")])),
+			Box::new(crusty_core::status_filters::ContentType::new(vec![
+				String::from("text/html"),
+				String::from("text/plain"),
+			])),
 			Box::new(crusty_core::status_filters::Redirect::new()),
 		]
 	}
 
 	fn load_filters(&self) -> ct::LoadFilters<JobState, TaskState> {
-		vec![]
+		vec![Box::new(crusty_core::load_filters::RobotsTxt::new())]
 	}
 
 	fn task_expanders(&self) -> ct::TaskExpanders<JobState, TaskState> {
