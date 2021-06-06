@@ -119,6 +119,10 @@ impl Crusty {
 		ddc: &mut TtlCache<String, ()>,
 		cfg: &CrustyConfig,
 	) -> Option<String> {
+		if lnk.rel.to_lowercase() == "no-follow" {
+			return None
+		}
+
 		let domain = lnk.host()?;
 
 		if domain.len() < 3 || !domain.contains('.') || domain == *task_domain || ddc.contains_key(&domain) {
