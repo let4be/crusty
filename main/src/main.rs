@@ -352,7 +352,7 @@ impl Crusty {
 		rx_sig: Receiver<()>,
 	) -> Sender<String> {
 		let cfg = self.cfg.clone();
-		let (tx, rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size() * 10);
+		let (tx, rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
 		let (out_tx, out_rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
 
 		for _ in 0..cfg.resolver.concurrency {
