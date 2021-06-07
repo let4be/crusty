@@ -63,7 +63,7 @@ impl Writer {
 	) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
 		let map = Arc::new(map);
-		retry(ExponentialBackoff::default(), || async {
+		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {
 			Writer::go(
 				self.cfg.clone(),
 				client.clone(),
