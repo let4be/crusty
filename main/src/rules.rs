@@ -16,15 +16,18 @@ pub struct CrawlingRules {}
 
 impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 	fn task_filters(&self) -> ct::TaskFilters<JobState, TaskState> {
+		let dedup_checking = crusty_core::task_filters::HashSetDedup::new(true);
+		let dedup_committing = dedup_checking.committing();
 		vec![
 			Box::new(crusty_core::task_filters::MaxRedirect::new(5)),
 			Box::new(crusty_core::task_filters::SkipNoFollowLinks::new()),
 			Box::new(crusty_core::task_filters::SameDomain::new(true)),
+			Box::new(dedup_checking),
 			Box::new(crusty_core::task_filters::TotalPageBudget::new(50)),
 			Box::new(crusty_core::task_filters::LinkPerPageBudget::new(10)),
 			Box::new(crusty_core::task_filters::PageLevel::new(10)),
-			Box::new(crusty_core::task_filters::HashSetDedup::new()),
 			Box::new(crusty_core::task_filters::RobotsTxt::new()),
+			Box::new(dedup_committing),
 		]
 	}
 
