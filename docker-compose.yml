@@ -26,6 +26,7 @@ services:
 
   grafana:
     container_name: crusty-grafana
+    restart: on-failure
     build:
       context: ./infra/grafana
     logging:
@@ -50,7 +51,6 @@ services:
     build:
       context: .
       dockerfile: ./infra/crusty/Dockerfile
-    restart: on-failure
     logging:
       driver: "json-file"
       options:
