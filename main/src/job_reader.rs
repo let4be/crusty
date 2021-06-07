@@ -74,8 +74,14 @@ impl JobReaderState {
 		}
 	}
 
-	fn next_job_and_shard(&self, task_buffer: usize) -> (Option<u16>, Option<Domain>) {
+	fn next_job(&self) -> Option<Domain> {
 		let mut jobs = self.jobs.borrow_mut();
+
+		jobs.pop_front()
+	}
+
+	fn next_shard(&self, task_buffer: usize) -> Option<u16> {
+		let jobs = self.jobs.borrow();
 
 		let mut shard: Option<u16> = None;
 		if jobs.len() < task_buffer {
@@ -91,9 +97,7 @@ impl JobReaderState {
 			}
 		}
 
-		let job = jobs.pop_front();
-
-		(shard, job)
+		shard
 	}
 
 	fn check_shard(&self, shard: u16) {
@@ -170,7 +174,7 @@ struct JobReaderRow {
 #[derive(Debug)]
 enum FutureResult {
 	JobsRead(Result<Vec<Domain>>),
-	JobsSent,
+	JobSent,
 	MetricsSent,
 	Notify(core::result::Result<chu::Notification<Domain>, RecvError>),
 	IdleCheckTimeout,
@@ -314,7 +318,9 @@ impl JobReader {
 
 		let mut last_read = Instant::now();
 		while !rx_sig.is_disconnected() {
-			let (shard, job) = state.next_job_and_shard(self.cfg.job_buffer);
+			let shard = state.next_shard(self.cfg.job_buffer);
+			let job = state.next_job();
+
 			trace!("selected shard {:?} job {:?}", shard, job);
 
 			if let (Some(shard), false) = (shard, seed_domains.is_empty()) {
@@ -341,7 +347,7 @@ impl JobReader {
 			if let Some(job) = job.clone() {
 				futures.push(Box::pin(async {
 					self.send_job(&tx_jobs, job).await;
-					FutureResult::JobsSent
+					FutureResult::JobSent
 				}))
 			}
 
@@ -357,9 +363,12 @@ impl JobReader {
 			}
 
 			let t = Instant::now();
+			let mut more_jobs = true;
 			while let Some(r) = futures.next().await {
 				match r {
 					FutureResult::JobsRead(Ok(jobs)) => {
+						more_jobs = false;
+
 						let queried_for = t.elapsed();
 						if !jobs.is_empty() {
 							let notification = chu::GenericNotification {
@@ -379,10 +388,23 @@ impl JobReader {
 						last_read = Instant::now();
 					}
 					FutureResult::JobsRead(Err(_)) => {
+						more_jobs = false;
+
 						self.handle_read_jobs_err(&state, shard.unwrap());
 					}
-					FutureResult::JobsSent => {
+					FutureResult::JobSent => {
 						self.handle_sent_job(&state, job.as_ref().unwrap().clone());
+
+						if more_jobs {
+							let job = state.next_job();
+							if let Some(job) = job {
+								trace!("selected another job while waiting {:?}", &job);
+								futures.push(Box::pin(async {
+									self.send_job(&tx_jobs, job).await;
+									FutureResult::JobSent
+								}))
+							}
+						}
 					}
 					FutureResult::Notify(Ok(notification)) => {
 						awaiting_notification = false;
