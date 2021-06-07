@@ -174,7 +174,7 @@ struct JobReaderRow {
 #[derive(Debug)]
 enum FutureResult {
 	JobsRead(Result<Vec<Domain>>),
-	JobSent,
+	JobSent(Domain),
 	MetricsSent,
 	Notify(core::result::Result<chu::Notification<Domain>, RecvError>),
 	IdleCheckTimeout,
@@ -244,7 +244,7 @@ impl JobReader {
 		state.check_shard(shard);
 	}
 
-	async fn send_job(&self, tx: &Sender<Job>, job: Domain) {
+	async fn send_job(&self, tx: &Sender<Job>, job: &Domain) {
 		let url = job.url.clone().map(|u| u.to_string()).unwrap_or_else(|| format!("http://{}", &job.domain));
 		let job_obj = Job::new(
 			&url,
@@ -261,7 +261,7 @@ impl JobReader {
 		}
 	}
 
-	fn handle_sent_job(&self, state: &JobReaderState, job: Domain) {
+	fn handle_sent_job(&self, state: &JobReaderState, job: &Domain) {
 		info!(
 			"->new task sent for {}, jobs left: {}, free shards: {}, busy shards: {}",
 			job.domain,
@@ -346,8 +346,8 @@ impl JobReader {
 
 			if let Some(job) = job.clone() {
 				futures.push(Box::pin(async {
-					self.send_job(&tx_jobs, job).await;
-					FutureResult::JobSent
+					self.send_job(&tx_jobs, &job).await;
+					FutureResult::JobSent(job)
 				}))
 			}
 
@@ -392,16 +392,16 @@ impl JobReader {
 
 						self.handle_read_jobs_err(&state, shard.unwrap());
 					}
-					FutureResult::JobSent => {
-						self.handle_sent_job(&state, job.as_ref().unwrap().clone());
+					FutureResult::JobSent(job) => {
+						self.handle_sent_job(&state, &job);
 
 						if more_jobs {
 							let job = state.next_job();
 							if let Some(job) = job {
 								trace!("selected another job while waiting {:?}", &job);
 								futures.push(Box::pin(async {
-									self.send_job(&tx_jobs, job).await;
-									FutureResult::JobSent
+									self.send_job(&tx_jobs, &job).await;
+									FutureResult::JobSent(job)
 								}))
 							}
 						}
