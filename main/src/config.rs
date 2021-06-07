@@ -36,7 +36,7 @@ pub struct ClickhouseConfig {
 impl Default for ClickhouseConfig {
 	fn default() -> Self {
 		Self {
-			url:      String::from("http://localhost:8123"),
+			url:      String::from("http://clickhouse:8123"),
 			username: String::from("default"),
 			password: String::from(""),
 			database: String::from("default"),

@@ -32,6 +32,10 @@ struct Crusty {
 
 impl Crusty {
 	async fn try_connect(cfg: &config::CrustyConfig) -> Result<Client> {
+		info!(
+			"trying to connect to {} as {}, db: {}",
+			&cfg.clickhouse.url, &cfg.clickhouse.username, &cfg.clickhouse.database
+		);
 		let client = Client::default()
 			.with_url(&cfg.clickhouse.url)
 			.with_user(&cfg.clickhouse.username)

@@ -1,9 +1,8 @@
----
 log:
   # fancy some colors? - disable if redirect to file is intended
   ansi: false
   # base-line log level
-  level: warn
+  level: trace
   # my_crate=info,my_crate::my_mod=debug,[my_span]=trace
   # see https://tracing.rs/tracing_subscriber/filter/struct.envfilter
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
@@ -58,10 +57,10 @@ clickhouse:
     force_write_duration: 2500ms
 # resolver settings
 # leave empty for auto-conf
-#resolver:
+resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  #concurrency: 64
+  concurrency: 80
 # domain discovery cache capacity, this cache helps to ease load on clickhouse(so we do not insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new crawler nodes
 # so if one were to try running this on google scale it would most likely require a dedicated dedup layer before hitting clickhouse
