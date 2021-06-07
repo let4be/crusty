@@ -50,6 +50,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/crusty/Dockerfile
+    restart: on-failure
     logging:
       driver: "json-file"
       options:
