@@ -18,13 +18,17 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   see a typical [config file](./main/config.yaml) with some explanations regarding available options
 
-- Fast single node performance
+- Fast single node performance (~8 gbit/s on 96 core `c5.metal` more if used with custom html parser)
 
-  Crusty is written in `Rust` on top of green threads running on [tokio](https://github.com/tokio-rs/tokio), so it can achieve quite impressive single-node performance even on a moderate PC
+  - Crusty is written in `Rust` on top of green threads running on [tokio](https://github.com/tokio-rs/tokio), so it can achieve quite impressive single-node performance even on a moderate PC
 
-  Additional optimizations are possible to further improve this(mostly better html parsing, there are tasks that do not require full DOM parsing, this implementation does full DOM parsing mostly for the sake of extensibility and configurability)
+  - Additional optimizations are possible to further improve this - there are tasks that do not require full DOM parsing, this implementation does full DOM parsing mostly for the sake of extensibility and configurability
 
-  `Crusty` has small, stable and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory.
+- Stable performance and predictable resource consumption
+
+  - `Crusty` has small, stable and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory.
+
+  - Built on top of buffered [Flume](https://github.com/zesterer/flume) channels - which helps to build system with predictable performance. Peak loads are getting buffered, continuous over-band loads lead to producer backoff.
 
 - Scalability
 
