@@ -49,15 +49,18 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
     - ensure high scalability(pre-sharded, move shards to other machines if there's not enough CPU or more reliability desired)
       but the fact is a single QUEUE can handle ~10 `Crusty` running on top hardware(96 cores monsters with 25gbit channels), so I would be quite curious to see a use case where you need to move out redis queue shards to dedicated machines(except for reliability)
 
-- Basic politeness
+- True politeness
 
-  While we can crawl thousands of domains in parallel - we should absolutely limit concurrency on per-domain level
+  - while we can crawl tens of thousands of domains in parallel - we should absolutely limit concurrency on per-domain level
   to avoid any stress to crawled sites, see `job_reader.default_crawler_settings.concurrency`.
-  More over testing shows that A LOT of totally different domains can live on the same physical IP... so we never try to fetch more than `job_reader.domain_top_n` domains from the same IP
 
-  It's also a good practice to introduce delays between visiting pages, see `job_reader.default_crawler_settings.delay`.
+  - each domain is first resolved and then mapped to `addr_key`, Redis Queue makes sure we -never- process several domains with the same `addr_key` thus effectively limiting concurrency on per IP/Subnet basis
 
-  `robots.txt` is supported!
+  - it's a good practice to introduce delays between visiting pages, see `job_reader.default_crawler_settings.delay`.
+
+  - `robots.txt` is fully supported(using Google's implementation ported to rust)
+
+  - global IP filtering - you can easily restrict which IP blocks or maybe even countries(if you bring a good IP->Country mapper) you wish to visit(just hack on top of existing DNS resolver when configuring `crusty-core`)
 
 - Observability
 
