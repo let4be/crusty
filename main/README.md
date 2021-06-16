@@ -32,26 +32,26 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
 - Scalability
 
-  Each `Crusty` node is essentially an independent unit which we can run hundreds of in parallel(on different machines of course),
+  - Each `Crusty` node is essentially an independent unit which we can run hundreds of in parallel(on different machines of course),
   the tricky part is job delegation and domain discovery which is solved by a high performance sharded queue-like structure built on top of redis.
 
-  We leverage redis low-latency and use carefully picked up data structures along with careful memory management to achieve our goals
+  - We leverage redis low-latency and use carefully picked up data structures along with careful memory management to achieve our goals
 
-  We shard all domains based on `addr_key`, where `addr_key` = First Lexicographically going IP && netmask, so it's possible to "compress" a given IP address and store all similar addresses under the same slot
+  - We shard all domains based on `addr_key`, where `addr_key` = First Lexicographically going IP && netmask, so it's possible to "compress" a given IP address and store all similar addresses under the same slot
 
-  This is widely used to avoid bombing same IP(or subnet if so desired) by concurrent requests
+  - This is widely used to avoid bombing same IP(or subnet if so desired) by concurrent requests
 
-  Each domain belongs to some shard(`crc32(addr_key) % number_of_shards`), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so-called domain discovery).
+  - Each domain belongs to some shard(`crc32(addr_key) % number_of_shards`), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so-called domain discovery).
   Shards can be distributed across many redis instances.
 
-  With careful planning and minimal changes this system should scale from a single core instance to a 100+ instances(with total of tens of thousands of cores)
+  - With careful planning and minimal changes this system should scale from a single core instance to a 100+ instances(with total of tens of thousands of cores)
 
-  Smart Queue implemented on top of `Redis Modules` system allows to:
+ - Smart Queue implemented on top of `Redis Modules` system allows to:
     - ensure we check only one domain with same `addr_key`(no DDOS!)
     - ensure high queue throughput
     - ensure high availability(pre-sharded, if some segments become temporary unavailable system will work with others)
-    - ensure high scalability(pre-sharded, move shards to other machines if there's not enough CPU or more reliability desired)
-      but the fact is a single QUEUE can handle ~10 `Crusty` running on top hardware(96 cores monsters with 25gbit channels), so I would be quite curious to see a use case where you need to move out redis queue shards to dedicated machines(except for reliability)
+    - ensure high scalability(pre-sharded, move shards to other machines if there's not enough CPU or more reliability desired).
+      Though the fact is a single Smart Queue can easily handle 5+ `Crusty` running on top hardware(96 cores monsters with 25gbit channels), so I would be quite curious to see a use case where you need to move out redis queue shards to dedicated machines(except for reliability)
 
 - True politeness
 
