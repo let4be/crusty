@@ -1,3 +1,5 @@
+use std::net::{IpAddr, SocketAddr};
+
 use clickhouse::Row;
 use crusty_core::{types as ct, types::StatusResult};
 use serde::{Deserialize, Serialize};
@@ -10,27 +12,28 @@ pub type Result<T> = anyhow::Result<T>;
 
 #[derive(Debug, Clone)]
 pub struct Domain {
-	is_discovery:     bool,
-	pub shard:        u16,
-	pub shards_total: usize,
+	pub addrs:    Vec<SocketAddr>,
+	pub url:      Option<Url>,
+	pub domain:   String,
+	pub addr_key: String,
+}
 
-	pub url:    Option<Url>,
-	pub domain: String,
-	addr_key:   [u8; 4],
+impl From<interop::Domain> for Domain {
+	fn from(s: interop::Domain) -> Self {
+		Self { domain: s.name, addr_key: s.addr_key, addrs: s.addrs, url: None }
+	}
 }
 
 impl Domain {
-	pub fn new(
-		domain: String,
-		addrs: Vec<[u8; 4]>,
-		shards_total: usize,
-		addr_key_mask: u8,
-		url: Option<Url>,
-		is_discovery: bool,
-	) -> Domain {
-		let mut addrs = addrs;
-		addrs.sort_unstable();
-		let mut addr = addrs.into_iter().next().unwrap_or([255, 255, 255, 255]);
+	pub fn new(domain: String, addrs: Vec<SocketAddr>, addr_key_mask: u8, url: Option<Url>) -> Domain {
+		let mut addrs_sorted = addrs.clone();
+		addrs_sorted.sort_unstable();
+		let mut addr = addrs_sorted
+			.into_iter()
+			.next()
+			.filter(|a| a.ip().is_ipv4())
+			.map(|ip| if let IpAddr::V4(ip) = ip.ip() { ip.octets() } else { panic!("not supposed to happen") })
+			.unwrap_or([255, 255, 255, 255]);
 
 		let mut left = addr_key_mask;
 		for a in &mut addr {
@@ -42,41 +45,37 @@ impl Domain {
 					mask |= 1 << k;
 				}
 				*a &= mask;
+				left = 0;
 			}
 		}
 
-		let mut domain = Domain { addr_key: addr, is_discovery, shard: 0, shards_total, url, domain };
-		domain.calc_shard();
-		domain
+		Domain { addr_key: base64::encode(addr), addrs, url, domain }
 	}
 
-	fn calc_shard(&mut self) {
+	pub fn to_interop(&self) -> interop::Domain {
+		interop::Domain::new(&self.domain, &self.addr_key, &self.addrs)
+	}
+
+	pub fn to_interop_descriptor(&self) -> interop::DomainDescriptor {
+		interop::DomainDescriptor::new(&self.domain, &self.addr_key)
+	}
+
+	pub fn _calc_shard(&mut self, shards_total: usize) -> u32 {
 		let mut hasher = crc32fast::Hasher::new();
-		hasher.update(&self.addr_key);
-		self.shard = (hasher.finalize() % self.shards_total as u32 + 1) as u16;
+		hasher.update(self.addr_key.as_bytes());
+		hasher.finalize() % shards_total as u32 + 1
 	}
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DomainDBEntry {
-	pub shard:      u16,
-	pub addr_key:   [u8; 4],
-	pub domain:     String,
-	pub created_at: u32,
-	pub updated_at: u32,
+	pub domain: String,
+	pub addrs:  Vec<SocketAddr>,
 }
 
 impl From<Domain> for DomainDBEntry {
 	fn from(s: Domain) -> Self {
-		let now = now();
-
-		Self {
-			shard:      s.shard,
-			addr_key:   s.addr_key,
-			domain:     s.domain,
-			created_at: now,
-			updated_at: if s.is_discovery { 644616000 } else { now },
-		}
+		Self { domain: s.domain, addrs: s.addrs }
 	}
 }
 
@@ -98,7 +97,7 @@ impl From<chu::GenericNotification> for DBRWNotificationDBEntry {
 		DBRWNotificationDBEntry {
 			host:          c.host.clone(),
 			app_id:        c.app_id.clone(),
-			created_at:    now(),
+			created_at:    now().as_secs() as u32,
 			table_name:    s.table_name,
 			label:         s.label,
 			took_ms:       s.duration.as_millis() as u32,
@@ -195,9 +194,10 @@ pub enum QueueKind {
 	DomainUpdate,
 	DomainInsert,
 
-	DomainUpdateNotifyP,
 	DomainUpdateNotify,
 	DomainInsertNotify,
+	Parse,
+	DomainResolveAggregator,
 }
 
 #[derive(Debug, Clone)]
@@ -248,7 +248,7 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 
 			if let StatusResult::Ok(status) = &load_data.status {
 				return TaskMeasurement {
-					time: now(),
+					time: now().as_secs() as u32,
 					url:  r.task.link.url.to_string(),
 					md:   Some(TaskMeasurementData {
 						status_code: status.code as u16,
@@ -263,6 +263,6 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 			}
 		}
 
-		TaskMeasurement { time: now(), url: r.task.link.url.to_string(), md: None }
+		TaskMeasurement { time: now().as_secs() as u32, url: r.task.link.url.to_string(), md: None }
 	}
 }

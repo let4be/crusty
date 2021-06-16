@@ -33,11 +33,11 @@ pub struct GenericNotification {
 	pub items:      usize,
 }
 
-impl<A: Clone + Send> From<Notification<A>> for GenericNotification {
-	fn from(s: Notification<A>) -> Self {
+impl<A: Clone + Send> From<&Notification<A>> for GenericNotification {
+	fn from(s: &Notification<A>) -> Self {
 		GenericNotification {
-			table_name: s.table_name,
-			label:      s.label,
+			table_name: s.table_name.clone(),
+			label:      s.label.clone(),
 			since_last: s.since_last,
 			duration:   s.duration,
 			items:      s.items.len(),
@@ -108,16 +108,6 @@ impl Writer {
 
 			let mut done = false;
 			while !done {
-				if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
-					for el in r.unwrap_or_else(|_| {
-						done = true;
-						vec![]
-					}) {
-						state.lock().unwrap().notify.push(el.clone());
-						inserter.write(&map(el)).await.context("error during inserter.write")?;
-					}
-				}
-
 				let t = Instant::now();
 
 				let s = inserter.commit().await.context("error during inserter.commit")?;
@@ -147,6 +137,16 @@ impl Writer {
 					}
 					state.lock().unwrap().notify.clear();
 					last_write = Instant::now();
+				}
+
+				if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
+					for el in r.unwrap_or_else(|_| {
+						done = true;
+						vec![]
+					}) {
+						state.lock().unwrap().notify.push(el.clone());
+						inserter.write(&map(el)).await.context("error during inserter.write")?;
+					}
 				}
 			}
 

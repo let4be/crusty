@@ -2,10 +2,31 @@ version: '3.8'
 
 services:
 
-  clickhouse:
-    container_name: crusty-clickhouse
+  crusty:
+    container_name: crusty
     build:
-      context: ./infra/clickhouse
+      context: .
+      dockerfile: ./infra/crusty/Dockerfile
+    network_mode: host
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - CRUSTY_SEEDS=${CRUSTY_SEEDS:-}
+
+  redis:
+    container_name: crusty-redis
+    build:
+      context: ./infra/redis
+    network_mode: host
     logging:
       driver: "json-file"
       options:
@@ -16,19 +37,35 @@ services:
       nofile:
         soft: 1048576
         hard: 1048576
-    ports:
-      - "8123:8123"
-      - "9000:9000"
-      - "9009:9009"
     volumes:
-    - clickhouse-volume:/var/lib/clickhouse
-    - /etc/localtime:/etc/localtime:ro
+      - redis-volume:/data
+      - /etc/localtime:/etc/localtime:ro
+
+  clickhouse:
+    container_name: crusty-clickhouse
+    build:
+      context: ./infra/clickhouse
+    network_mode: host
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - clickhouse-volume:/var/lib/clickhouse
+      - /etc/localtime:/etc/localtime:ro
 
   grafana:
     container_name: crusty-grafana
     restart: on-failure
     build:
       context: ./infra/grafana
+    network_mode: host
     logging:
       driver: "json-file"
       options:
@@ -38,36 +75,12 @@ services:
       - grafana-volume:/var/lib/grafana
       - grafana-plugins:/grafana-plugins
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "3000:3000"
-    links:
-      - clickhouse
     environment:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 2.3.1
       - GF_PLUGIN_DIR=/grafana-plugins
 
-  crusty:
-    container_name: crusty
-    build:
-      context: .
-      dockerfile: ./infra/crusty/Dockerfile
-    logging:
-      driver: "json-file"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    ulimits:
-      nofile:
-        soft: 1048576
-        hard: 1048576
-    links:
-      - clickhouse
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-    environment:
-      - CRUSTY_SEEDS=${CRUSTY_SEEDS:-}
-
 volumes:
+  redis-volume:
   clickhouse-volume:
   grafana-volume:
   grafana-plugins:

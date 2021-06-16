@@ -20,7 +20,7 @@ repos:
             pass_filenames: false
         -   id: clippy
             name: Lint sources
-            entry: bash -c "cargo +nightly clippy -- -D warnings"
+            entry: bash -c "cargo +nightly clippy -- -D warnings -A clippy::not_unsafe_ptr_arg_deref"
             language: system
             pass_filenames: false
         -   id: udeps

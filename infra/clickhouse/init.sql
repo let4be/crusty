@@ -5,13 +5,13 @@ CREATE DATABASE crusty;
 USE crusty;
 
 CREATE TABLE domain_discovery (
-    shard UInt16,
+    shard UInt32,
     addr_key FixedString(4),
     domain String,
     updated_at SimpleAggregateFunction(max, DateTime),
-    created_at SimpleAggregateFunction(min, DateTime),
-    INDEX updated_at_index updated_at TYPE
-    set(100) GRANULARITY 1
+    created_at SimpleAggregateFunction(min, DateTime64(3)),
+    INDEX created_at_index created_at TYPE set(100) GRANULARITY 1,
+    INDEX updated_at_index updated_at TYPE set(100) GRANULARITY 1
 ) ENGINE = AggregatingMergeTree()
     PARTITION BY shard
     PRIMARY KEY (shard, addr_key, domain)

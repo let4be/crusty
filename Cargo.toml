@@ -9,5 +9,7 @@ opt-level = 3
 
 [workspace]
     members = [
-        "main"
+        "main",
+        "queue",
+        "interop"
     ]

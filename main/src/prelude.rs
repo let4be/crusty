@@ -15,8 +15,7 @@ pub use tracing::{debug, error, info, trace, warn, Level};
 pub use tracing_tools::{span, PinnedFut, TracingTask};
 pub use url::Url;
 
-pub fn now() -> u32 {
+pub fn now() -> Duration {
 	let start = SystemTime::now();
-	let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-	since_the_epoch.as_secs() as u32
+	start.duration_since(UNIX_EPOCH).expect("Time went backwards")
 }

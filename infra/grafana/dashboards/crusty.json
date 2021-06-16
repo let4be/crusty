@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1622730068372,
+  "iteration": 1623790632743,
   "links": [],
   "panels": [
     {
@@ -293,7 +293,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "OK tasks"
+              "options": "OK pages"
             },
             "properties": [
               {
@@ -308,7 +308,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "ERR tasks"
+              "options": "ERR pages"
             },
             "properties": [
               {
@@ -357,8 +357,8 @@
           "format": "table",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=0",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"OK tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622722631) AND created_at <= toDateTime(1622724433)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=0",
+          "query": "SELECT 'total' as p, count(created_at) as \"OK pages\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=0",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"OK pages\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1623746203) AND created_at <= toDateTime(1623746505)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=0",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -370,8 +370,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"ERR tasks\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=1",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"ERR tasks\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1622722631) AND created_at <= toDateTime(1622724433)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=1",
+          "query": "SELECT 'total' as p, count(created_at) as \"ERR pages\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n    AND error=1",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"ERR pages\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1623746203) AND created_at <= toDateTime(1623746505)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND error=1",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -599,7 +599,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Read"
+              "options": "Dequeued"
             },
             "properties": [
               {
@@ -618,7 +618,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Inserted"
+              "options": "Enqueued"
             },
             "properties": [
               {
@@ -633,7 +633,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Updated"
+              "options": "Finished"
             },
             "properties": [
               {
@@ -674,8 +674,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest($interval, 3) as Inserted\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'insert'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest(10, 3) as Inserted\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622710366) AND created_at <= toDateTime(1622731968)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'insert'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(10, 3))\n\nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest($interval, 3) as Enqueued\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domains' AND label = 'insert'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest(1, 3) as Enqueued\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1623746218) AND created_at <= toDateTime(1623746520)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domains' AND label = 'insert'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -687,8 +687,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest($interval, 3) as Updated\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'update'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest(10, 3) as Updated\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622710366) AND created_at <= toDateTime(1622731968)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'update'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(10, 3))\n\nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest($interval, 3) as Finished\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domains' AND label = 'update'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest(1, 3) as Finished\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1623746218) AND created_at <= toDateTime(1623746520)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domains' AND label = 'update'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n\nORDER BY time",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -700,8 +700,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest($interval, 3) as Read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'read'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n\nORDER BY time",
-          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest(10, 3) as Read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622710366) AND created_at <= toDateTime(1622731968)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'read'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(10, 3))\n\nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest($interval, 3) as Dequeued\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domains' AND label = 'read'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n\nORDER BY time",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(items) / greatest(1, 3) as Dequeued\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1623746218) AND created_at <= toDateTime(1623746520)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domains' AND label = 'read'\n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n\nORDER BY time",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
@@ -709,7 +709,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Job Q Throughput",
+      "title": "Job Queue Throughput",
       "type": "timeseries"
     },
     {
@@ -840,7 +840,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    count(created_at) / greatest($interval, 3) as Total,\n    sum(error) / greatest($interval, 3) as Error\nFROM $DB.metrics_task\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host) $conditionalTest( AND app_id = '$app_id', $app_id)\n\nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    count(created_at) / greatest(1, 3) as Total,\n    sum(error) / greatest(1, 3) as Error\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1622722761) AND created_at <= toDateTime(1622724563)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n\nORDER BY time",
+          "rawQuery": "SELECT\n    max(toUnixTimestamp(created_at) * 1000) as time,\n    count(created_at) / greatest(1, 3) as Total,\n    sum(error) / greatest(1, 3) as Error\nFROM crusty.metrics_task\n\nWHERE created_at >= toDateTime(1623746162) AND created_at <= toDateTime(1623746464)  AND host = 'crawler-1'   AND app_id = 'crusty' \n\nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -848,7 +848,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Tasks/sec",
+      "title": "Pages/sec",
       "type": "timeseries"
     },
     {
@@ -923,6 +923,191 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "Dequeue"
+            },
+            "properties": [
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Finish"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Enqueue"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.0.0-beta3",
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": false,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Enqueue\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domains' AND label = 'insert' \n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Enqueue\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1623791572) AND created_at <= toDateTime(1623791874)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domains' AND label = 'insert' \n    \nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Finish\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domains' AND label = 'update' \n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Finish\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1623791572) AND created_at <= toDateTime(1623791874)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domains' AND label = 'update' \n    \nORDER BY time",
+          "refId": "B",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Dequeue\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domains' AND label = 'read' \n    \nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Dequeue\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1623791572) AND created_at <= toDateTime(1623791874)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domains' AND label = 'read' \n    \nORDER BY time",
+          "refId": "C",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Job Queue Latencies",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "clickhouse",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "right",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "Read"
             },
             "properties": [
@@ -968,16 +1153,61 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Job"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JobUpdate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Parse"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
         "h": 9,
         "w": 12,
-        "x": 12,
-        "y": 14
+        "x": 0,
+        "y": 23
       },
-      "id": 6,
+      "id": 11,
       "options": {
         "legend": {
           "calcs": [
@@ -998,8 +1228,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / greatest($interval, 3) as Insert\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'insert' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / greatest(1, 3) as Insert\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622722735) AND created_at <= toDateTime(1622724537)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'insert' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n    \nORDER BY time",
+          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as JobUpdate\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'JobUpdate'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
+          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as JobUpdate\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1623160101) AND updated_at <= toDateTime(1623160403)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'JobUpdate'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -1011,8 +1241,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / greatest($interval, 3) as Update\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'update' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / greatest(1, 3) as Update\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622722735) AND created_at <= toDateTime(1622724537)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'update' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n    \nORDER BY time",
+          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Job\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'Job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
+          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Job\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1623160101) AND updated_at <= toDateTime(1623160403)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'Job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -1024,8 +1254,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / greatest($interval, 3) as Read\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\n    AND table_name = 'domain_discovery' AND label = 'read' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest($interval, 3))\n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(max(created_at))*1000 as time,\n    sum(took_ms) / greatest(1, 3) as Read\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1622722735) AND created_at <= toDateTime(1622724537)\n     AND host = 'crawler-1'   AND app_id = 'crusty' \n    AND table_name = 'domain_discovery' AND label = 'read' \n    \nGROUP BY intDiv(toRelativeSecondNum(created_at), greatest(1, 3))\n    \nORDER BY time",
+          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Parse\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'Parse'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
+          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Parse\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1623160101) AND updated_at <= toDateTime(1623160403)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'Parse'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
@@ -1033,7 +1263,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Job Q Latencies",
+      "title": "Buffers",
       "type": "timeseries"
     }
   ],
@@ -1112,7 +1342,7 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},

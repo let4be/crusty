@@ -10,9 +10,13 @@ log:
 host: crawler-1 # for metrics
 app_id: crusty # for metrics
 
-# Clickhouse database settings
+# Redis settings (queue)
+redis:
+  hosts: ["redis://localhost:6379/"]
+
+# Clickhouse database settings (metrics)
 clickhouse:
-  url: http://clickhouse:8123
+  url: http://localhost:8123
   username: default
   password: ""
   database: crusty
@@ -27,6 +31,7 @@ clickhouse:
     check_for_force_write_duration: 100ms
     # if force_write_duration elapsed since last write but we yet not filled buffer_capacity force the write anyway
     force_write_duration: 500ms
+
   # We persist some db metrics for further analysis
   metrics_db:
     table_name: metrics_db
@@ -34,61 +39,23 @@ clickhouse:
     buffer_capacity: 1000
     check_for_force_write_duration: 100ms
     force_write_duration: 500ms
+
   # We persist metrics and various meta-data for each visited page
   metrics_task:
     table_name: metrics_task
     label: ""
-    buffer_capacity: 10000
-    check_for_force_write_duration: 100ms
-    force_write_duration: 500ms
-  # We persist candidates for newly discovered domains, db will perform final deduplication
-  domain_discovery_insert:
-    table_name: domain_discovery
-    label: insert
-    buffer_capacity: 10000
+    buffer_capacity: 5000
     check_for_force_write_duration: 500ms
-    force_write_duration: 2500ms
-  # We persist confirmations that domain has been checked so that it won't be re-selected unless special criteria is met
-  domain_discovery_update:
-    table_name: domain_discovery
-    label: update
-    buffer_capacity: 10000
-    check_for_force_write_duration: 500ms
-    force_write_duration: 2500ms
-# resolver settings
-# leave empty for auto-conf
-resolver:
-  # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
-  # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  concurrency: 80
-# domain discovery cache capacity, this cache helps to ease load on clickhouse(so we do not insert billions of duplicated records)
-# but because cache is local it's effectiveness will drop when adding new crawler nodes
-# so if one were to try running this on google scale it would most likely require a dedicated dedup layer before hitting clickhouse
-ddc_cap: 25000000
-# recently discovered domains live in cache up to this duration
-ddc_lifetime: 1h
-# We monitor various internal queues and persist their status to db
-queue_monitor_interval: 1s
-# We parse HTML in a separate thread pool, stack size is configurable
-# apparently even 32mib is not enough given max_response_size of 2mib...
-parser_processor_stack_size: 128mib
-# Fancy local address binding for monster setups with several NICs(local port limitation)
-networking_profile:
-  values:
-    bind_local_ipv4:
-    bind_local_ipv6:
-    socket_read_buffer_size: 32kib
-    socket_write_buffer_size: 32kib
-    connect_timeout: 5s
-#leave commented for auto-conf
-#concurrency_profile:
-  #= N of physical cores by default
-  #parser_concurrency:
-  # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
-  #domain_concurrency: 100
-# We select new jobs(domains) from queue-like structure hosted in clickhouse
-job_reader:
-  domain_table_name: domain_discovery
+    force_write_duration: 5000ms
+
+# right now sharding is not yet implemented, but there are good placeholders where needed
+jobs:
+  # min shard number we have access to
+  shard_min: 1
+  # max shard number we have access to
+  shard_max: 25
+  # total number of all shards, in a multi-node setup shard_total > shard_max - shard_min + 1 (always)
+  shard_total: 25
   #we resolve IP of all discovered domains and calculate addr_key
   #1. Take only ipv4
   #2. Sort
@@ -97,45 +64,113 @@ job_reader:
   #we now use addr_key in shard calculation, we never select more than domain_top_n domains from a given addr_key
   #this ensures we are being polite to websites with different domains hosted on the same IP(or subnet, depending on addr_key_4_mask)
   addr_key_mask: 24 #read as /24 meaning first 24 bits are significant while last 8 are not(will be masked)
-  # re-select checked domains after some time
-  re_after_days: 3
-  # queue is sharded, do not ask the same shard for job unless duration has passed since last time we asked
-  shard_min_last_read: 1s
-  # min shard number we have access to
-  shard_min: 1
-  # max shard number we have access to
-  shard_max: 25
-  # total number of all shards, in a multi-node setup shard_total > shard_max - shard_min + 1 (always)
-  shard_total: 25
-  # select up to N domains from a shard at once
-  shard_select_limit: 100000
-  # buffer up to N domains and do not try to fetch new if we have enough
-  job_buffer: 100000
-  # select up to N domains belonging to the same IP, (a.tumblr.com, b.tumblr.com, c.tumblr.com but not d.tumblr.com)
-  domain_top_n: 2
-  # those settings relate to a crawler running on some particular domain
-  default_crawling_settings:
-    # up to N pages concurrently, keep this number low to avoid excess stress
-    concurrency: 2
-    internal_read_buffer_size: 32kib
-    max_response_size: 2mib
-    # follow up to N redirects before giving up
-    max_redirect: 5
-    # 1s-5s is a safe bet to keep to avoid extra stress
-    delay: 1s
-    # vary delay time by this jitter(0..)
-    delay_jitter: 1s
-    # timeout for page loading and buffering
-    load_timeout: 10s
-    # after soft timeout elapses we no longer queue new tasks for domain
-    job_soft_timeout: 30s
-    # after hard timeout elapses we forcibly stop the crawling job for this domain
-    job_hard_timeout: 60s
-    user_agent: "crusty/0.12.0"
-    compression: true
-    # custom headers are supported
-    custom_headers:
-      accept:
-        - "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
-  # initial list of seed URLs to start the broad crawling from, additionally we also read seeds from CRUSTY_SEEDS env. variable
-  seeds: []
+  enqueue:
+    options:
+      # each added jobs has a TTL, we don't want jobs handing in redis memory forever...
+      # the nature of broad web crawling is - almost everything significant will be discovered, eventually
+      # dropping job here and there is no biggie
+      ttl: 10m
+    driver: #those are relabuf settings, see https://github.com/let4be/relabuf
+      soft_cap: 500       # release when we've buffered soft_cap or more
+      hard_cap: 1000      # do not buffer more than hard_cap, slow down the producer after hard_cap is reached
+      release_after: 1s   # release when release_after since last successful release(or start) has passed
+  finish:
+    options:
+      ttl: 10m
+      # initial in-history bloom filter capacity, keep this big enough.
+      # Scaling of bloom filter is relatively expensive and will affect performance of all future computations against this filter
+      bf_initial_capacity: 10000000
+      # we won't check bf_error_rate of all discovered domains... it's the price for predictable memory footprint && efficiency
+      bf_error_rate: 0.001
+      # when filter is at capacity expand it by multiplying current capacity by this factor
+      bf_expansion_factor: 2
+    driver:
+      soft_cap: 500
+      hard_cap: 1000
+      release_after: 1s
+  dequeue:
+    options:
+      # up to limit jobs at once
+      limit: 10000
+      # dequeued jobs are being put in the in-processing list with TTL in case of sudden Crusty node explosion
+      # we do NOT want jobs getting stuck "in processing" state forever!
+      # keep this strictly > reader.default_crawling_settings job_hard_timeout
+      ttl: 10m
+      # do not emit job permits more frequently than
+      emit_permit_delay: 1s
+    # we reuse the same relabuf functionality when looking for new jobs
+    # the basic concept is - we regularly emit so called job look permits, and the rest of relabuf rules apply(for releasing those permits)
+    driver:
+      # look for new jobs when internal buffer gets empty AND we have at least 1 outstanding permit
+      soft_cap: 1
+      # do not keep more than hard_cap permits(backoff permit producer)
+      hard_cap: 2
+      # look for new jobs also by time(if permit is available)
+      release_after: 1s
+  # select new jobs(domains) from a sharded queue stored in redis
+  reader:
+    # jobs are sharded, do not ask the same shard for job unless duration has passed since last time we asked
+    shard_min_last_read: 1s
+    # initial list of seed URLs to start the broad crawling from, additionally we also read seeds from CRUSTY_SEEDS env. variable
+    seeds: [ ]
+
+# those settings relate to a crawler running on some particular domain
+default_crawling_settings:
+  # up to N pages concurrently, keep this number low to avoid excess stress
+  concurrency: 2
+  internal_read_buffer_size: 32kib
+  max_response_size: 2mib
+  # follow up to N redirects before giving up
+  max_redirect: 5
+  # 1s-5s is a safe bet to keep to avoid extra stress
+  delay: 1s
+  # vary delay time by this jitter(0..)
+  delay_jitter: 1s
+  # timeout for page loading and buffering
+  load_timeout: 10s
+  # after soft timeout elapses we no longer queue new tasks for domain
+  job_soft_timeout: 180s
+  # after hard timeout elapses we forcibly stop the crawling job for this domain
+  job_hard_timeout: 360s
+  user_agent: "crusty/0.12.0"
+  compression: true
+  # custom headers are supported
+  custom_headers:
+    accept:
+      - "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+
+# resolver settings
+# leave empty for auto-conf
+resolver:
+  # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
+  # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
+  concurrency: 64
+
+# domain discovery cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
+# but because cache is local it's effectiveness will drop when adding new Crusty nodes
+# but worry not, redis queue is so fast(and pre-sharded) we could run couple hundred crusty nodes with minimal additional setup
+ddc_cap: 25000000
+# recently discovered domains live in cache up to this duration
+ddc_lifetime: 1h
+
+# We monitor various internal queues and persist their status to db
+queue_monitor_interval: 1s
+# We parse HTML in a separate thread pool, stack size is configurable
+# apparently even 32mib is not enough given max_response_size of 2mib...
+parser_processor_stack_size: 128mib
+
+# Fancy local address binding for monster setups with several NICs(local port limitation)
+networking_profile:
+  values:
+    bind_local_ipv4: []
+    bind_local_ipv6: []
+    socket_read_buffer_size: 32kib
+    socket_write_buffer_size: 32kib
+    connect_timeout: 5s
+
+#leave commented for auto-conf
+concurrency_profile:
+  #= N of physical cores by default
+  parser_concurrency: 8
+  # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
+  domain_concurrency: 300

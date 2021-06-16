@@ -23,9 +23,9 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 			Box::new(crusty_core::task_filters::SkipNoFollowLinks::new()),
 			Box::new(crusty_core::task_filters::SameDomain::new(true)),
 			Box::new(dedup_checking),
-			Box::new(crusty_core::task_filters::TotalPageBudget::new(50)),
-			Box::new(crusty_core::task_filters::LinkPerPageBudget::new(10)),
-			Box::new(crusty_core::task_filters::PageLevel::new(10)),
+			Box::new(crusty_core::task_filters::TotalPageBudget::new(150)),
+			Box::new(crusty_core::task_filters::LinkPerPageBudget::new(100)),
+			Box::new(crusty_core::task_filters::PageLevel::new(25)),
 			Box::new(crusty_core::task_filters::RobotsTxt::new()),
 			Box::new(dedup_committing),
 		]
