@@ -114,9 +114,13 @@ if you decide to build manually via `cargo build`, remember - `release` build is
 
 In the real world usage scenario on high bandwidth channel docker might become a bit too expensive, so it might be a good idea either to run directly or at least in `network_mode = host`
 
-### External service dependencies - clickhouse and grafana
+### External service dependencies
 
-just use `docker-compose`, it's the recommended way to play with `Crusty`
+- clickhouse - metrics
+- redis - smart queue
+- grafana - dashboard for metrics
+
+just use `docker-compose`, it's the recommended way to play with `Crusty`(configured in `network_mode=host` because of speed constraints when using on ~10gbit/s channels, we don't really wanna pay docker vnet overheads)
 
 however...
 
