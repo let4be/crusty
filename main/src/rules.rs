@@ -27,9 +27,9 @@ pub type Ctx = ct::JobCtx<JobState, TaskState>;
 
 #[derive(Debug, Default)]
 pub struct LinkData {
-	href: String,
-	alt:  String,
-	rel:  String,
+	href: StrTendril,
+	alt:  StrTendril,
+	rel:  StrTendril,
 }
 
 pub struct Document {
@@ -72,9 +72,9 @@ impl TokenSink for TokenCollector {
 					let mut link = LinkData::default();
 					for attr in tag.attrs {
 						match attr.name.local {
-							local_name!("href") => link.href = attr.value.to_string(),
-							local_name!("rel") => link.rel = attr.value.to_string(),
-							local_name!("alt") => link.alt = attr.value.to_string(),
+							local_name!("href") => link.href = attr.value,
+							local_name!("rel") => link.rel = attr.value,
+							local_name!("alt") => link.alt = attr.value,
 							_ => {}
 						}
 					}
