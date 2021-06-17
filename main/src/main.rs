@@ -313,7 +313,7 @@ impl Crusty {
 						.as_ref()
 						.map(|u| u.to_string())
 						.unwrap_or_else(|| format!("http://{}", &domain.domain));
-					let job_obj = Job::new(
+					let job_obj = Job::new_with_shared_settings(
 						&url,
 						Arc::clone(&default_crawling_settings),
 						CrawlingRules {},

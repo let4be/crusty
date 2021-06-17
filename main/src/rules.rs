@@ -1,5 +1,16 @@
-use crusty_core::types as ct;
+use std::io;
 
+use crusty_core::{task_expanders, types as ct};
+use html5ever::{
+	local_name,
+	tendril::*,
+	tokenizer::{
+		BufferQueue, CharacterTokens, ParseError, TagToken, Token, TokenSink, TokenSinkResult, Tokenizer, TokenizerOpts,
+	},
+};
+
+#[allow(unused_imports)]
+use crate::prelude::*;
 use crate::types::*;
 
 #[derive(Debug, Clone)]
@@ -10,11 +21,85 @@ pub struct JobState {
 #[derive(Debug, Default, Clone)]
 pub struct TaskState {}
 
-pub type Job = ct::Job<JobState, TaskState>;
+pub type Job = ct::Job<JobState, TaskState, Document>;
+pub type Ctx = ct::JobCtx<JobState, TaskState>;
+
+#[derive(Debug, Default)]
+pub struct LinkData {
+	href: String,
+	alt:  String,
+	rel:  String,
+}
+
+pub struct Document {
+	links: Vec<LinkData>,
+}
+
+impl ct::ParsedDocument for Document {}
+
+pub struct LinkExtractor {}
+impl task_expanders::Expander<JobState, TaskState, Document> for LinkExtractor {
+	fn expand(&self, ctx: &mut Ctx, task: &ct::Task, _: &ct::HttpStatus, doc: &Document) -> task_expanders::Result {
+		let mut links = vec![];
+		for link in &doc.links {
+			if let Ok(link) =
+				ct::Link::new(&link.href, &link.rel, &link.alt, "", 0, ct::LinkTarget::HeadFollow, &task.link)
+			{
+				links.push(link);
+			}
+		}
+		ctx.push_links(links);
+		Ok(())
+	}
+}
+
+#[derive(Default)]
+struct TokenCollector {
+	links: Vec<LinkData>,
+}
+
+impl TokenCollector {}
+
+impl TokenSink for TokenCollector {
+	type Handle = ();
+
+	fn process_token(&mut self, token: Token, _line_number: u64) -> TokenSinkResult<()> {
+		match token {
+			CharacterTokens(_) => {}
+			TagToken(tag) => {
+				if tag.name == local_name!("a") {
+					let mut link = LinkData::default();
+					for attr in tag.attrs {
+						match attr.name.local {
+							local_name!("href") => link.href = attr.value.to_string(),
+							local_name!("rel") => link.rel = attr.value.to_string(),
+							local_name!("alt") => link.alt = attr.value.to_string(),
+							_ => {}
+						}
+					}
+					self.links.push(link)
+				}
+			}
+			ParseError(_) => {}
+			_ => {}
+		}
+		TokenSinkResult::Continue
+	}
+}
 
 pub struct CrawlingRules {}
 
-impl ct::JobRules<JobState, TaskState> for CrawlingRules {
+fn from_read<R: io::Read>(mut readable: R) -> io::Result<StrTendril> {
+	let mut byte_tendril = ByteTendril::new();
+	readable.read_to_tendril(&mut byte_tendril)?;
+
+	match byte_tendril.try_reinterpret() {
+		Ok(str_tendril) => Ok(str_tendril),
+		Err(_) => Err(io::Error::new(io::ErrorKind::InvalidData, "stream did not contain valid UTF-8")),
+	}
+}
+
+impl ct::JobRules<JobState, TaskState, Document> for CrawlingRules {
 	fn task_filters(&self) -> ct::TaskFilters<JobState, TaskState> {
 		let dedup_checking = crusty_core::task_filters::HashSetDedup::new(true);
 		let dedup_committing = dedup_checking.committing();
@@ -33,10 +118,7 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 
 	fn status_filters(&self) -> ct::StatusFilters<JobState, TaskState> {
 		vec![
-			Box::new(crusty_core::status_filters::ContentType::new(vec![
-				String::from("text/html"),
-				String::from("text/plain"),
-			])),
+			Box::new(crusty_core::status_filters::ContentType::new(vec!["text/html", "text/plain"])),
 			Box::new(crusty_core::status_filters::Redirect::new()),
 		]
 	}
@@ -45,7 +127,23 @@ impl ct::JobRules<JobState, TaskState> for CrawlingRules {
 		vec![Box::new(crusty_core::load_filters::RobotsTxt::new())]
 	}
 
-	fn task_expanders(&self) -> ct::TaskExpanders<JobState, TaskState> {
-		vec![Box::new(crusty_core::task_expanders::FollowLinks::new(ct::LinkTarget::Follow))]
+	fn task_expanders(&self) -> ct::TaskExpanders<JobState, TaskState, Document> {
+		vec![Box::new(LinkExtractor {})]
+	}
+
+	fn document_parser(&self) -> Arc<ct::DocumentParser<Document>> {
+		Arc::new(Box::new(|reader: Box<dyn io::Read + Sync + Send>| -> ct::Result<Document> {
+			let tendril = from_read(reader).context("cannot read")?;
+
+			let sink = TokenCollector::default();
+			let mut input = BufferQueue::new();
+			input.push_back(tendril);
+
+			let mut tok = Tokenizer::new(sink, TokenizerOpts::default());
+			let _ = tok.feed(&mut input);
+			tok.end();
+
+			Ok(Document { links: tok.sink.links })
+		}))
 	}
 }
