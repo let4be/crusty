@@ -2,11 +2,10 @@ use std::{borrow::Cow, io};
 
 use crusty_core::{task_expanders, types as ct};
 use html5ever::{
-	local_name, tendril,
+	tendril,
 	tendril::*,
 	tokenizer::{
-		BufferQueue, CharacterTokens, ParseError, TagToken, Token, TokenSink, TokenSinkResult, Tokenizer,
-		TokenizerOpts, TokenizerResult,
+		BufferQueue, StartTag, TagToken, Token, TokenSink, TokenSinkResult, Tokenizer, TokenizerOpts, TokenizerResult,
 	},
 };
 
@@ -65,24 +64,19 @@ impl TokenSink for TokenCollector {
 	type Handle = ();
 
 	fn process_token(&mut self, token: Token, _line_number: u64) -> TokenSinkResult<()> {
-		match token {
-			CharacterTokens(_) => {}
-			TagToken(tag) => {
-				if tag.name == local_name!("a") {
-					let mut link = LinkData::default();
-					for attr in tag.attrs {
-						match attr.name.local {
-							local_name!("href") => link.href = attr.value,
-							local_name!("rel") => link.rel = attr.value,
-							local_name!("alt") => link.alt = attr.value,
-							_ => {}
-						}
+		if let TagToken(tag) = token {
+			if tag.kind == StartTag && tag.name.to_string() == "a" {
+				let mut link = LinkData::default();
+				for attr in tag.attrs {
+					match attr.name.local.to_string().as_str() {
+						"href" => link.href = attr.value,
+						"rel" => link.rel = attr.value,
+						"alt" => link.alt = attr.value,
+						_ => {}
 					}
-					self.links.push(link)
 				}
+				self.links.push(link)
 			}
-			ParseError(_) => {}
-			_ => {}
 		}
 		TokenSinkResult::Continue
 	}
