@@ -1,11 +1,12 @@
-use std::io;
+use std::{borrow::Cow, io};
 
 use crusty_core::{task_expanders, types as ct};
 use html5ever::{
-	local_name,
+	local_name, tendril,
 	tendril::*,
 	tokenizer::{
-		BufferQueue, CharacterTokens, ParseError, TagToken, Token, TokenSink, TokenSinkResult, Tokenizer, TokenizerOpts,
+		BufferQueue, CharacterTokens, ParseError, TagToken, Token, TokenSink, TokenSinkResult, Tokenizer,
+		TokenizerOpts, TokenizerResult,
 	},
 };
 
@@ -89,6 +90,29 @@ impl TokenSink for TokenCollector {
 
 pub struct CrawlingRules {}
 
+struct Parser<Sink> {
+	pub tokenizer:    Tokenizer<Sink>,
+	pub input_buffer: BufferQueue,
+}
+
+impl<Sink: TokenSink> TendrilSink<tendril::fmt::UTF8> for Parser<Sink> {
+	type Output = Self;
+
+	fn process(&mut self, t: StrTendril) {
+		self.input_buffer.push_back(t);
+		while let TokenizerResult::Script(_) = self.tokenizer.feed(&mut self.input_buffer) {}
+	}
+
+	fn error(&mut self, _desc: Cow<'static, str>) {}
+
+	fn finish(mut self) -> Self::Output {
+		while let TokenizerResult::Script(_) = self.tokenizer.feed(&mut self.input_buffer) {}
+		assert!(self.input_buffer.is_empty());
+		self.tokenizer.end();
+		self
+	}
+}
+
 fn from_read<R: io::Read>(mut readable: R) -> io::Result<StrTendril> {
 	let mut byte_tendril = ByteTendril::new();
 	readable.read_to_tendril(&mut byte_tendril)?;
@@ -133,17 +157,14 @@ impl ct::JobRules<JobState, TaskState, Document> for CrawlingRules {
 
 	fn document_parser(&self) -> Arc<ct::DocumentParser<Document>> {
 		Arc::new(Box::new(|reader: Box<dyn io::Read + Sync + Send>| -> ct::Result<Document> {
-			let tendril = from_read(reader).context("cannot read")?;
-
 			let sink = TokenCollector::default();
-			let mut input = BufferQueue::new();
-			input.push_back(tendril);
+			let tokenizer = Tokenizer::new(sink, TokenizerOpts::default());
+			let parser = Parser { tokenizer, input_buffer: BufferQueue::new() };
 
-			let mut tok = Tokenizer::new(sink, TokenizerOpts::default());
-			let _ = tok.feed(&mut input);
-			tok.end();
+			let tendril = from_read(reader).context("cannot read")?;
+			let parser = parser.one(tendril);
 
-			Ok(Document { links: tok.sink.links })
+			Ok(Document { links: parser.tokenizer.sink.links })
 		}))
 	}
 }
