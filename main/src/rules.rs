@@ -26,9 +26,9 @@ pub type Ctx = ct::JobCtx<JobState, TaskState>;
 
 #[derive(Debug, Default)]
 pub struct LinkData {
-	href: StrTendril,
-	alt:  StrTendril,
-	rel:  StrTendril,
+	href: Option<StrTendril>,
+	alt:  Option<StrTendril>,
+	rel:  Option<StrTendril>,
 }
 
 pub struct Document {
@@ -42,9 +42,15 @@ impl task_expanders::Expander<JobState, TaskState, Document> for LinkExtractor {
 	fn expand(&self, ctx: &mut Ctx, task: &ct::Task, _: &ct::HttpStatus, doc: &Document) -> task_expanders::Result {
 		let mut links = vec![];
 		for link in &doc.links {
-			if let Ok(link) =
-				ct::Link::new(&link.href, &link.rel, &link.alt, "", 0, ct::LinkTarget::HeadFollow, &task.link)
-			{
+			if let Ok(link) = ct::Link::new(
+				link.href.as_ref().map(|a| a as &str).unwrap_or(""),
+				link.rel.as_ref().map(|a| a as &str).unwrap_or(""),
+				link.alt.as_ref().map(|a| a as &str).unwrap_or(""),
+				"",
+				0,
+				ct::LinkTarget::HeadFollow,
+				&task.link,
+			) {
 				links.push(link);
 			}
 		}
@@ -68,13 +74,21 @@ impl TokenSink for TokenCollector {
 			if tag.kind == StartTag && tag.name.to_string() == "a" {
 				let mut link = LinkData::default();
 				for attr in tag.attrs {
-					match attr.name.local.to_string().as_str() {
-						"href" => link.href = attr.value,
-						"rel" => link.rel = attr.value,
-						"alt" => link.alt = attr.value,
-						_ => {}
+					let name = &attr.name.local;
+					if link.href.is_none() && name == "href" {
+						link.href = Some(attr.value);
+						continue
+					}
+					if link.rel.is_none() && name == "rel" {
+						link.rel = Some(attr.value);
+						continue
+					}
+					if link.alt.is_none() && name == "alt" {
+						link.href = Some(attr.value);
+						continue
 					}
 				}
+
 				self.links.push(link)
 			}
 		}
