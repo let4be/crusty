@@ -366,7 +366,7 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
- "tracing-tools",
+ "tracing-tools 0.5.0",
  "ttl_cache",
  "url",
  "vergen",
@@ -400,7 +400,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-tools",
+ "tracing-tools 0.2.0",
  "trust-dns-resolver",
  "url",
 ]
@@ -2635,6 +2635,18 @@ name = "tracing-tools"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb9fe4dae672e8b51fb9fdebec063171a9af088185a308910c9d601dd6b0f30f"
+dependencies = [
+ "anyhow",
+ "futures-lite",
+ "tracing",
+ "tracing-futures",
+]
+
+[[package]]
+name = "tracing-tools"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50279cb27d8abdca4343b9fc1371efaae0d5a5a58196667bb662aacb5c23e26e"
 dependencies = [
  "anyhow",
  "futures-lite",

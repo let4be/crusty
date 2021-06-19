@@ -16,7 +16,7 @@ lol_html_parser = ["lol_html"]
 default = ["lol_html_parser"]
 
 [dependencies]
-tracing-tools = "~0.2.0"
+tracing-tools = "~0.5.0"
 
 #crusty-core = {version="~0.43.0", features=["select_rs"]}
 crusty-core = {version="~0.47.0"}
