@@ -31,6 +31,7 @@ clickhouse:
     check_for_force_write_duration: 100ms
     # if force_write_duration elapsed since last write but we yet not filled buffer_capacity force the write anyway
     force_write_duration: 500ms
+    concurrency: 3
 
   # We persist some db metrics for further analysis
   metrics_db:
@@ -39,14 +40,16 @@ clickhouse:
     buffer_capacity: 1000
     check_for_force_write_duration: 100ms
     force_write_duration: 500ms
+    concurrency: 3
 
   # We persist metrics and various meta-data for each visited page
   metrics_task:
     table_name: metrics_task
     label: ""
-    buffer_capacity: 5000
+    buffer_capacity: 25000
     check_for_force_write_duration: 500ms
     force_write_duration: 5000ms
+    concurrency: 3
 
 # right now sharding is not yet implemented, but there are good placeholders where needed
 jobs:
@@ -172,5 +175,7 @@ networking_profile:
 concurrency_profile:
   #= N of physical cores by default
   parser_concurrency: 8
+  # pin N parser threads to core
+  parser_pin: 0
   # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
   domain_concurrency: 300

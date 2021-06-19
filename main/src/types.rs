@@ -194,8 +194,6 @@ pub enum QueueKind {
 	DomainUpdate,
 	DomainInsert,
 
-	DomainUpdateNotify,
-	DomainInsertNotify,
 	Parse,
 	DomainResolveAggregator,
 }

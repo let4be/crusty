@@ -10,11 +10,16 @@ repository = "https://github.com/let4be/crusty"
 keywords = ["broad", "crawler", "rust", "async", "multi-threaded"]
 build = "src/build.rs"
 
+[features]
+html5ever_parser = ["html5ever"]
+lol_html_parser = ["lol_html"]
+default = ["lol_html_parser"]
+
 [dependencies]
 tracing-tools = "~0.2.0"
 
 #crusty-core = {version="~0.43.0", features=["select_rs"]}
-crusty-core = {version="~0.43.0"}
+crusty-core = {version="~0.47.0"}
 interop = {path = "../interop"}
 
 futures = "~0.3.14"
@@ -41,7 +46,8 @@ humanize-rs = "~0.1"
 redis = { version = "~0.20.1", features = ["tokio-comp", "aio"] }
 relabuf = "~0.10.0"
 base64 = "~0.13.0"
-html5ever = {version = "~0.25.1"}
+html5ever = {version = "~0.25.1", optional = true}
+lol_html = {version = "~0.3.0", optional = true}
 
 [build-dependencies]
 vergen = {version = "~5", features = ["build", "cargo", "git", "rustc"] }

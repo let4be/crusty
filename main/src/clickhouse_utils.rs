@@ -57,7 +57,7 @@ impl Writer {
 	>(
 		&self,
 		client: Client,
-		rx: Receiver<Vec<A>>,
+		rx: Receiver<A>,
 		notify_tx: Option<Sender<Notification<A>>>,
 		map: F,
 	) -> Result<()> {
@@ -87,7 +87,7 @@ impl Writer {
 	>(
 		cfg: ClickhouseWriterConfig,
 		client: Client,
-		rx: Receiver<Vec<A>>,
+		rx: Receiver<A>,
 		notify_tx: Option<Sender<Notification<A>>>,
 		map: Arc<F>,
 		state: Arc<Mutex<WriterState<A>>>,
@@ -140,12 +140,14 @@ impl Writer {
 				}
 
 				if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
-					for el in r.unwrap_or_else(|_| {
-						done = true;
-						vec![]
-					}) {
-						state.lock().unwrap().notify.push(el.clone());
-						inserter.write(&map(el)).await.context("error during inserter.write")?;
+					match r {
+						Ok(el) => {
+							state.lock().unwrap().notify.push(el.clone());
+							inserter.write(&map(el)).await.context("error during inserter.write")?;
+						}
+						_ => {
+							done = true;
+						}
 					}
 				}
 			}

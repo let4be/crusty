@@ -10,9 +10,10 @@ pub struct RedisDriver<T: 'static + Send + Sync + Debug, R: 'static + Send + Syn
 	table_name: String,
 	label:      String,
 
-	host:      String,
-	rx:        Receiver<T>,
-	tx_notify: Option<Sender<chu::Notification<R>>>,
+	host:              String,
+	rx:                Receiver<T>,
+	tx_notify:         Option<Sender<chu::Notification<R>>>,
+	tx_generic_notify: Option<Sender<chu::GenericNotification>>,
 }
 
 use crate::clickhouse_utils as chu;
@@ -32,11 +33,16 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 			table_name: String::from(table_name),
 			label: String::from(label),
 			tx_notify: None,
+			tx_generic_notify: None,
 		}
 	}
 
 	pub fn with_notifier(&mut self, tx_notify: Sender<chu::Notification<R>>) {
 		self.tx_notify = Some(tx_notify)
+	}
+
+	pub fn with_generic_notifier(&mut self, tx_notify: Sender<chu::GenericNotification>) {
+		self.tx_generic_notify = Some(tx_notify)
 	}
 
 	pub async fn go(
@@ -85,6 +91,16 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 								since_last: since_last_elapsed,
 								duration:   query_took,
 								items:      out_items,
+							})
+							.await;
+					} else if let Some(tx_notify) = &self.tx_generic_notify {
+						let _ = tx_notify
+							.send_async(chu::GenericNotification {
+								table_name: self.table_name.clone(),
+								label:      self.label.clone(),
+								since_last: since_last_elapsed,
+								duration:   query_took,
+								items:      out_items.len(),
 							})
 							.await;
 					}

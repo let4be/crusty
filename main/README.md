@@ -18,11 +18,11 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   see a typical [config file](./main/config.yaml) with some explanations regarding available options
 
-- Fast single node performance (~8 gbit/s on 96 core `c5.metal` more if used with custom html parser)
+- Fast single node performance (~10 gbit/s on 96 core `c5.metal`)
 
   - Crusty is written in `Rust` on top of green threads running on [tokio](https://github.com/tokio-rs/tokio), so it can achieve quite impressive single-node performance even on a moderate PC
 
-  - Additional optimizations are possible to further improve this - there are tasks that do not require full DOM parsing, this implementation does full DOM parsing mostly for the sake of extensibility and configurability
+  - We parse HTML using [LoL HTML](https://github.com/cloudflare/lol-html) - it provides world-class speed, can work in tight memory boundaries and is easy to use
 
 - Stable performance and predictable resource consumption
 
@@ -72,7 +72,11 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 [clickhouse](https://github.com/ClickHouse/ClickHouse)
 that we can observe with [grafana](https://github.com/grafana/grafana) - giving a real-time insight in crawling performance
 
-![example](./resources/grafana.png "this is a screenshot of an actual broad web crawling run done on i9 10900k and 100mbit fiber optic channel, crusty takes about 2,5-3,5 cores on average while saturating 100mbit channel")
+scales from
+![example](./resources/grafana.png "this is a screenshot of an actual broad web crawling run done on i9 10900k and 100mbit fiber optic channel, crusty takes less than 1 core while saturating 100mbit channel")
+
+up to
+![example](./resources/grafana-96.png "this is a screenshot of an actual broad web crawling run done on AWS c5.metal / c5.24xlarge and 25gbit fiber optic channel, crusty takes all cores available!")
 
 ## Getting started
 

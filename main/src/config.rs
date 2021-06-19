@@ -177,6 +177,7 @@ pub struct ClickhouseWriterConfig {
 	pub buffer_capacity: usize,
 	pub check_for_force_write_duration: rc::CDuration,
 	pub force_write_duration: rc::CDuration,
+	pub concurrency: usize,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -205,6 +206,7 @@ impl Default for ClickhouseConfig {
 				buffer_capacity: 1000,
 				check_for_force_write_duration: rc::CDuration::from_millis(100),
 				force_write_duration: rc::CDuration::from_millis(500),
+				concurrency: 3,
 			},
 			metrics_db:    ClickhouseWriterConfig {
 				table_name: String::from("metrics_db"),
@@ -212,6 +214,7 @@ impl Default for ClickhouseConfig {
 				buffer_capacity: 1000,
 				check_for_force_write_duration: rc::CDuration::from_millis(100),
 				force_write_duration: rc::CDuration::from_millis(500),
+				concurrency: 3,
 			},
 			metrics_task:  ClickhouseWriterConfig {
 				table_name: String::from("metrics_task"),
@@ -219,6 +222,7 @@ impl Default for ClickhouseConfig {
 				buffer_capacity: 10000,
 				check_for_force_write_duration: rc::CDuration::from_millis(100),
 				force_write_duration: rc::CDuration::from_millis(500),
+				concurrency: 3,
 			},
 		}
 	}
@@ -307,6 +311,7 @@ pub fn load() -> Result<()> {
 	}
 
 	if let Ok(seeds) = env::var("CRUSTY_SEEDS") {
+		println!("{}", seeds);
 		config
 			.jobs
 			.reader
