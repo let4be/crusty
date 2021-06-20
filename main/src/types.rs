@@ -4,7 +4,7 @@ use clickhouse::Row;
 use crusty_core::{types as ct, types::StatusResult};
 use serde::{Deserialize, Serialize};
 
-use crate::config::CONFIG;
+use crate::config::config;
 #[allow(unused_imports)]
 use crate::prelude::*;
 
@@ -111,10 +111,9 @@ pub struct DBRWNotificationDBEntry {
 
 impl From<DBGenericNotification> for DBRWNotificationDBEntry {
 	fn from(s: DBGenericNotification) -> Self {
-		let c = CONFIG.lock().unwrap();
 		DBRWNotificationDBEntry {
-			host:          c.host.clone(),
-			app_id:        c.app_id.clone(),
+			host:          config().host.clone(),
+			app_id:        config().app_id.clone(),
 			created_at:    now().as_secs() as u32,
 			table_name:    s.table_name,
 			label:         s.label,
@@ -161,11 +160,10 @@ pub struct TaskMeasurementDBEntry {
 
 impl From<TaskMeasurement> for TaskMeasurementDBEntry {
 	fn from(s: TaskMeasurement) -> Self {
-		let c = CONFIG.lock().unwrap();
 		if s.md.is_none() {
 			return Self {
-				host:           c.host.clone(),
-				app_id:         c.app_id.clone(),
+				host:           config().host.clone(),
+				app_id:         config().app_id.clone(),
 				created_at:     s.time,
 				url:            s.url,
 				error:          1,
@@ -180,8 +178,8 @@ impl From<TaskMeasurement> for TaskMeasurementDBEntry {
 		}
 		let md = s.md.unwrap();
 		Self {
-			host:           c.host.clone(),
-			app_id:         c.app_id.clone(),
+			host:           config().host.clone(),
+			app_id:         config().app_id.clone(),
 			created_at:     s.time,
 			url:            s.url,
 			error:          0,
@@ -233,10 +231,9 @@ pub struct QueueMeasurementDBEntry {
 
 impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 	fn from(s: QueueMeasurement) -> Self {
-		let c = CONFIG.lock().unwrap();
 		Self {
-			host:       c.host.clone(),
-			app_id:     c.app_id.clone(),
+			host:       config().host.clone(),
+			app_id:     config().app_id.clone(),
 			name:       format!("{:?}", s.kind),
 			updated_at: s.stats.time,
 			len:        s.stats.len as u32,

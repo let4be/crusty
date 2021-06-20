@@ -607,7 +607,7 @@ fn main() -> Result<()> {
 			println!("Loading config err: '{:?}' - using defaults", err)
 		}
 	}
-	let cfg = { config::CONFIG.lock().unwrap().clone() };
+	let cfg = config::config();
 
 	let mut filter = EnvFilter::from_default_env().add_directive((*cfg.log.level).into());
 	if let Some(filters) = &cfg.log.filter {
@@ -637,7 +637,7 @@ fn main() -> Result<()> {
 		let rt = tokio::runtime::Runtime::new().unwrap();
 		rt.block_on(
 			TracingTask::new(span!(), async move {
-				let crusty = Crusty::new(cfg);
+				let crusty = Crusty::new(cfg.clone());
 				crusty.go(tx, crawler_done_rx).instrument().await
 			})
 			.instrument(),

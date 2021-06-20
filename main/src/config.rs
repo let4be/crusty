@@ -1,14 +1,18 @@
 use std::{env, fs};
 
 use crusty_core::config as rc;
-use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use serde::Deserialize;
 
 #[allow(unused_imports)]
 use crate::prelude::*;
 use crate::types::*;
 
-pub static CONFIG: Lazy<Mutex<CrustyConfig>> = Lazy::new(|| Mutex::new(CrustyConfig::default()));
+pub static CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
+
+pub fn config<'a>() -> &'a CrustyConfig {
+	CONFIG.get().unwrap()
+}
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct RedisConfig {
@@ -301,17 +305,14 @@ impl Default for CrustyConfig {
 }
 
 pub fn load() -> Result<()> {
+	let mut read_err = None;
 	let cfg_str = fs::read_to_string("./config.yaml")?;
-	let mut config = CONFIG.lock().unwrap();
-
-	let mut e = None;
-	match serde_yaml::from_str(&cfg_str) {
-		Ok(cfg) => *config = cfg,
-		Err(err) => e = Some(err),
-	}
+	let mut config: CrustyConfig = serde_yaml::from_str(&cfg_str).unwrap_or_else(|err| {
+		read_err = Some(err);
+		CrustyConfig::default()
+	});
 
 	if let Ok(seeds) = env::var("CRUSTY_SEEDS") {
-		println!("{}", seeds);
 		config
 			.jobs
 			.reader
@@ -319,7 +320,9 @@ pub fn load() -> Result<()> {
 			.extend(seeds.split(',').filter(|v| !v.is_empty()).map(String::from).collect::<Vec<_>>());
 	}
 
-	if let Some(err) = e {
+	CONFIG.set(config).unwrap();
+
+	if let Some(err) = read_err {
 		return Err(err.into())
 	}
 	Ok(())
