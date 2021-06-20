@@ -9,6 +9,8 @@ use crate::prelude::*;
 use crate::types::*;
 
 pub static CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
+static DEFAULT_CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
+static DEFAULT_CONFIG_STR: &str = include_str!("../config.yaml");
 
 pub fn config<'a>() -> &'a CrustyConfig {
 	CONFIG.get().unwrap()
@@ -246,24 +248,31 @@ impl Default for LogConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(default)]
 pub struct CrustyConfig {
-	pub host:       String,
-	pub app_id:     String,
-	pub log:        LogConfig,
-	pub clickhouse: ClickhouseConfig,
-	pub redis:      RedisConfig,
-	pub jobs:       JobsConfig,
+	pub host:   String,
+	pub app_id: String,
 
-	pub resolver:                    ResolverConfig,
+	#[serde(default)]
+	pub log: LogConfig,
+	#[serde(default)]
+	pub clickhouse: ClickhouseConfig,
+	#[serde(default)]
+	pub redis: RedisConfig,
+	#[serde(default)]
+	pub jobs: JobsConfig,
+	#[serde(default)]
+	pub resolver: ResolverConfig,
+	#[serde(default)]
+	pub networking_profile: rc::NetworkingProfile,
+	#[serde(default)]
+	pub concurrency_profile: rc::ConcurrencyProfile,
+	#[serde(default)]
+	pub default_crawling_settings: rc::CrawlingSettings,
+
 	pub ddc_cap:                     usize,
 	pub ddc_lifetime:                rc::CDuration,
 	pub queue_monitor_interval:      rc::CDuration,
 	pub parser_processor_stack_size: rc::CBytes,
-
-	pub networking_profile:        rc::NetworkingProfile,
-	pub concurrency_profile:       rc::ConcurrencyProfile,
-	pub default_crawling_settings: rc::CrawlingSettings,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -280,31 +289,15 @@ impl Default for ResolverConfig {
 
 impl Default for CrustyConfig {
 	fn default() -> Self {
-		Self {
-			host:       String::from("crawler-1"),
-			app_id:     String::from("rusty-spider"),
-			log:        LogConfig::default(),
-			clickhouse: ClickhouseConfig::default(),
-			redis:      RedisConfig::default(),
-			jobs:       JobsConfig::default(),
-
-			resolver:                    ResolverConfig::default(),
-			ddc_cap:                     25_000_000,
-			ddc_lifetime:                rc::CDuration::from_secs(60 * 60),
-			queue_monitor_interval:      rc::CDuration::from_secs(1),
-			parser_processor_stack_size: rc::CBytes(1024 * 1024 * 32),
-
-			networking_profile:        rc::NetworkingProfile::default(),
-			concurrency_profile:       rc::ConcurrencyProfile::default(),
-			default_crawling_settings: rc::CrawlingSettings {
-				user_agent: Some(String::from("crusty/0.12.0")),
-				..rc::CrawlingSettings::default()
-			},
-		}
+		DEFAULT_CONFIG.get().unwrap().clone()
 	}
 }
 
 pub fn load() -> Result<()> {
+	let default_config: CrustyConfig =
+		serde_yaml::from_str(DEFAULT_CONFIG_STR).context("uh-oh, cannot parse default config...")?;
+	DEFAULT_CONFIG.set(default_config).unwrap();
+
 	let mut read_err = None;
 	let cfg_str = fs::read_to_string("./config.yaml")?;
 	let mut config: CrustyConfig = serde_yaml::from_str(&cfg_str).unwrap_or_else(|err| {
