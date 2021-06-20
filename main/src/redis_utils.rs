@@ -48,7 +48,6 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 		mut operator: Box<dyn RedisOperator<T, R> + Send + Sync>,
 	) -> Result<()> {
 		let client = Client::open(self.host.as_str())?;
-		let mut con = client.get_async_connection().await?;
 
 		let rx = self.rx.clone();
 		let buffer = relabuf::RelaBuf::<T>::new(thresholds, move || {
@@ -58,7 +57,18 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 
 		let mut last_query = Instant::now();
 
+		let mut con = None;
 		while let Ok(released) = buffer.next().await {
+			if con.is_none() {
+				let connection = client.get_async_connection().await;
+				if let Err(err) = connection {
+					warn!("Cannot acquire redis connection: {:?}", err);
+					released.return_on_err();
+					continue
+				}
+				con = Some(connection.unwrap());
+			}
+
 			let mut pipe = redis::pipe();
 			let atomic_pipe = pipe.atomic();
 
@@ -68,13 +78,14 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 			last_query = Instant::now();
 
 			let t = Instant::now();
-			let r = atomic_pipe.query_async::<_, Vec<String>>(&mut con).await;
+			let r = atomic_pipe.query_async::<_, Vec<String>>(con.as_mut().unwrap()).await;
 			let query_took = t.elapsed();
 
 			match r {
 				Err(err) => {
 					warn!("Error during redis operation: {:?} - returning back to buffer", err);
 					released.return_on_err();
+					con = None;
 				}
 				Ok(r) => {
 					released.confirm();
