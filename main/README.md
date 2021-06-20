@@ -104,7 +104,7 @@ you will also be asked a series of questions to help you configure your machine,
 
 - see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
 
-- to stop background run and _erase_ crawling data(clickhouse/grafana)
+- to stop background run and _erase_ crawling data(redis/clickhouse/grafana)
   `docker-compose down -v`
 
 additionally
@@ -118,7 +118,7 @@ additionally
 - to run && attach and see live logs from all containers (can abort with ctrl+c)
   `CRUSTY_SEEDS=https://example.com docker-compose up`
 
-- to see running containers `docker ps`(should be 3 - `crusty-grafana`, `crusty-clickhouse` and `crusty`)
+- to see running containers `docker ps`(should be 4 - `crusty-grafana`, `crusty-clickhouse`, `crusty-redis` and `crusty`)
 
 - to see logs: `docker logs crusty`
 
