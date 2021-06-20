@@ -2,7 +2,7 @@ log:
   # fancy some colors? - disable if redirect to file is intended
   ansi: false
   # base-line log level
-  level: warn
+  level: info
   # my_crate=info,my_crate::my_mod=debug,[my_span]=trace
   # see https://tracing.rs/tracing_subscriber/filter/struct.envfilter
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
@@ -12,7 +12,7 @@ app_id: crusty # for metrics
 
 # Redis settings (queue)
 redis:
-  hosts: ["redis://localhost:6379/"]
+  hosts: ["redis://localhost:63790/"]
 
 # Clickhouse database settings (metrics)
 clickhouse:

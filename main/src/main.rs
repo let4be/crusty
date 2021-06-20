@@ -384,31 +384,28 @@ impl Crusty {
 		resolver: Arc<AsyncHyperResolver>,
 		rx: Receiver<String>,
 		tx_domain_insert: Sender<Domain>,
-		rx_sig: Receiver<()>,
 	) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
-			while !rx_sig.is_disconnected() {
-				if let Ok(domain_str) = rx.recv_async().await {
-					match resolver.resolve(&domain_str).await {
-						Ok(addrs) => {
-							let addrs = addrs
-								.filter(|a| {
-									for net in crusty_core::resolver::RESERVED_SUBNETS.iter() {
-										if net.contains(&a.ip()) {
-											return false
-										}
+			while let Ok(domain_str) = rx.recv_async().await {
+				match resolver.resolve(&domain_str).await {
+					Ok(addrs) => {
+						let addrs = addrs
+							.filter(|a| {
+								for net in crusty_core::resolver::RESERVED_SUBNETS.iter() {
+									if net.contains(&a.ip()) {
+										return false
 									}
-									a.ip().is_ipv4()
-								})
-								.collect::<Vec<_>>();
+								}
+								a.ip().is_ipv4()
+							})
+							.collect::<Vec<_>>();
 
-							let domain = Domain::new(domain_str, addrs, cfg.jobs.addr_key_mask, None);
-							let _ = tx_domain_insert.send_async(domain).await;
-						}
-						Err(_) => {
-							let domain = Domain::new(domain_str, vec![], cfg.jobs.addr_key_mask, None);
-							let _ = tx_domain_insert.send_async(domain).await;
-						}
+						let domain = Domain::new(domain_str, addrs, cfg.jobs.addr_key_mask, None);
+						let _ = tx_domain_insert.send_async(domain).await;
+					}
+					Err(_) => {
+						let domain = Domain::new(domain_str, vec![], cfg.jobs.addr_key_mask, None);
+						let _ = tx_domain_insert.send_async(domain).await;
 					}
 				}
 			}
@@ -421,23 +418,20 @@ impl Crusty {
 		rx: Receiver<String>,
 		tx: Sender<String>,
 		tx_domain_insert: Sender<Domain>,
-		rx_sig: Receiver<()>,
 	) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
-			while !rx_sig.is_disconnected() {
-				if let Ok(domain_str) = rx.recv_async().await {
-					if tx.try_send(domain_str.clone()).is_err() {
-						// send overflow under not-resolved section... no ideal, but works for now
-						let domain = Domain::new(domain_str, vec![], cfg.jobs.addr_key_mask, None);
-						let _ = tx_domain_insert.send_async(domain).await;
-					}
+			while let Ok(domain_str) = rx.recv_async().await {
+				if tx.try_send(domain_str.clone()).is_err() {
+					// send overflow under not-resolved section... no ideal, but works for now
+					let domain = Domain::new(domain_str, vec![], cfg.jobs.addr_key_mask, None);
+					let _ = tx_domain_insert.send_async(domain).await;
 				}
 			}
 			Ok(())
 		})
 	}
 
-	fn domain_resolver(&mut self, tx_domain_insert: Sender<Domain>, rx_sig: Receiver<()>) -> Sender<String> {
+	fn domain_resolver(&mut self, tx_domain_insert: Sender<Domain>) -> Sender<String> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
 		let (tx_out, rx_out) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
@@ -450,10 +444,9 @@ impl Crusty {
 				network_profile.resolver,
 				rx.clone(),
 				tx_domain_insert.clone(),
-				rx_sig.clone(),
 			));
 		}
-		self.spawn(Crusty::domain_resolver_aggregator(self.cfg.clone(), rx_out, tx, tx_domain_insert, rx_sig));
+		self.spawn(Crusty::domain_resolver_aggregator(self.cfg.clone(), rx_out, tx, tx_domain_insert));
 
 		tx_out
 	}
@@ -498,7 +491,7 @@ impl Crusty {
 			let tx_domain_insert = self.domain_enqueue_handler(tx_metrics_db.clone());
 			let tx_domain_update = self.domain_finish_handler(tx_metrics_db.clone());
 
-			let tx_domain_resolve = self.domain_resolver(tx_domain_insert.clone(), rx_sig.clone());
+			let tx_domain_resolve = self.domain_resolver(tx_domain_insert.clone());
 
 			{
 				let tx_metrics_task = tx_metrics_task.clone();
