@@ -88,7 +88,7 @@ https://docs.docker.com/get-docker/
 
 https://docs.docker.com/compose/install/
 
-- play with it(for those looking for an easy way)
+- play with it(debian/ubuntu, the easy way)
 
 ```
 git clone https://github.com/let4be/crusty && \
