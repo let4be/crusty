@@ -396,18 +396,19 @@ impl Crusty {
 		})
 	}
 
-	fn domain_resolver_aggregator(
-		cfg: config::CrustyConfig,
-		rx: Receiver<String>,
-		tx: Sender<String>,
-		tx_domain_insert: Sender<Domain>,
-	) -> TracingTask<'static> {
+	fn domain_resolver_aggregator(rx: Receiver<String>, tx: Sender<String>) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
+			let mut overflow = 0_u32;
+			let mut last_overflow_check = Instant::now();
 			while let Ok(domain_str) = rx.recv_async().await {
 				if tx.try_send(domain_str.clone()).is_err() {
-					// send overflow under not-resolved section... no ideal, but works for now
-					let domain = Domain::new(domain_str, vec![], cfg.jobs.addr_key_mask, None);
-					let _ = tx_domain_insert.send_async(domain).await;
+					overflow += 1;
+				}
+
+				if last_overflow_check.elapsed().as_millis() > 3000 && overflow > 0 {
+					warn!("domains discarded as overflow(over resolver's capacity): {}", overflow);
+					last_overflow_check = Instant::now();
+					overflow = 0;
 				}
 			}
 			Ok(())
@@ -429,7 +430,7 @@ impl Crusty {
 				tx_domain_insert.clone(),
 			));
 		}
-		self.spawn(Crusty::domain_resolver_aggregator(self.cfg.clone(), rx_out, tx, tx_domain_insert));
+		self.spawn(Crusty::domain_resolver_aggregator(rx_out, tx));
 
 		tx_out
 	}

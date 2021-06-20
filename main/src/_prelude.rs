@@ -1,4 +1,3 @@
-use std::time::{SystemTime, UNIX_EPOCH};
 pub use std::{
 	collections::{HashMap, HashSet, LinkedList},
 	future::Future,
@@ -16,6 +15,7 @@ pub use tracing_tools::{span, TracingTask};
 pub use url::Url;
 
 pub fn now() -> Duration {
+	use std::time::{SystemTime, UNIX_EPOCH};
 	let start = SystemTime::now();
 	start.duration_since(UNIX_EPOCH).expect("Time went backwards")
 }
