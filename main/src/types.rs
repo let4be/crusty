@@ -1,7 +1,7 @@
 use std::net::{IpAddr, SocketAddr};
 
 use clickhouse::Row;
-use crusty_core::{types as ct, types::StatusResult};
+use crusty_core::types as ct;
 use serde::{Deserialize, Serialize};
 
 use crate::config::config;
@@ -242,24 +242,23 @@ impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 }
 impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurement {
 	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
-		if let ct::JobStatus::Processing(Ok(ref load_data)) = r.status {
-			let parse_time_ms = if let ct::FollowResult::Ok(ref follow) = load_data.follow {
-				follow.metrics.duration.as_millis() as u32
-			} else {
-				0
-			};
+		if let ct::JobStatus::Processing(Ok(ref job_processing)) = r.status {
+			let parse_time_ms =
+				job_processing.follow.as_ref().map(|d| d.metrics.duration.as_millis() as u32).unwrap_or(0);
 
-			let (load_time_ms, write_size_b, read_size_b) = if let ct::LoadResult::Ok(ref load) = load_data.load {
-				(
-					load.metrics.duration.as_millis() as u32,
-					load.metrics.write_size as u32,
-					load.metrics.read_size as u32,
-				)
-			} else {
-				(0, 0, 0)
-			};
+			let (load_time_ms, write_size_b, read_size_b) = job_processing
+				.load
+				.as_ref()
+				.map(|load| {
+					(
+						load.metrics.duration.as_millis() as u32,
+						load.metrics.write_size as u32,
+						load.metrics.read_size as u32,
+					)
+				})
+				.unwrap_or((0, 0, 0));
 
-			if let StatusResult::Ok(status) = &load_data.status {
+			if let Ok(status) = job_processing.status.as_ref() {
 				return TaskMeasurement {
 					time: now().as_secs() as u32,
 					url:  r.task.link.url.to_string(),
