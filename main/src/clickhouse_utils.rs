@@ -40,7 +40,7 @@ impl Writer {
 		&self,
 		client: Client,
 		rx: Receiver<A>,
-		notify_tx: Option<Sender<DBNotification<A>>>,
+		tx_notify: Option<Sender<DBNotification<A>>>,
 		map: F,
 	) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
@@ -50,7 +50,7 @@ impl Writer {
 				self.cfg.clone(),
 				client.clone(),
 				rx.clone(),
-				notify_tx.clone(),
+				tx_notify.clone(),
 				Arc::clone(&map),
 				state.clone(),
 			)
@@ -70,7 +70,7 @@ impl Writer {
 		cfg: ClickhouseWriterConfig,
 		client: Client,
 		rx: Receiver<A>,
-		notify_tx: Option<Sender<DBNotification<A>>>,
+		tx_notify: Option<Sender<DBNotification<A>>>,
 		map: Arc<F>,
 		state: Arc<Mutex<WriterState<A>>>,
 	) -> TracingTask<'static> {
@@ -107,7 +107,7 @@ impl Writer {
 						since_last.as_millis(),
 						write_took.as_millis()
 					);
-					if let Some(notify_tx) = &notify_tx {
+					if let Some(tx_notify) = &tx_notify {
 						let n = DBNotification {
 							label: cfg.label.clone(),
 							table_name: cfg.table_name.clone(),
@@ -115,7 +115,7 @@ impl Writer {
 							duration: write_took,
 							items: { state.lock().unwrap().notify.clone() },
 						};
-						let _ = notify_tx.send_async(n).await;
+						let _ = tx_notify.send_async(n).await;
 					}
 					state.lock().unwrap().notify.clear();
 					last_write = Instant::now();

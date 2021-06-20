@@ -451,7 +451,7 @@ impl Crusty {
 	fn domain_resolver(&mut self, tx_domain_insert: Sender<Domain>, rx_sig: Receiver<()>) -> Sender<String> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
-		let (out_tx, out_rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
+		let (tx_out, rx_out) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
 
 		for _ in 0..cfg.resolver.concurrency {
 			let network_profile = self.cfg.networking_profile.clone().resolve().unwrap();
@@ -464,9 +464,9 @@ impl Crusty {
 				rx_sig.clone(),
 			));
 		}
-		self.spawn(Crusty::domain_resolver_aggregator(self.cfg.clone(), out_rx, tx, tx_domain_insert, rx_sig));
+		self.spawn(Crusty::domain_resolver_aggregator(self.cfg.clone(), rx_out, tx, tx_domain_insert, rx_sig));
 
-		out_tx
+		tx_out
 	}
 
 	pub fn spawn(&mut self, task: TracingTask<'static, ()>) {
@@ -476,7 +476,7 @@ impl Crusty {
 
 	fn go(
 		mut self,
-		tx: std::sync::mpsc::Sender<MyMultiCrawler>,
+		tx_crawler: std::sync::mpsc::Sender<MyMultiCrawler>,
 		rx_crawler_done: Receiver<()>,
 	) -> TracingTask<'static, ()> {
 		TracingTask::new(span!(), async move {
@@ -577,7 +577,7 @@ impl Crusty {
 			self.spawn(Crusty::monitor_queues(self.state.clone(), self.cfg.clone(), rx_sig, tx_metrics_queue));
 			drop(self.state);
 
-			let _ = tx.send(crawler);
+			let _ = tx_crawler.send(crawler);
 			let _ = rx_crawler_done.recv_async().await;
 
 			info!("Waiting for pending ops to finish...");
@@ -630,15 +630,15 @@ fn main() -> Result<()> {
 	let new_fd_lim = fdlimit::raise_fd_limit();
 	println!("New FD limit set: {:?}", new_fd_lim);
 
-	let (tx, rx) = std::sync::mpsc::channel();
-	let (crawler_done_tx, crawler_done_rx) = unbounded_ch();
+	let (tx_crawler, rx_crawler) = std::sync::mpsc::channel();
+	let (tx_crawler_done, rx_crawler_done) = unbounded_ch();
 
 	std::thread::spawn(move || {
 		let rt = tokio::runtime::Runtime::new().unwrap();
 		rt.block_on(
 			TracingTask::new(span!(), async move {
 				let crusty = Crusty::new(cfg.clone());
-				crusty.go(tx, crawler_done_rx).instrument().await
+				crusty.go(tx_crawler, rx_crawler_done).instrument().await
 			})
 			.instrument(),
 		)
@@ -647,13 +647,13 @@ fn main() -> Result<()> {
 	let rt = tokio::runtime::Runtime::new().unwrap();
 	rt.block_on(
 		TracingTask::new(span!(), async move {
-			let crawler = rx.recv()?;
+			let crawler = rx_crawler.recv()?;
 
 			info!("Crawling is a go...");
 			let _ = crawler.go().await?;
 			info!("Crawling finished...");
 
-			drop(crawler_done_tx);
+			drop(tx_crawler_done);
 			Ok::<(), anyhow::Error>(())
 		})
 		.instrument(),
