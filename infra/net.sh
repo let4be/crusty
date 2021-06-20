@@ -42,4 +42,4 @@ done
 
 echo "Configuring sysctl..."
 cp  ./infra/sysctl.conf /etc/sysctl.d/90-crusty.conf
-sysctl -p
+sysctl --system
