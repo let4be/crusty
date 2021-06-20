@@ -5,7 +5,7 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-cd $(git rev-parse --show-toplevel)
+cd "$(git rev-parse --show-toplevel)" || exit 1
 
 conf () {
 	INDEX=$1
