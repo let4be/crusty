@@ -5,8 +5,7 @@ use once_cell::sync::OnceCell;
 use serde::Deserialize;
 
 #[allow(unused_imports)]
-use crate::_prelude::*;
-use crate::types::*;
+use crate::{_prelude::*, types::*};
 
 pub static CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
 static DEFAULT_CONFIG: OnceCell<CrustyConfig> = OnceCell::new();

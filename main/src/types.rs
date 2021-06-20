@@ -5,8 +5,7 @@ use crusty_core::types as ct;
 use serde::{Deserialize, Serialize};
 
 #[allow(unused_imports)]
-use crate::_prelude::*;
-use crate::config::config;
+use crate::{_prelude::*, config::config};
 
 pub type Result<T> = anyhow::Result<T>;
 

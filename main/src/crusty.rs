@@ -5,11 +5,9 @@ use ttl_cache::TtlCache;
 #[allow(unused_imports)]
 use crate::{
 	_prelude::*,
-	{clickhouse_utils as chu, config::CrustyConfig, rules::*, types::*},
-};
-use crate::{
 	config,
 	redis_utils::{RedisDriver, RedisOperator},
+	{clickhouse_utils, rules::*, types::*},
 };
 
 #[derive(Clone)]
@@ -128,7 +126,7 @@ impl Crusty {
 			let cfg = self.cfg.clone();
 			let rx = rx.clone();
 			self.spawn(TracingTask::new(span!(), async move {
-				let writer = chu::Writer::new(cfg.clickhouse.metrics_queue);
+				let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_queue);
 				writer.go_with_retry(state.client, rx, None, QueueMeasurementDBEntry::from).await
 			}));
 		}
@@ -142,7 +140,7 @@ impl Crusty {
 			let cfg = self.cfg.clone();
 			let rx = rx.clone();
 			self.spawn(TracingTask::new(span!(), async move {
-				let writer = chu::Writer::new(cfg.clickhouse.metrics_db);
+				let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_db);
 				writer.go_with_retry(state.client, rx, None, DBRWNotificationDBEntry::from).await
 			}));
 		}
@@ -156,7 +154,7 @@ impl Crusty {
 			let cfg = self.cfg.clone();
 			let rx = rx.clone();
 			self.spawn(TracingTask::new(span!(), async move {
-				let writer = chu::Writer::new(cfg.clickhouse.metrics_task);
+				let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_task);
 				writer.go_with_retry(state.client, rx, None, TaskMeasurementDBEntry::from).await
 			}));
 		}
@@ -224,7 +222,7 @@ impl Crusty {
 		lnk: &Arc<rt::Link>,
 		task_domain: &str,
 		ddc: &Arc<Mutex<TtlCache<String, ()>>>,
-		cfg: &CrustyConfig,
+		cfg: &config::CrustyConfig,
 	) -> Option<String> {
 		let domain = lnk.host()?;
 
