@@ -81,10 +81,7 @@ impl RedisOperator<(), Domain> for DequeueOperator {
 
 	fn filter(&mut self, _: Vec<()>, r: String) -> Vec<Domain> {
 		let domains: Vec<interop::Domain> = serde_json::from_str(&r).unwrap_or_else(|_| Vec::new());
-		domains.into_iter().fold(vec![], |mut acc, domain| {
-			acc.push(Domain::from(domain));
-			acc
-		})
+		domains.into_iter().map(Domain::from).collect()
 	}
 }
 
@@ -302,7 +299,6 @@ impl Crusty {
 
 	fn job_sender(
 		cfg: config::CrustyConfig,
-		seed_domains: Vec<Domain>,
 		rx_domain_read_notification: Receiver<DBNotification<Domain>>,
 		tx_job: Sender<Job>,
 		tx_metrics_db: Sender<DBGenericNotification>,
@@ -310,9 +306,10 @@ impl Crusty {
 		TracingTask::new(span!(), async move {
 			let default_crawling_settings = Arc::new(cfg.default_crawling_settings);
 
-			let mut domains = seed_domains;
-			loop {
-				for domain in domains {
+			while let Ok(notify) = rx_domain_read_notification.recv_async().await {
+				let _ = tx_metrics_db.send_async(DBGenericNotification::from(&notify)).await;
+
+				for domain in notify.items {
 					let url = domain
 						.url
 						.as_ref()
@@ -336,13 +333,6 @@ impl Crusty {
 						}
 						Err(err) => warn!("->cannot create job for {:?}: {:#}", &domain, err),
 					}
-				}
-
-				if let Ok(notify) = rx_domain_read_notification.recv_async().await {
-					let _ = tx_metrics_db.send_async(DBGenericNotification::from(&notify)).await;
-					domains = notify.items;
-				} else {
-					break
 				}
 			}
 
@@ -548,10 +538,7 @@ impl Crusty {
 			drop(tx_domain_update);
 			drop(rx_job_state_update);
 
-			let (tx_domain_read_notification, rx_domain_read_notification) =
-				bounded_ch::<DBNotification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
-
-			self.domain_dequeue_handler(tx_domain_read_notification);
+			let (tx_domain_read_notification, rx_domain_read_notification) = bounded_ch::<DBNotification<Domain>>(1);
 
 			let seed_domains: Vec<_> = self
 				.cfg
@@ -565,9 +552,20 @@ impl Crusty {
 				})
 				.collect();
 
+			let _ = &tx_domain_read_notification
+				.send_async(DBNotification {
+					table_name: String::from("domains"),
+					label:      String::from("insert"),
+					since_last: Duration::from_secs(0),
+					duration:   Duration::from_secs(0),
+					items:      seed_domains,
+				})
+				.await;
+
+			self.domain_dequeue_handler(tx_domain_read_notification);
+
 			self.spawn(Crusty::job_sender(
 				self.cfg.clone(),
-				seed_domains,
 				rx_domain_read_notification,
 				tx_job,
 				tx_metrics_db.clone(),
