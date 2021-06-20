@@ -93,6 +93,7 @@ https://docs.docker.com/compose/install/
 ```
 git clone https://github.com/let4be/crusty && \
 cd crusty && \
+./lazy.sh && \
 CRUSTY_SEEDS=https://example.com docker-compose up -d --build
 ```
 
