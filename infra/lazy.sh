@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e
 
 if [[ $EUID -ne 0 ]]; then
@@ -7,10 +8,9 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 apt-get update
-apt-get -y install bmon net-tools
+apt-get -y install bmon net-tools git
 
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
+curl -fsSL https://get.docker.com | bash -s
 curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
