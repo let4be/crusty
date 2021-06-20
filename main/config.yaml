@@ -12,7 +12,7 @@ app_id: crusty # for metrics
 
 # Redis settings (queue)
 redis:
-  hosts: ["redis://localhost:63790/"]
+  hosts: ["redis://localhost:6379/"]
 
 # Clickhouse database settings (metrics)
 clickhouse:
