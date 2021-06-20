@@ -634,13 +634,10 @@ fn main() -> Result<()> {
 
 	std::thread::spawn(move || {
 		let rt = tokio::runtime::Runtime::new().unwrap();
-		rt.block_on(
-			TracingTask::new(span!(), async move {
-				let crusty = Crusty::new(cfg.clone());
-				crusty.go(tx_crawler, rx_crawler_done).instrument().await
-			})
-			.instrument(),
-		)
+		rt.block_on(async move {
+			let crusty = Crusty::new(cfg.clone());
+			crusty.go(tx_crawler, rx_crawler_done).instrument().await
+		})
 	});
 
 	let rt = tokio::runtime::Runtime::new().unwrap();
