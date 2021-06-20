@@ -88,14 +88,19 @@ https://docs.docker.com/get-docker/
 
 https://docs.docker.com/compose/install/
 
-- play with it
+- play with it(for those looking for an easy way)
 
 ```
 git clone https://github.com/let4be/crusty && \
 cd crusty && \
-./lazy.sh && \
+sudo ./infra/net.sh && \
+sudo ./infra/lazy.sh && \
 CRUSTY_SEEDS=https://example.com docker-compose up -d --build
 ```
+while this is cooking(might take a while after you configure your net), take a look at your [Config File](./main/config.yaml)
+
+- now be AWARE scripts `./infra/lazy.sh` and `./infra/net.sh` require ROOT access,
+you will also be asked a series of questions to help you configure your machine, you can do all of this manually, just study the scripts. I was just so bored of doing it over and over again in my tests I wrote the scripts...
 
 - see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
 
