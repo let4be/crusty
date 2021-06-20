@@ -1,20 +1,38 @@
 #!/bin/bash
 
-set -e
+cd $(git rev-parse --show-toplevel)
 
 conf () {
-	DEV=$1
-	GW=$2
-	IP=$(/sbin/ip -o -4 addr list $DEV | awk '{print $4}' | cut -d/ -f1)
-	N=$3
-	echo "Configuring $DEV with GW $GW and IP $IP table $N"
-	ip route add default via $GW dev $DEV tab $N
-	ip rule add from $IP tab $N
+	INDEX=$1
+	IP=$2
+	echo "Configuring $DEV:$INDEX with $IP"
+	ifconfig $DEV:$INDEX $IP up
 }
 
-conf "ens5" "172.31.0.1" 1
-conf "ens6" "172.32.0.1" 2
+echo "what is the NIC name?"
+read -r DEV
+echo "about to configure $DEV"
 
-echo "net.ipv4.ip_local_port_range = 1024 65535" >> /etc/sysctl.conf
-echo "net.ipv4.tcp_tw_reuse = 1" >> /etc/sysctl.conf
+echo "what are NIC private IPs?"
+i=0
+while IFS='$\n' read -r IP; do
+    if [ "$IP" == "" ]; then
+        break
+    fi
+    echo "about to configure $DEV with $IP"
+
+    while true; do
+        read -p "Continue(y/n)?" yn
+        case $yn in
+            [Yy]* ) conf $i "$IP"; break;;
+            [Nn]* ) break;;
+            * ) echo "Please answer yes or no.";;
+        esac
+    done
+
+    ((i=i+1))
+    echo "next ip?"
+done
+
+cp  ./infra/sysctl.conf /etc/sysctl.d/90-crusty.conf
 sysctl -p
