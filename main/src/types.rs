@@ -4,9 +4,9 @@ use clickhouse::Row;
 use crusty_core::{types as ct, types::StatusResult};
 use serde::{Deserialize, Serialize};
 
+use crate::config::CONFIG;
 #[allow(unused_imports)]
 use crate::prelude::*;
-use crate::{clickhouse_utils as chu, config::CONFIG};
 
 pub type Result<T> = anyhow::Result<T>;
 
@@ -79,6 +79,24 @@ impl From<Domain> for DomainDBEntry {
 	}
 }
 
+#[derive(Debug, Clone)]
+pub struct DBNotification<A: Clone + Send> {
+	pub table_name: String,
+	pub label:      String,
+	pub since_last: Duration,
+	pub duration:   Duration,
+	pub items:      Vec<A>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DBGenericNotification {
+	pub table_name: String,
+	pub label:      String,
+	pub since_last: Duration,
+	pub duration:   Duration,
+	pub items:      usize,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DBRWNotificationDBEntry {
 	host:          String,
@@ -91,8 +109,8 @@ pub struct DBRWNotificationDBEntry {
 	items:         u32,
 }
 
-impl From<chu::GenericNotification> for DBRWNotificationDBEntry {
-	fn from(s: chu::GenericNotification) -> Self {
+impl From<DBGenericNotification> for DBRWNotificationDBEntry {
+	fn from(s: DBGenericNotification) -> Self {
 		let c = CONFIG.lock().unwrap();
 		DBRWNotificationDBEntry {
 			host:          c.host.clone(),

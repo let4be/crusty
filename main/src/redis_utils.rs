@@ -12,11 +12,9 @@ pub struct RedisDriver<T: 'static + Send + Sync + Debug, R: 'static + Send + Syn
 
 	host:              String,
 	rx:                Receiver<T>,
-	tx_notify:         Option<Sender<chu::Notification<R>>>,
-	tx_generic_notify: Option<Sender<chu::GenericNotification>>,
+	tx_notify:         Option<Sender<DBNotification<R>>>,
+	tx_generic_notify: Option<Sender<DBGenericNotification>>,
 }
-
-use crate::clickhouse_utils as chu;
 
 pub type Thresholds = relabuf::RelaBufConfig;
 
@@ -37,11 +35,11 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 		}
 	}
 
-	pub fn with_notifier(&mut self, tx_notify: Sender<chu::Notification<R>>) {
+	pub fn with_notifier(&mut self, tx_notify: Sender<DBNotification<R>>) {
 		self.tx_notify = Some(tx_notify)
 	}
 
-	pub fn with_generic_notifier(&mut self, tx_notify: Sender<chu::GenericNotification>) {
+	pub fn with_generic_notifier(&mut self, tx_notify: Sender<DBGenericNotification>) {
 		self.tx_generic_notify = Some(tx_notify)
 	}
 
@@ -85,7 +83,7 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 						operator.filter(released.items, r.into_iter().next().unwrap_or_else(|| String::from("")));
 					if let Some(tx_notify) = &self.tx_notify {
 						let _ = tx_notify
-							.send_async(chu::Notification {
+							.send_async(DBNotification {
 								table_name: self.table_name.clone(),
 								label:      self.label.clone(),
 								since_last: since_last_elapsed,
@@ -95,7 +93,7 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 							.await;
 					} else if let Some(tx_notify) = &self.tx_generic_notify {
 						let _ = tx_notify
-							.send_async(chu::GenericNotification {
+							.send_async(DBGenericNotification {
 								table_name: self.table_name.clone(),
 								label:      self.label.clone(),
 								since_last: since_last_elapsed,

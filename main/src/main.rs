@@ -155,8 +155,8 @@ impl Crusty {
 		tx
 	}
 
-	fn metrics_db_handler(&mut self) -> Sender<chu::GenericNotification> {
-		let (tx, rx) = bounded_ch::<chu::GenericNotification>(self.cfg.concurrency_profile.transit_buffer_size());
+	fn metrics_db_handler(&mut self) -> Sender<DBGenericNotification> {
+		let (tx, rx) = bounded_ch::<DBGenericNotification>(self.cfg.concurrency_profile.transit_buffer_size());
 		for _ in 0..self.cfg.clickhouse.metrics_db.concurrency {
 			let state = self.state.clone();
 			let cfg = self.cfg.clone();
@@ -183,7 +183,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_enqueue_handler(&mut self, tx_notify: Sender<chu::GenericNotification>) -> Sender<Domain> {
+	fn domain_enqueue_handler(&mut self, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<Domain>(cfg.concurrency_profile.transit_buffer_size());
 
@@ -200,7 +200,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_finish_handler(&mut self, tx_notify: Sender<chu::GenericNotification>) -> Sender<Domain> {
+	fn domain_finish_handler(&mut self, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<Domain>(cfg.concurrency_profile.transit_buffer_size());
 
@@ -217,7 +217,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_dequeue_handler(&mut self, tx_notify: Sender<chu::Notification<Domain>>) {
+	fn domain_dequeue_handler(&mut self, tx_notify: Sender<DBNotification<Domain>>) {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<()>(10);
 
@@ -304,9 +304,9 @@ impl Crusty {
 	fn job_sender(
 		cfg: config::CrustyConfig,
 		seed_domains: Vec<Domain>,
-		rx_domain_read_notification: Receiver<chu::Notification<Domain>>,
+		rx_domain_read_notification: Receiver<DBNotification<Domain>>,
 		tx_job: Sender<Job>,
-		tx_metrics_db: Sender<chu::GenericNotification>,
+		tx_metrics_db: Sender<DBGenericNotification>,
 	) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
 			let default_crawling_settings = Arc::new(cfg.default_crawling_settings);
@@ -340,7 +340,7 @@ impl Crusty {
 				}
 
 				if let Ok(notify) = rx_domain_read_notification.recv_async().await {
-					let _ = tx_metrics_db.send_async(chu::GenericNotification::from(&notify)).await;
+					let _ = tx_metrics_db.send_async(DBGenericNotification::from(&notify)).await;
 					domains = notify.items;
 				} else {
 					break
@@ -550,7 +550,7 @@ impl Crusty {
 			drop(rx_job_state_update);
 
 			let (tx_domain_read_notification, rx_domain_read_notification) =
-				bounded_ch::<chu::Notification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
+				bounded_ch::<DBNotification<Domain>>(self.cfg.concurrency_profile.transit_buffer_size());
 
 			self.domain_dequeue_handler(tx_domain_read_notification);
 

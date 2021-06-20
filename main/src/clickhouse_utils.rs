@@ -15,27 +15,9 @@ pub struct WriterState<A: Clone + Send> {
 	notify: Vec<A>,
 }
 
-#[derive(Debug, Clone)]
-pub struct Notification<A: Clone + Send> {
-	pub table_name: String,
-	pub label:      String,
-	pub since_last: Duration,
-	pub duration:   Duration,
-	pub items:      Vec<A>,
-}
-
-#[derive(Debug, Clone)]
-pub struct GenericNotification {
-	pub table_name: String,
-	pub label:      String,
-	pub since_last: Duration,
-	pub duration:   Duration,
-	pub items:      usize,
-}
-
-impl<A: Clone + Send> From<&Notification<A>> for GenericNotification {
-	fn from(s: &Notification<A>) -> Self {
-		GenericNotification {
+impl<A: Clone + Send> From<&DBNotification<A>> for DBGenericNotification {
+	fn from(s: &DBNotification<A>) -> Self {
+		DBGenericNotification {
 			table_name: s.table_name.clone(),
 			label:      s.label.clone(),
 			since_last: s.since_last,
@@ -58,7 +40,7 @@ impl Writer {
 		&self,
 		client: Client,
 		rx: Receiver<A>,
-		notify_tx: Option<Sender<Notification<A>>>,
+		notify_tx: Option<Sender<DBNotification<A>>>,
 		map: F,
 	) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
@@ -88,7 +70,7 @@ impl Writer {
 		cfg: ClickhouseWriterConfig,
 		client: Client,
 		rx: Receiver<A>,
-		notify_tx: Option<Sender<Notification<A>>>,
+		notify_tx: Option<Sender<DBNotification<A>>>,
 		map: Arc<F>,
 		state: Arc<Mutex<WriterState<A>>>,
 	) -> TracingTask<'static> {
@@ -126,7 +108,7 @@ impl Writer {
 						write_took.as_millis()
 					);
 					if let Some(notify_tx) = &notify_tx {
-						let n = Notification {
+						let n = DBNotification {
 							label: cfg.label.clone(),
 							table_name: cfg.table_name.clone(),
 							since_last,
