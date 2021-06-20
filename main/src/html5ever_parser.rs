@@ -11,7 +11,7 @@ use html5ever::{
 };
 
 #[allow(unused_imports)]
-use crate::prelude::*;
+use crate::_prelude::*;
 use crate::{html5ever_defs::*, rules::*};
 
 #[derive(Debug, Default)]

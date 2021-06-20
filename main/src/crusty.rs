@@ -2,14 +2,14 @@ use clickhouse::Client;
 use crusty_core::{self, prelude::AsyncHyperResolver, resolver::Resolver, types as rt, MultiCrawler};
 use ttl_cache::TtlCache;
 
+#[allow(unused_imports)]
+use crate::{
+	_prelude::*,
+	{clickhouse_utils as chu, config::CrustyConfig, rules::*, types::*},
+};
 use crate::{
 	config,
 	redis_utils::{RedisDriver, RedisOperator},
-};
-#[allow(unused_imports)]
-use crate::{
-	prelude::*,
-	{clickhouse_utils as chu, config::CrustyConfig, rules::*, types::*},
 };
 
 #[derive(Clone)]

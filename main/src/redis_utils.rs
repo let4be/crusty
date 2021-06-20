@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use redis::Client;
 
 #[allow(unused_imports)]
-use crate::prelude::*;
+use crate::_prelude::*;
 use crate::types::*;
 
 pub struct RedisDriver<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug> {

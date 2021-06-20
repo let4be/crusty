@@ -3,7 +3,7 @@ use clickhouse::{Client, Row};
 use serde::Serialize;
 
 #[allow(unused_imports)]
-use crate::prelude::*;
+use crate::_prelude::*;
 use crate::{config::*, types::*};
 
 #[derive(Clone)]

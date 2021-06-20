@@ -1,11 +1,11 @@
 use crusty_core::types as ct;
 
+#[allow(unused_imports)]
+use crate::_prelude::*;
 #[cfg(feature = "html5ever")]
 pub use crate::html5ever_defs::*;
 #[cfg(feature = "lol_html_parser")]
 pub use crate::lolhtml_defs::*;
-#[allow(unused_imports)]
-use crate::prelude::*;
 use crate::{lolhtml_parser::*, types::*};
 
 #[derive(Debug, Clone)]

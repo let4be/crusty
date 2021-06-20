@@ -8,20 +8,20 @@ mod html5ever_parser;
 #[cfg(feature = "lol_html_parser")]
 mod lolhtml_parser;
 
+mod _prelude;
 mod clickhouse_utils;
 mod config;
 mod crusty;
-mod prelude;
 mod redis_utils;
 mod rules;
 mod types;
 
-use crusty::Crusty;
 use tracing_subscriber::EnvFilter;
 
 #[allow(unused_imports)]
 use crate::{
-	prelude::*,
+	_prelude::*,
+	crusty::Crusty,
 	{config::CrustyConfig, rules::*, types::*},
 };
 

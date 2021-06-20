@@ -4,7 +4,7 @@ use crusty_core::{task_expanders, types as ct};
 use lol_html::{element, HtmlRewriter, Settings};
 
 #[allow(unused_imports)]
-use crate::prelude::*;
+use crate::_prelude::*;
 use crate::{lolhtml_defs::*, rules::*};
 
 #[derive(Debug, Default)]
