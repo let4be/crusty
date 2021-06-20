@@ -108,6 +108,18 @@ pub struct DBRWNotificationDBEntry {
 	items:         u32,
 }
 
+impl<T: Clone + Send> From<DBNotification<T>> for DBGenericNotification {
+	fn from(s: DBNotification<T>) -> Self {
+		DBGenericNotification {
+			table_name: s.table_name,
+			label:      s.label,
+			since_last: s.since_last,
+			duration:   s.duration,
+			items:      s.items.len(),
+		}
+	}
+}
+
 impl From<DBGenericNotification> for DBRWNotificationDBEntry {
 	fn from(s: DBGenericNotification) -> Self {
 		DBRWNotificationDBEntry {

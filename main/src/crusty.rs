@@ -161,60 +161,61 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_enqueue_handler(&mut self, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
+	fn domain_enqueue_handler(
+		&mut self,
+		host_index: usize,
+		tx_notify: Sender<DBGenericNotification>,
+	) -> Sender<Domain> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<Domain>(cfg.concurrency_profile.transit_buffer_size());
 
 		self.spawn(TracingTask::new(span!(), async move {
-			let mut drv = RedisDriver::new(&cfg.redis.hosts[0], rx, "domains", "insert");
-			drv.with_generic_notifier(tx_notify);
-			drv.go(
-				cfg.jobs.enqueue.driver.into(),
-				Box::new(EnqueueOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.enqueue.options }),
-			)
-			.await
+			RedisDriver::new(&cfg.redis.hosts[host_index], rx, "domains", "insert", tx_notify)
+				.go(
+					cfg.jobs.enqueue.driver.into(),
+					Box::new(EnqueueOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.enqueue.options }),
+				)
+				.await
 		}));
 
 		tx
 	}
 
-	fn domain_finish_handler(&mut self, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
+	fn domain_finish_handler(&mut self, host_index: usize, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<Domain>(cfg.concurrency_profile.transit_buffer_size());
 
 		self.spawn(TracingTask::new(span!(), async move {
-			let mut drv = RedisDriver::new(&cfg.redis.hosts[0], rx, "domains", "update");
-			drv.with_generic_notifier(tx_notify);
-			drv.go(
-				cfg.jobs.finish.driver.into(),
-				Box::new(FinishOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.finish.options }),
-			)
-			.await
+			RedisDriver::new(&cfg.redis.hosts[host_index], rx, "domains", "update", tx_notify)
+				.go(
+					cfg.jobs.finish.driver.into(),
+					Box::new(FinishOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.finish.options }),
+				)
+				.await
 		}));
 
 		tx
 	}
 
-	fn domain_dequeue_handler(&mut self, tx_notify: Sender<DBNotification<Domain>>) {
+	fn domain_dequeue_handler(&mut self, host_index: usize, tx_notify: Sender<DBNotification<Domain>>) {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<()>(10);
 
 		let emit_permit_delay = *cfg.jobs.dequeue.options.emit_permit_delay;
 		self.spawn(TracingTask::new(span!(), async move {
-			loop {
-				let _ = tx.send_async(()).await;
+			while tx.send_async(()).await.is_ok() {
 				time::sleep(emit_permit_delay).await;
 			}
+			Ok(())
 		}));
 
 		self.spawn(TracingTask::new(span!(), async move {
-			let mut drv = RedisDriver::new(&cfg.redis.hosts[0], rx, "domains", "read");
-			drv.with_notifier(tx_notify);
-			drv.go(
-				cfg.jobs.dequeue.driver.into(),
-				Box::new(DequeueOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.dequeue.options }),
-			)
-			.await
+			RedisDriver::new(&cfg.redis.hosts[host_index], rx, "domains", "read", tx_notify)
+				.go(
+					cfg.jobs.dequeue.driver.into(),
+					Box::new(DequeueOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.dequeue.options }),
+				)
+				.await
 		}));
 	}
 
@@ -472,8 +473,10 @@ impl Crusty {
 			let tx_metrics_task = self.metrics_task_handler();
 			let tx_metrics_queue = self.metrics_queue_handler();
 			let tx_metrics_db = self.metrics_db_handler();
-			let tx_domain_insert = self.domain_enqueue_handler(tx_metrics_db.clone());
-			let tx_domain_update = self.domain_finish_handler(tx_metrics_db.clone());
+			let tx_domain_insert = self.domain_enqueue_handler(0, tx_metrics_db.clone());
+			let tx_domain_update = self.domain_finish_handler(0, tx_metrics_db.clone());
+			let (tx_domain_read_notify, rx_domain_read_notify) = bounded_ch::<DBNotification<Domain>>(3);
+			self.domain_dequeue_handler(0, tx_domain_read_notify.clone());
 			let tx_domain_resolve = self.domain_resolver(tx_domain_insert.clone());
 
 			{
@@ -515,8 +518,6 @@ impl Crusty {
 			drop(tx_domain_update);
 			drop(rx_job_state_update);
 
-			let (tx_domain_read_notification, rx_domain_read_notification) = bounded_ch::<DBNotification<Domain>>(1);
-
 			let seed_domains: Vec<_> = self
 				.cfg
 				.jobs
@@ -529,7 +530,7 @@ impl Crusty {
 				})
 				.collect();
 
-			let _ = &tx_domain_read_notification
+			let _ = &tx_domain_read_notify
 				.send_async(DBNotification {
 					table_name: String::from("domains"),
 					label:      String::from("insert"),
@@ -538,15 +539,9 @@ impl Crusty {
 					items:      seed_domains,
 				})
 				.await;
+			drop(tx_domain_read_notify);
 
-			self.domain_dequeue_handler(tx_domain_read_notification);
-
-			self.spawn(Crusty::job_sender(
-				self.cfg.clone(),
-				rx_domain_read_notification,
-				tx_job,
-				tx_metrics_db.clone(),
-			));
+			self.spawn(Crusty::job_sender(self.cfg.clone(), rx_domain_read_notify, tx_job, tx_metrics_db.clone()));
 
 			self.spawn(Crusty::monitor_queues(self.state.clone(), self.cfg.clone(), rx_sig, tx_metrics_queue));
 			drop(self.state);

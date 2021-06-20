@@ -1,45 +1,43 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::PhantomData};
 
 use redis::Client;
 
 #[allow(unused_imports)]
 use crate::{_prelude::*, types::*};
 
-pub struct RedisDriver<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug> {
+pub struct RedisDriver<
+	T: 'static + Send + Sync + Debug,
+	R: 'static + Send + Sync + Debug + Clone,
+	N: From<DBNotification<R>>,
+> {
 	table_name: String,
 	label:      String,
 
-	host:              String,
-	rx:                Receiver<T>,
-	tx_notify:         Option<Sender<DBNotification<R>>>,
-	tx_generic_notify: Option<Sender<DBGenericNotification>>,
+	host:      String,
+	rx:        Receiver<T>,
+	tx_notify: Sender<N>,
+	_r:        PhantomData<R>,
 }
 
 pub type Thresholds = relabuf::RelaBufConfig;
 
-pub trait RedisOperator<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug> {
+pub trait RedisOperator<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone> {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, items: &[T]);
 	fn filter(&mut self, items: Vec<T>, response: String) -> Vec<R>;
 }
 
-impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug> RedisDriver<T, R> {
-	pub fn new(host: &str, rx: Receiver<T>, table_name: &str, label: &str) -> Self {
+impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone, N: From<DBNotification<R>>>
+	RedisDriver<T, R, N>
+{
+	pub fn new(host: &str, rx: Receiver<T>, table_name: &str, label: &str, tx_notify: Sender<N>) -> Self {
 		Self {
 			host: String::from(host),
 			rx,
 			table_name: String::from(table_name),
 			label: String::from(label),
-			tx_notify: None,
-			tx_generic_notify: None,
+			tx_notify,
+			_r: PhantomData::default(),
 		}
-	}
-
-	pub fn with_notifier(&mut self, tx_notify: Sender<DBNotification<R>>) {
-		self.tx_notify = Some(tx_notify)
-	}
-
-	pub fn with_generic_notifier(&mut self, tx_notify: Sender<DBGenericNotification>) {
-		self.tx_generic_notify = Some(tx_notify)
 	}
 
 	pub async fn go(
@@ -91,27 +89,19 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Clone + Debug>
 					released.confirm();
 					let out_items =
 						operator.filter(released.items, r.into_iter().next().unwrap_or_else(|| String::from("")));
-					if let Some(tx_notify) = &self.tx_notify {
-						let _ = tx_notify
-							.send_async(DBNotification {
+					let _ = self
+						.tx_notify
+						.send_async(
+							DBNotification {
 								table_name: self.table_name.clone(),
 								label:      self.label.clone(),
 								since_last: since_last_elapsed,
 								duration:   query_took,
 								items:      out_items,
-							})
-							.await;
-					} else if let Some(tx_notify) = &self.tx_generic_notify {
-						let _ = tx_notify
-							.send_async(DBGenericNotification {
-								table_name: self.table_name.clone(),
-								label:      self.label.clone(),
-								since_last: since_last_elapsed,
-								duration:   query_took,
-								items:      out_items.len(),
-							})
-							.await;
-					}
+							}
+							.into(),
+						)
+						.await;
 				}
 			}
 		}
