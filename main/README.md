@@ -91,12 +91,9 @@ https://docs.docker.com/compose/install/
 - play with it
 
 ```
-git clone https://github.com/let4be/crusty
-cd crusty
-# might take some time
-docker-compose build
-# can use ANY or even several(separated by a comma), example.com works too just has one external link ;)
-CRUSTY_SEEDS=https://example.com docker-compose up -d
+git clone https://github.com/let4be/crusty && \
+cd crusty && \
+CRUSTY_SEEDS=https://example.com docker-compose up -d --build
 ```
 
 - see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
