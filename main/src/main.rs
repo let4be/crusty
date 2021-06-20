@@ -80,9 +80,7 @@ impl RedisOperator<(), Domain> for DequeueOperator {
 	}
 
 	fn filter(&mut self, _: Vec<()>, r: String) -> Vec<Domain> {
-		let t = Instant::now();
 		let domains: Vec<interop::Domain> = serde_json::from_str(&r).unwrap_or_else(|_| Vec::new());
-		warn!("dequeue deserialize took: {:?}, yielding {} domains", t.elapsed(), domains.len());
 		domains.into_iter().fold(vec![], |mut acc, domain| {
 			acc.push(Domain::from(domain));
 			acc
@@ -287,7 +285,8 @@ impl Crusty {
 						}
 						let _ = tx_metrics.send_async(r.into()).await;
 					}
-					rt::JobStatus::Processing(Err(_)) => {
+					rt::JobStatus::Processing(Err(ref err)) => {
+						warn!(task = %r.task, err = ?err, "Error during task processing");
 						let _ = tx_metrics.send_async(r.into()).await;
 					}
 					rt::JobStatus::Finished(ref _jd) => {
