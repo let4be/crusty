@@ -22,6 +22,7 @@ echo "what are NIC private IPs?"
 i=0
 while IFS='$\n' read -r IP; do
     if [ "$IP" == "" ]; then
+        echo "done with the network..."
         break
     fi
     echo "about to configure $DEV with $IP"
@@ -39,5 +40,6 @@ while IFS='$\n' read -r IP; do
     echo "next ip?"
 done
 
+echo "Configuring sysctl..."
 cp  ./infra/sysctl.conf /etc/sysctl.d/90-crusty.conf
 sysctl -p
