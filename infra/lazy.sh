@@ -71,7 +71,7 @@ sysctl --system
 echo "Configure Crusty pls..."
 nano ./main/config.yaml </dev/tty
 
-docker built -f ./infra/crusty/Dockerfile -t crusty_crusty .
+docker build -f ./infra/crusty/Dockerfile -t crusty_crusty .
 
 docker-compose build
 
