@@ -79,8 +79,26 @@ services:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 2.3.1
       - GF_PLUGIN_DIR=/grafana-plugins
 
+  bind9:
+    container_name: crusty-bind9
+    restart: on-failure
+    build:
+      context: ./infra/bind9
+    network_mode: bridge
+    ports:
+      - "127.0.0.1:53:53/udp"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    volumes:
+      - bind9-cache:/var/cache/bind
+      - /etc/localtime:/etc/localtime:ro
+
 volumes:
   redis-volume:
   clickhouse-volume:
   grafana-volume:
   grafana-plugins:
+  bind9-cache:
