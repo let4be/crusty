@@ -81,7 +81,7 @@ up to
 ## Getting started
 
 ```
-curl -fsSL https://raw.githubusercontent.com/let4be/crusty/master/infra/lazy.sh | bash -s && cd crusty
+curl -fsSL https://raw.githubusercontent.com/let4be/crusty/master/infra/lazy.sh | sudo bash -s && cd crusty
 ```
 
 Now be aware this one liner will do most of the job for you and ask you some useful questions along the way to help you configure your machine, BUT it requires ROOT access.

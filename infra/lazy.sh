@@ -30,16 +30,16 @@ conf_eth () {
 	INDEX=$1
 	IP=$2
 	echo "Configuring $DEV:$INDEX with $IP"
-	ifconfig $DEV:$INDEX $IP up
+	ifconfig $DEV:$INDEX $IP up || true
 }
 
 echo "what is the internet's NIC name?"
-read -r DEV
+read -r DEV </dev/tty
 echo "about to configure $DEV"
 
 echo "what are available NIC IPs?"
 i=0
-while IFS='$\n' read -r IP; do
+while IFS='$\n' read -r IP </dev/tty; do
     if [ "$IP" == "" ]; then
         echo "done with the network..."
         break
@@ -47,7 +47,7 @@ while IFS='$\n' read -r IP; do
     echo "about to configure $DEV with $IP"
 
     while true; do
-        read -p "Continue(y/n)?" yn
+        read -p "Continue(y/n)?" yn </dev/tty
         case $yn in
             [Yy]* ) conf_eth $i "$IP"; break;;
             [Nn]* ) break;;
@@ -64,6 +64,9 @@ cp  ./infra/sysctl.conf /etc/sysctl.d/90-crusty.conf
 sysctl --system
 
 echo "Configure Crusty pls..."
-nano ./main/config.yaml
+nano ./main/config.yaml </dev/tty
 
 docker-compose build
+
+echo "Everything is almost ready to go..."
+echo "CRUSTY_SEEDS=https://cnn.com docker-compose up -d --build"
