@@ -5,7 +5,7 @@ use validator::Validate;
 
 #[derive(Debug, Validate)]
 pub(crate) struct Enqueue {
-    #[validate(range(min = 1))]
+    #[validate(range(min = 0))]
     pub n: usize,
     #[validate(range(min = 1))]
     pub ttl: usize,
@@ -16,7 +16,7 @@ pub(crate) struct Enqueue {
 
 #[derive(Debug, Validate)]
 pub(crate) struct Dequeue {
-    #[validate(range(min = 1))]
+    #[validate(range(min = 0))]
     pub n: usize,
     #[validate(range(min = 10))]
     pub ttl: usize,
@@ -26,7 +26,7 @@ pub(crate) struct Dequeue {
 
 #[derive(Debug, Validate)]
 pub(crate) struct Finish {
-    #[validate(range(min = 1))]
+    #[validate(range(min = 0))]
     pub n: usize,
     #[validate(range(min = 10))]
     pub ttl: usize,
