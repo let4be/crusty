@@ -80,27 +80,20 @@ up to
 
 ## Getting started
 
-- before you start - install `docker` && `docker-compose`
-
-either(debian/ubuntu, the easy way)
 ```
-git clone https://github.com/let4be/crusty && \
-cd crusty && \
-sudo ./infra/net.sh && \
-sudo ./infra/lazy.sh
+curl -fsSL https://raw.githubusercontent.com/let4be/crusty/master/infra/lazy.sh | bash -s && cd crusty
 ```
-while this is cooking(might take a while after you configure your net), take a look at your [Config File](./main/config.yaml)
 
-Now be AWARE scripts `./infra/lazy.sh` and `./infra/net.sh` require ROOT access,
-you will also be asked a series of questions to help you configure your machine, you can do all of this manually, just study the scripts. I was just so bored of doing it over and over again in my tests I wrote the scripts...
+Now be aware this one liner will do most of the job for you and ask you some useful questions along the way to help you configure your machine, BUT it requires ROOT access.
+You can do all of this manually, just study the script. I was just so bored with doing it over and over again in my tests I wrote the script...
 
-or follow instructions at
+alternatively follow instructions at
 
 https://docs.docker.com/get-docker/
 
 https://docs.docker.com/compose/install/
 
-and configure your machine manually(study the scripts!)
+then clone this repository && configure your machine manually(study the [script](./infra/lazy.sh)!)
 
 - play with it
 
