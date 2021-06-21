@@ -161,43 +161,33 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_enqueue_handler(
-		&mut self,
-		host_index: usize,
-		tx_notify: Sender<DBGenericNotification>,
-	) -> Sender<Domain> {
+	fn domain_enqueue_handler(&mut self, shard: usize, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<Domain>(cfg.concurrency_profile.transit_buffer_size());
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[host_index], rx, "domains", "insert", tx_notify)
-				.go(
-					cfg.jobs.enqueue.driver.into(),
-					Box::new(EnqueueOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.enqueue.options }),
-				)
+			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "insert", tx_notify)
+				.go(cfg.jobs.enqueue.driver.into(), Box::new(EnqueueOperator { shard, cfg: cfg.jobs.enqueue.options }))
 				.await
 		}));
 
 		tx
 	}
 
-	fn domain_finish_handler(&mut self, host_index: usize, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
+	fn domain_finish_handler(&mut self, shard: usize, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<Domain>(cfg.concurrency_profile.transit_buffer_size());
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[host_index], rx, "domains", "update", tx_notify)
-				.go(
-					cfg.jobs.finish.driver.into(),
-					Box::new(FinishOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.finish.options }),
-				)
+			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "update", tx_notify)
+				.go(cfg.jobs.finish.driver.into(), Box::new(FinishOperator { shard, cfg: cfg.jobs.finish.options }))
 				.await
 		}));
 
 		tx
 	}
 
-	fn domain_dequeue_handler(&mut self, host_index: usize, tx_notify: Sender<DBNotification<Domain>>) {
+	fn domain_dequeue_handler(&mut self, shard: usize, tx_notify: Sender<DBNotification<Domain>>) {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<()>(10);
 
@@ -210,11 +200,8 @@ impl Crusty {
 		}));
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[host_index], rx, "domains", "read", tx_notify)
-				.go(
-					cfg.jobs.dequeue.driver.into(),
-					Box::new(DequeueOperator { shard: cfg.jobs.shard_min, cfg: cfg.jobs.dequeue.options }),
-				)
+			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "read", tx_notify)
+				.go(cfg.jobs.dequeue.driver.into(), Box::new(DequeueOperator { shard, cfg: cfg.jobs.dequeue.options }))
 				.await
 		}));
 	}
