@@ -19,9 +19,8 @@ echo "Installing docker-compose..."
 curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-echo "Getting crusty..."
-git clone https://github.com/let4be/crusty
-cd crusty
+groupadd docker || true
+usermod -aG docker "$SUDO_USER" || true
 
 echo "Your current network interfaces seem to be:"
 ifconfig
@@ -59,6 +58,12 @@ while IFS='$\n' read -r IP </dev/tty; do
     echo "next ip?"
 done
 
+echo "Getting crusty..."
+git clone https://github.com/let4be/crusty
+chown -R "$SUDO_USER":"$SUDO_USER" crusty
+chmod -R go-rwx crusty
+cd crusty
+
 echo "Configuring sysctl..."
 cp  ./infra/sysctl.conf /etc/sysctl.d/90-crusty.conf
 sysctl --system
@@ -69,4 +74,7 @@ nano ./main/config.yaml </dev/tty
 docker-compose build
 
 echo "Everything is almost ready to go..."
+echo "To make sure your user can use docker, execute sudo -s -u ${USER}"
+echo "Or just logout and log back in"
+echo "To play with crusty"
 echo "CRUSTY_SEEDS=https://cnn.com docker-compose up -d --build"
