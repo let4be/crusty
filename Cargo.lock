@@ -374,9 +374,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.50.0"
+version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "256164dcf43468fb3ded32c7b1113177b81ea321504f024e74c37e99a4b37bdd"
+checksum = "c6fe2584fced156db97a4ffef67b25e3ffccc61919d2d6092099b062708f0540"
 dependencies = [
  "anyhow",
  "bytes",
@@ -2672,6 +2672,7 @@ dependencies = [
  "lazy_static",
  "log",
  "rand 0.8.3",
+ "serde",
  "smallvec 1.6.1",
  "thiserror",
  "tinyvec",
@@ -2693,6 +2694,7 @@ dependencies = [
  "lru-cache",
  "parking_lot",
  "resolv-conf",
+ "serde",
  "smallvec 1.6.1",
  "thiserror",
  "tokio",

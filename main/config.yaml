@@ -170,6 +170,13 @@ networking_profile:
     socket_read_buffer_size: 32kib
     socket_write_buffer_size: 32kib
     connect_timeout: 5s
+  resolver_config:
+    config:
+      name_servers:
+        - socket_addr: 127.0.0.1:53
+          protocol: udp
+    options:
+      timeout: 5s
 
 #leave commented for auto-conf
 concurrency_profile:

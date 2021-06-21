@@ -1,5 +1,5 @@
 use clickhouse::Client;
-use crusty_core::{self, prelude::AsyncHyperResolver, resolver::Resolver, types as rt, MultiCrawler};
+use crusty_core::{self, resolver::Resolver, types as rt, MultiCrawler};
 use ttl_cache::TtlCache;
 
 #[allow(unused_imports)]
@@ -93,7 +93,7 @@ impl RedisOperator<Domain, Domain> for FinishOperator {
 	}
 }
 
-type MyMultiCrawler = MultiCrawler<JobState, TaskState, AsyncHyperResolver, Document>;
+type MyMultiCrawler = MultiCrawler<JobState, TaskState, Document>;
 
 impl Crusty {
 	async fn try_connect(&mut self) -> Result<()> {
@@ -352,7 +352,7 @@ impl Crusty {
 
 	fn domain_resolver_worker(
 		cfg: config::CrustyConfig,
-		resolver: Arc<AsyncHyperResolver>,
+		resolver: Arc<Box<dyn Resolver>>,
 		rx: Receiver<String>,
 		tx_domain_insert: Sender<Domain>,
 	) -> TracingTask<'static> {
