@@ -1,6 +1,9 @@
-- name: 'crusty'
-  org_id: 1
-  folder: ''
-  type: 'file'
-  options:
-    folder: '/var/lib/grafana/dashboards'
+apiVersion: 1
+
+providers:
+  - name: 'crusty'
+    org_id: 1
+    folder: ''
+    type: 'file'
+    options:
+      folder: '/var/lib/grafana/dashboards'
