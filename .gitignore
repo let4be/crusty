@@ -2,3 +2,5 @@
 target/
 log*
 .env
+infra/unbound/conf/*
+!infra/unbound/conf/unbound.conf

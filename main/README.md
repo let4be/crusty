@@ -124,7 +124,7 @@ additionally
 - to run && attach and see live logs from all containers (can abort with ctrl+c)
   `CRUSTY_SEEDS=https://example.com docker-compose up`
 
-- to see running containers `docker ps`(should be 4 - `crusty-grafana`, `crusty-clickhouse`, `crusty-redis` and `crusty` and optionally `crusty-bind9`)
+- to see running containers `docker ps`(should be 4 - `crusty-grafana`, `crusty-clickhouse`, `crusty-redis` and `crusty` and optionally `crusty-unbound`)
 
 - to see logs: `docker logs crusty`
 
@@ -139,7 +139,7 @@ In the real world usage scenario on high bandwidth channel docker might become a
 - clickhouse - metrics
 - redis - smart queue
 - grafana - dashboard for metrics
-- bind9(optional) - run your own recursive DNS resolver server(for heavy-duty setups you will probably need it)
+- unbound(optional) - run your own caching/recursive DNS resolver server(for heavy-duty setups you most likely have to)
 
 just use `docker-compose`, it's the recommended way to play with `Crusty`(configured in `network_mode=host` because of speed constraints when using on ~10gbit/s channels, we don't really wanna pay docker vnet overheads)
 

@@ -235,7 +235,7 @@ impl Crusty {
 		cfg: config::CrustyConfig,
 		tx_metrics: Sender<TaskMeasurement>,
 		tx_domain_insert: Sender<String>,
-		tx_domain_update: Sender<Domain>,
+		tx_domain_update: Vec<Sender<Domain>>,
 		rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
 	) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
@@ -259,7 +259,8 @@ impl Crusty {
 					}
 					rt::JobStatus::Finished(ref _jd) => {
 						let selected_domain = { r.ctx.job_state.lock().unwrap().selected_domain.clone() };
-						let _ = tx_domain_update.send_async(selected_domain).await;
+						let shard = selected_domain.calc_shard(cfg.jobs.shard_total);
+						let _ = tx_domain_update[shard].send_async(selected_domain).await;
 					}
 				}
 			}
@@ -354,7 +355,7 @@ impl Crusty {
 		cfg: config::CrustyConfig,
 		resolver: Arc<Box<dyn Resolver>>,
 		rx: Receiver<String>,
-		tx_domain_insert: Sender<Domain>,
+		tx_domain_insert: Vec<Sender<Domain>>,
 	) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
 			while let Ok(domain_str) = rx.recv_async().await {
@@ -371,12 +372,19 @@ impl Crusty {
 							})
 							.collect::<Vec<_>>();
 
+						// for now we process only domains with available ipv4 addresses, see https://github.com/let4be/crusty/issues/10
+						if addrs.is_empty() {
+							continue
+						}
+
 						let domain = Domain::new(domain_str, addrs, cfg.jobs.addr_key_mask, None);
-						let _ = tx_domain_insert.send_async(domain).await;
+						let shard = domain.calc_shard(cfg.jobs.shard_total);
+						let _ = tx_domain_insert[shard].send_async(domain).await;
 					}
 					Err(_) => {
 						let domain = Domain::new(domain_str, vec![], cfg.jobs.addr_key_mask, None);
-						let _ = tx_domain_insert.send_async(domain).await;
+						let shard = domain.calc_shard(cfg.jobs.shard_total);
+						let _ = tx_domain_insert[shard].send_async(domain).await;
 					}
 				}
 			}
@@ -403,7 +411,7 @@ impl Crusty {
 		})
 	}
 
-	fn domain_resolver(&mut self, tx_domain_insert: Sender<Domain>) -> Sender<String> {
+	fn domain_resolver(&mut self, tx_domain_insert: Vec<Sender<Domain>>) -> Sender<String> {
 		let cfg = self.cfg.clone();
 		let (tx, rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
 		let (tx_out, rx_out) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
@@ -460,10 +468,23 @@ impl Crusty {
 			let tx_metrics_task = self.metrics_task_handler();
 			let tx_metrics_queue = self.metrics_queue_handler();
 			let tx_metrics_db = self.metrics_db_handler();
-			let tx_domain_insert = self.domain_enqueue_handler(0, tx_metrics_db.clone());
-			let tx_domain_update = self.domain_finish_handler(0, tx_metrics_db.clone());
+
+			let scoped_shard_range = self.cfg.jobs.shard_min..self.cfg.jobs.shard_max;
+			let total_shard_range = 0..self.cfg.jobs.shard_total;
+
+			let tx_domain_insert = total_shard_range
+				.clone()
+				.map(|shard| self.domain_enqueue_handler(shard, tx_metrics_db.clone()))
+				.collect::<Vec<_>>();
+			let tx_domain_update = scoped_shard_range
+				.clone()
+				.map(|shard| self.domain_finish_handler(shard, tx_metrics_db.clone()))
+				.collect::<Vec<_>>();
 			let (tx_domain_read_notify, rx_domain_read_notify) = bounded_ch::<DBNotification<Domain>>(3);
-			self.domain_dequeue_handler(0, tx_domain_read_notify.clone());
+
+			for shard in scoped_shard_range.clone() {
+				self.domain_dequeue_handler(shard, tx_domain_read_notify.clone());
+			}
 			let tx_domain_resolve = self.domain_resolver(tx_domain_insert.clone());
 
 			{

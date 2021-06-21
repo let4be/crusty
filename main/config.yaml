@@ -2,7 +2,7 @@ log:
   # fancy some colors? - disable if redirect to file is intended
   ansi: false
   # base-line log level
-  level: info
+  level: warn
   # my_crate=info,my_crate::my_mod=debug,[my_span]=trace
   # see https://tracing.rs/tracing_subscriber/filter/struct.envfilter
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
@@ -12,11 +12,11 @@ app_id: crusty # for metrics
 
 # Redis settings (queue)
 redis:
-  hosts: ["redis://localhost:6379/"]
+  hosts: ["redis://172.16.2.1:6379/", "redis://172.16.2.2:6379/"]
 
 # Clickhouse database settings (metrics)
 clickhouse:
-  url: http://localhost:8123
+  url: http://172.16.1.1:8123
   username: default
   password: ""
   database: crusty
@@ -53,12 +53,16 @@ clickhouse:
 
 # right now sharding is not yet implemented, but there are good placeholders where needed
 jobs:
-  # min shard number we have access to
-  shard_min: 1
-  # max shard number we have access to
-  shard_max: 25
-  # total number of all shards, in a multi-node setup shard_total > shard_max - shard_min + 1 (always)
-  shard_total: 25
+  # min shard number we have access to(so called scoped shards)
+  shard_min: 0
+  # max shard number we have access to(so called scoped shards), effective scoped shards - 0, 1
+  shard_max: 2
+  # total number of all shards, in a multi-node setup shard_total >= shard_max - shard_min
+  shard_total: 2
+
+  # scoped shards - shards we dequeue jobs from and update job status at
+  # total shards - shards we insert into, this is always 0..shard_total
+
   #we resolve IP of all discovered domains and calculate addr_key
   #1. Take only ipv4
   #2. Sort
@@ -147,7 +151,7 @@ default_crawling_settings:
 resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  concurrency: 64
+  concurrency: 350
 
 # domain discovery cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new Crusty nodes
@@ -173,7 +177,7 @@ networking_profile:
   resolver_config:
     config:
       name_servers:
-        - socket_addr: 127.0.0.1:53
+        - socket_addr: 172.16.0.254:53
           protocol: udp
     options:
       timeout: 5s

@@ -59,10 +59,10 @@ impl Domain {
 		interop::DomainDescriptor::new(&self.domain, &self.addr_key)
 	}
 
-	pub fn _calc_shard(&mut self, shards_total: usize) -> u32 {
+	pub fn calc_shard(&self, shards_total: usize) -> usize {
 		let mut hasher = crc32fast::Hasher::new();
 		hasher.update(self.addr_key.as_bytes());
-		hasher.finalize() % shards_total as u32 + 1
+		hasher.finalize() as usize % shards_total
 	}
 }
 

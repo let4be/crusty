@@ -7,7 +7,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/crusty/Dockerfile
-    network_mode: host
+    network_mode: "host"
     logging:
       driver: "json-file"
       options:
@@ -26,7 +26,11 @@ services:
     container_name: crusty-redis
     build:
       context: ./infra/redis
-    network_mode: host
+    networks:
+      crusty:
+        ipv4_address: 172.16.2.1
+    expose:
+      - "6379"
     logging:
       driver: "json-file"
       options:
@@ -41,11 +45,38 @@ services:
       - redis-volume:/data
       - /etc/localtime:/etc/localtime:ro
 
+  redis-2:
+    container_name: crusty-redis-2
+    build:
+      context: ./infra/redis
+    networks:
+      crusty:
+        ipv4_address: 172.16.2.2
+    expose:
+      - "6379"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - redis-volume-2:/data
+      - /etc/localtime:/etc/localtime:ro
+
   clickhouse:
     container_name: crusty-clickhouse
     build:
       context: ./infra/clickhouse
-    network_mode: host
+    networks:
+      crusty:
+        ipv4_address: 172.16.1.1
+    ports:
+      - "0.0.0.0:8123:8123/tcp"
     logging:
       driver: "json-file"
       options:
@@ -65,7 +96,13 @@ services:
     restart: on-failure
     build:
       context: ./infra/grafana
-    network_mode: host
+    networks:
+      crusty:
+        ipv4_address: 172.16.1.2
+    links:
+      - clickhouse
+    ports:
+      - "0.0.0.0:3000:3000/tcp"
     logging:
       driver: "json-file"
       options:
@@ -79,26 +116,36 @@ services:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 2.3.1
       - GF_PLUGIN_DIR=/grafana-plugins
 
-  bind9:
-    container_name: crusty-bind9
+  unbound:
+    container_name: crusty-unbound
     restart: on-failure
     build:
-      context: ./infra/bind9
-    network_mode: bridge
-    ports:
-      - "127.0.0.1:53:53/udp"
+      context: ./infra/unbound
+    networks:
+      crusty:
+        ipv4_address: 172.16.0.254
+    expose:
+      - "53"
     logging:
       driver: "json-file"
       options:
         max-file: "5"
         max-size: "10m"
     volumes:
-      - bind9-cache:/var/cache/bind
+      - ./infra/unbound/conf:/opt/unbound/etc/unbound
       - /etc/localtime:/etc/localtime:ro
+
+networks:
+  crusty:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.16.0.0/16"
 
 volumes:
   redis-volume:
+  redis-volume-2:
   clickhouse-volume:
   grafana-volume:
   grafana-plugins:
-  bind9-cache:
+  unbound-volume:

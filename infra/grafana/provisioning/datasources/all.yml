@@ -2,7 +2,7 @@ datasources:
   - name: clickhouse
     type: vertamedia-clickhouse-datasource
     access: proxy
-    url: http://localhost:8123
+    url: http://clickhouse:8123
     editable: true
     jsonData:
       addCorsHeader: true
