@@ -80,6 +80,7 @@ up to
 
 ## Getting started
 
+one liner for debian/ubuntu to be used on clean, docker-less system
 ```
 curl -fsSL https://raw.githubusercontent.com/let4be/crusty/master/infra/lazy.sh | sudo bash -s && cd crusty
 ```
@@ -93,7 +94,7 @@ https://docs.docker.com/get-docker/
 
 https://docs.docker.com/compose/install/
 
-then clone this repository && configure your machine manually(study the [script](./infra/lazy.sh)!)
+then clone this repository && configure your machine manually(study the [script](./infra/lazy.sh)!) and don't forget [/etc/sysctl.conf](./infra/sysctl.conf) && [configure](./main/config.yaml) crusty
 
 - play with it
 
