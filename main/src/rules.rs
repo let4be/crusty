@@ -36,8 +36,8 @@ impl ct::JobRules<JobState, TaskState, Document> for CrawlingRules {
 
 	fn status_filters(&self) -> ct::StatusFilters<JobState, TaskState> {
 		vec![
-			Box::new(crusty_core::status_filters::ContentType::new(vec!["text/html", "text/plain"])),
 			Box::new(crusty_core::status_filters::Redirect::new()),
+			Box::new(crusty_core::status_filters::ContentType::new(vec!["text/html", "text/plain"])),
 		]
 	}
 
