@@ -51,7 +51,6 @@ clickhouse:
     force_write_duration: 5000ms
     concurrency: 3
 
-# right now sharding is not yet implemented, but there are good placeholders where needed
 jobs:
   # min shard number we have access to(so called scoped shards)
   shard_min: 0
