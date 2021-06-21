@@ -366,7 +366,7 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
- "tracing-tools 0.5.0",
+ "tracing-tools",
  "ttl_cache",
  "url",
  "vergen",
@@ -374,9 +374,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.53.0"
+version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6fe2584fced156db97a4ffef67b25e3ffccc61919d2d6092099b062708f0540"
+checksum = "083ed2d7cdc531d4e849371d9be41bed23a91238d3a0e630a6e0dfc00745a9b9"
 dependencies = [
  "anyhow",
  "bytes",
@@ -400,7 +400,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-tools 0.2.0",
+ "tracing-tools",
  "trust-dns-resolver",
  "url",
 ]
@@ -2628,18 +2628,6 @@ dependencies = [
  "tracing-core",
  "tracing-log",
  "tracing-serde",
-]
-
-[[package]]
-name = "tracing-tools"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb9fe4dae672e8b51fb9fdebec063171a9af088185a308910c9d601dd6b0f30f"
-dependencies = [
- "anyhow",
- "futures-lite",
- "tracing",
- "tracing-futures",
 ]
 
 [[package]]
