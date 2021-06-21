@@ -32,11 +32,11 @@ conf_eth () {
 	ifconfig $DEV:$INDEX $IP up || true
 }
 
-echo "what is the internet's NIC name?"
+echo "what is the internet's NIC name(enter to skip)?"
 read -r DEV </dev/tty
 echo "about to configure $DEV"
 
-echo "what are available NIC IPs?"
+echo "what are available NIC IPs(enter to skip)?"
 i=0
 while IFS='$\n' read -r IP </dev/tty; do
     if [ "$IP" == "" ]; then
@@ -55,7 +55,7 @@ while IFS='$\n' read -r IP </dev/tty; do
     done
 
     ((i=i+1))
-    echo "next ip?"
+    echo "next ip(enter to skip)?"
 done
 
 echo "Getting crusty..."
