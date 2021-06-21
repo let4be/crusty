@@ -74,7 +74,7 @@ nano ./main/config.yaml </dev/tty
 docker-compose build
 
 echo "Everything is almost ready to go..."
-echo "To make sure your user can use docker, execute sudo -s -u ${USER}"
+echo "To make sure your user can use docker, execute sudo -s -u ${SUDO_USER}"
 echo "Or just logout and log back in"
 echo "To play with crusty"
 echo "CRUSTY_SEEDS=https://cnn.com docker-compose up -d --build"
