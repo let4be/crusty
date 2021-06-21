@@ -61,7 +61,7 @@ done
 echo "Getting crusty..."
 git clone https://github.com/let4be/crusty
 chown -R "$SUDO_USER":"$SUDO_USER" crusty
-chmod -R go-rwx crusty
+chmod -R go-wx crusty
 cd crusty
 
 echo "Configuring sysctl..."
