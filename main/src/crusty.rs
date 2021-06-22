@@ -14,18 +14,18 @@ struct ChMeasurements {
 	list: Vec<Box<dyn Fn() -> QueueMeasurement + Send + Sync + 'static>>,
 }
 
-struct SenderWr<T>(Weak<Sender<T>>);
-struct ReceiverWr<T>(Receiver<T>);
+struct SenderWeak<T>(Weak<Sender<T>>);
+struct ReceiverWeak<T>(Receiver<T>);
 
 trait LenGetter: Send + Sync + 'static {
 	fn len(&self) -> usize;
 }
-impl<T: Send + 'static> LenGetter for SenderWr<T> {
+impl<T: Send + 'static> LenGetter for SenderWeak<T> {
 	fn len(&self) -> usize {
 		self.0.upgrade().map(|sender| sender.len()).unwrap_or(0)
 	}
 }
-impl<T: Send + 'static> LenGetter for ReceiverWr<T> {
+impl<T: Send + 'static> LenGetter for ReceiverWeak<T> {
 	fn len(&self) -> usize {
 		self.0.len()
 	}
@@ -178,7 +178,7 @@ impl Crusty {
 	fn ch<T: Send + 'static>(&mut self, name: &'static str, index: usize, bounds: usize) -> (Sender<T>, Receiver<T>) {
 		let (tx, rx) = bounded_ch::<T>(bounds);
 
-		self.ch_measurements.register(name, index, ReceiverWr(rx.clone()));
+		self.ch_measurements.register(name, index, ReceiverWeak(rx.clone()));
 
 		(tx, rx)
 	}
@@ -450,11 +450,11 @@ impl Crusty {
 				tokio::select! {
 					_ = tokio::signal::ctrl_c() => {
 						if graceful_timeout.as_millis() < 1 {
-							warn!("Ctrl-C detected - but graceful_timeout is zero, switching to immediate shutdown mode");
+							warn!("Ctrl-C detected, but graceful_timeout is zero - switching to immediate shutdown mode");
 							break
 						}
 
-						warn!("Ctrl-C detected - no more accepting new tasks, awaiting graceful termination for {}s.", graceful_timeout.as_secs());
+						warn!("Ctrl-C detected - no more accepting new jobs, awaiting graceful termination for {}s.", graceful_timeout.as_secs());
 						if let SigTerm::Instant(_) = &sig_term {
 							warn!("Ctrl-C detected while awaiting for graceful termination - switching to immediate shutdown mode");
 							break
@@ -467,7 +467,7 @@ impl Crusty {
 				match &sig_term {
 					SigTerm::Tx(tx_sig_term) => if tx_sig_term.is_disconnected() { break },
 					SigTerm::Instant(sig_term_instant) => if sig_term_instant.elapsed() > graceful_timeout {
-						warn!("Failed to gracefully stop within graceful timeout({}s.), exit as is", graceful_timeout.as_secs());
+						warn!("Failed to exit within graceful timeout({}s.) - switching to immediate shutdown mode", graceful_timeout.as_secs());
 						break
 					}
 				}
@@ -603,15 +603,15 @@ impl Crusty {
 
 		info!("Creating parser processor...");
 		let tx_pp = crusty_core::ParserProcessor::spawn(concurrency_profile.clone(), *cfg.parser_processor_stack_size);
-		self.ch_measurements.register("parser", 0, SenderWr(Arc::downgrade(&tx_pp)));
+		self.ch_measurements.register("parser", 0, SenderWeak(Arc::downgrade(&tx_pp)));
 
 		info!("Creating crawler instance...");
 		let (crawler, tx_job, rx_job_state_update) =
 			crusty_core::MultiCrawler::new(tx_pp, concurrency_profile.clone(), network_profile);
 		let tx_job = Arc::new(tx_job);
 
-		self.ch_measurements.register("job", 0, SenderWr(Arc::downgrade(&tx_job)));
-		self.ch_measurements.register("job_state_update", 0, ReceiverWr(rx_job_state_update.clone()));
+		self.ch_measurements.register("job", 0, SenderWeak(Arc::downgrade(&tx_job)));
+		self.ch_measurements.register("job_state_update", 0, ReceiverWeak(rx_job_state_update.clone()));
 
 		let tx_metrics_task = self.metrics_task_handler();
 		let tx_metrics_queue = self.metrics_queue_handler();
