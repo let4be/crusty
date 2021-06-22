@@ -18,7 +18,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   see a typical [config file](./main/config.yaml) with some explanations regarding available options
 
-- Fast single node performance (~10 gbit/s on 96 core `c5.metal`)
+- Fast single node performance (~10 gbit/s on 48 core(96HT) `c5.metal`)
 
   - Crusty is written in `Rust` on top of green threads running on [tokio](https://github.com/tokio-rs/tokio), so it can achieve quite impressive single-node performance even on a moderate PC
 
@@ -96,7 +96,7 @@ https://docs.docker.com/compose/install/
 
 then clone this repository && configure your machine manually(study the [script](./infra/lazy.sh)!) and don't forget [/etc/sysctl.conf](./infra/sysctl.conf) && [configure](./main/config.yaml) crusty
 
-- play with it ( !CHANGE example.com to some valid domain without outgoing links not protected by robots.txt! )
+- play with it ( !CHANGE example.com to some valid domain with outgoing links not protected by robots.txt! )
 
 ```
 CRUSTY_SEEDS=https://example.com docker-compose up -d --build
