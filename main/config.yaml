@@ -6,9 +6,21 @@ log:
   # my_crate=info,my_crate::my_mod=debug,[my_span]=trace
   # see https://tracing.rs/tracing_subscriber/filter/struct.envfilter
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
-  #filter: ["[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"]
+  #filter: ["[task{name=TaskProcessor::go}]=warn", "[task{name=TaskScheduler::go}]=warn", "[task{name=Crawler::go}]=warn"]
 host: crawler-1 # for metrics
 app_id: crusty # for metrics
+
+# as soon as we see SIGTERM we stop consuming new jobs from redis queue and switch to one of shutdown states
+# graceful - we have time to spare
+#     1) start counting graceful_timeout
+#     2) WAIT for second SIGTERM or graceful_timeout elapsed - switch to immediate shutdown mode
+#     3) WAIT if we processed all jobs and persisted everything to db THEN exit normally
+# immediate - we need to be exit asap
+#     1) stop all crawling activity no matter the state of it
+#     2) WAIT if we persisted everything to db THEN exit normally
+shutdown:
+  # putting graceful_timeout to 0 basically means we go straight to immediate shutdown mode
+  graceful_timeout: 5s
 
 # Redis settings (queue)
 redis:
@@ -135,9 +147,9 @@ default_crawling_settings:
   # timeout for page loading and buffering
   load_timeout: 10s
   # after soft timeout elapses we no longer queue new tasks for domain
-  job_soft_timeout: 180s
+  job_soft_timeout: 30s
   # after hard timeout elapses we forcibly stop the crawling job for this domain
-  job_hard_timeout: 360s
+  job_hard_timeout: 60s
   user_agent: "crusty/0.12.0"
   compression: true
   # custom headers are supported
@@ -150,7 +162,7 @@ default_crawling_settings:
 resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  concurrency: 350
+  concurrency: 50
 
 # domain discovery cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new Crusty nodes
@@ -176,7 +188,7 @@ networking_profile:
   resolver_config:
     config:
       name_servers:
-        - socket_addr: 172.16.0.254:53
+        - socket_addr: 127.0.0.53:53
           protocol: udp
     options:
       timeout: 5s
@@ -188,4 +200,4 @@ concurrency_profile:
   # pin N parser threads to core
   parser_pin: 0
   # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
-  domain_concurrency: 300
+  domain_concurrency: 100

@@ -4,7 +4,7 @@ pub use std::{
 	iter::Iterator,
 	pin::Pin,
 	rc::Rc,
-	sync::{Arc, Mutex},
+	sync::{Arc, Mutex, Weak},
 };
 
 pub use anyhow::{anyhow, Context as _};

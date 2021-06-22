@@ -206,38 +206,21 @@ impl From<TaskMeasurement> for TaskMeasurementDBEntry {
 }
 
 #[derive(Debug, Clone)]
-pub struct QueueStats {
-	pub len:  usize,
-	pub time: u32,
-}
-
-#[derive(Debug, Clone)]
-pub enum QueueKind {
-	Job,
-	JobUpdate,
-	MetricsTask,
-	MetricsQueue,
-	MetricsDB,
-	DomainUpdate,
-	DomainInsert,
-
-	Parse,
-	DomainResolveAggregator,
-}
-
-#[derive(Debug, Clone)]
 pub struct QueueMeasurement {
-	pub kind:  QueueKind,
-	pub stats: QueueStats,
+	pub time:  Duration,
+	pub name:  String,
+	pub index: usize,
+	pub len:   usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Row)]
 pub struct QueueMeasurementDBEntry {
-	host:           String,
-	app_id:         String,
-	pub name:       String,
-	pub updated_at: u32,
-	pub len:        u32,
+	host:       String,
+	app_id:     String,
+	name:       String,
+	name_index: u32,
+	updated_at: u32,
+	len:        u32,
 }
 
 impl From<QueueMeasurement> for QueueMeasurementDBEntry {
@@ -245,9 +228,10 @@ impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 		Self {
 			host:       config().host.clone(),
 			app_id:     config().app_id.clone(),
-			name:       format!("{:?}", s.kind),
-			updated_at: s.stats.time,
-			len:        s.stats.len as u32,
+			updated_at: s.time.as_secs() as u32,
+			name:       s.name,
+			name_index: s.index as u32,
+			len:        s.len as u32,
 		}
 	}
 }

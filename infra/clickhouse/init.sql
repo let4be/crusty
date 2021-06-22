@@ -21,6 +21,7 @@ CREATE TABLE metrics_queue (
     host String,
     app_id String,
     name String,
+    name_index UInt32,
     len UInt32
 ) ENGINE = Memory;
 

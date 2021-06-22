@@ -40,23 +40,15 @@ impl Writer {
 		&self,
 		client: Client,
 		rx: Receiver<A>,
-		tx_notify: Option<Sender<DBNotification<A>>>,
 		map: F,
 	) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
 		let map = Arc::new(map);
 		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {
-			Writer::go(
-				self.cfg.clone(),
-				client.clone(),
-				rx.clone(),
-				tx_notify.clone(),
-				Arc::clone(&map),
-				state.clone(),
-			)
-			.instrument()
-			.await
-			.map_err(backoff::Error::Transient)?;
+			Writer::go(self.cfg.clone(), client.clone(), rx.clone(), Arc::clone(&map), state.clone())
+				.instrument()
+				.await
+				.map_err(backoff::Error::Transient)?;
 			Ok(())
 		})
 		.await
@@ -70,7 +62,6 @@ impl Writer {
 		cfg: ClickhouseWriterConfig,
 		client: Client,
 		rx: Receiver<A>,
-		tx_notify: Option<Sender<DBNotification<A>>>,
 		map: Arc<F>,
 		state: Arc<Mutex<WriterState<A>>>,
 	) -> TracingTask<'static> {
@@ -107,16 +98,6 @@ impl Writer {
 						since_last.as_millis(),
 						write_took.as_millis()
 					);
-					if let Some(tx_notify) = &tx_notify {
-						let n = DBNotification {
-							label: cfg.label.clone(),
-							table_name: cfg.table_name.clone(),
-							since_last,
-							duration: write_took,
-							items: { state.lock().unwrap().notify.clone() },
-						};
-						let _ = tx_notify.send_async(n).await;
-					}
 					state.lock().unwrap().notify.clear();
 					last_write = Instant::now();
 				}
@@ -134,7 +115,6 @@ impl Writer {
 				}
 			}
 
-			// if we're stopping, we don't care much about notifications or logs(for now...)
 			inserter.end().await?;
 
 			Ok(())

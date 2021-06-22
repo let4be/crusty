@@ -16,6 +16,17 @@ pub fn config<'a>() -> &'a CrustyConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct ShutdownConfig {
+	pub graceful_timeout: rc::CDuration,
+}
+
+impl Default for ShutdownConfig {
+	fn default() -> Self {
+		Self { graceful_timeout: rc::CDuration::from_secs(0) }
+	}
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct RedisConfig {
 	pub hosts: Vec<String>,
 }
@@ -251,6 +262,8 @@ pub struct CrustyConfig {
 	pub host:   String,
 	pub app_id: String,
 
+	#[serde(default)]
+	pub shutdown: ShutdownConfig,
 	#[serde(default)]
 	pub log: LogConfig,
 	#[serde(default)]

@@ -68,29 +68,36 @@ fn main() -> Result<()> {
 	let new_fd_lim = fdlimit::raise_fd_limit();
 	println!("New FD limit set: {:?}", new_fd_lim);
 
-	let (tx_crawler, rx_crawler) = std::sync::mpsc::channel();
+	let (tx_crusty, rx_crusty) = std::sync::mpsc::channel::<crusty::CrustyHandle>();
 	let (tx_crawler_done, rx_crawler_done) = unbounded_ch();
 
 	std::thread::spawn(move || {
 		let rt = tokio::runtime::Runtime::new().unwrap();
-		rt.block_on(async move {
-			let crusty = Crusty::new(cfg.clone());
-			crusty.go(tx_crawler, rx_crawler_done).instrument().await
-		})
+		rt.block_on(
+			TracingTask::new(span!(), async move {
+				let crusty_handle = rx_crusty.recv()?;
+
+				info!("Crawling is a go...");
+				tokio::select! {
+					r = crusty_handle.crawler.go() => {
+						info!("Crawler finished...");
+						r?;
+					},
+					_ = crusty_handle.rx_force_term.recv_async() => {
+						info!("Crawler finished by a force signal...");
+					}
+				}
+
+				drop(tx_crawler_done);
+				Ok::<(), anyhow::Error>(())
+			})
+			.instrument(),
+		)
 	});
 
 	let rt = tokio::runtime::Runtime::new().unwrap();
-	rt.block_on(
-		TracingTask::new(span!(), async move {
-			let crawler = rx_crawler.recv()?;
-
-			info!("Crawling is a go...");
-			let _ = crawler.go().await?;
-			info!("Crawling finished...");
-
-			drop(tx_crawler_done);
-			Ok::<(), anyhow::Error>(())
-		})
-		.instrument(),
-	)
+	rt.block_on(async move {
+		let crusty = Crusty::new();
+		crusty.go(tx_crusty, rx_crawler_done).instrument().await
+	})
 }

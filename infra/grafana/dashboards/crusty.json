@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1623790632743,
+  "iteration": 1624394746327,
   "links": [],
   "panels": [
     {
@@ -1228,8 +1228,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as JobUpdate\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'JobUpdate'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
-          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as JobUpdate\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1623160101) AND updated_at <= toDateTime(1623160403)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'JobUpdate'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
+          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as JobUpdate\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'job_state_update'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
+          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as JobUpdate\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624394706) AND updated_at <= toDateTime(1624395008)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'job_state_update'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -1241,8 +1241,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Job\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'Job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
-          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Job\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1623160101) AND updated_at <= toDateTime(1623160403)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'Job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
+          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Job\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
+          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Job\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624394706) AND updated_at <= toDateTime(1624395008)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -1254,8 +1254,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Parse\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'Parse'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
-          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Parse\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1623160101) AND updated_at <= toDateTime(1623160403)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'Parse'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
+          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Parse\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host) $conditionalTest(AND app_id = '$app_id', $app_id)\r\n    AND name = 'parser'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
+          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Parse\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624394706) AND updated_at <= toDateTime(1624395008)\r\n     AND host = 'crawler-1'   AND app_id = 'crusty' \r\n    AND name = 'parser'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
