@@ -188,7 +188,7 @@ networking_profile:
   resolver_config:
     config:
       name_servers:
-        - socket_addr: 127.0.0.53:53
+        - socket_addr: 172.16.0.254:53
           protocol: udp
     options:
       timeout: 5s
