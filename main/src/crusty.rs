@@ -136,10 +136,10 @@ impl RedisOperator<Domain, Domain> for FinishOperator {
 	}
 }
 
-type MyMultiCrawler = MultiCrawler<JobState, TaskState, Document>;
+type CrustyMultiCrawler = MultiCrawler<JobState, TaskState, Document>;
 
 pub struct CrustyHandle {
-	pub crawler:       MyMultiCrawler,
+	pub crawler:       CrustyMultiCrawler,
 	pub rx_force_term: Receiver<()>,
 }
 
@@ -202,8 +202,8 @@ impl Crusty {
 
 	fn metrics_queue_handler(&mut self) -> Sender<QueueMeasurement> {
 		let cfg = config::config();
-
 		let (tx, rx) = self.ch_trans("metrics_queue");
+
 		for _ in 0..cfg.clickhouse.metrics_queue.concurrency {
 			let client = self.client.clone();
 			let cfg = cfg.clone();
@@ -213,6 +213,7 @@ impl Crusty {
 				writer.go_with_retry(client, rx, QueueMeasurementDBEntry::from).await
 			}));
 		}
+
 		tx
 	}
 
@@ -491,14 +492,11 @@ impl Crusty {
 		TracingTask::new(span!(), async move {
 			while let Ok(domain_str) = rx.recv_async().await {
 				let r = tokio::select! {
-					r = resolver.resolve(&domain_str) => Some(r),
-					_ = rx_sig_term.recv_async() => None
+					r = resolver.resolve(&domain_str) => r,
+					_ = rx_sig_term.recv_async() => break
 				};
-				if r.is_none() {
-					break
-				}
 
-				match r.unwrap() {
+				match r {
 					Ok(addrs) => {
 						let addrs = addrs
 							.filter(|a| {
@@ -534,7 +532,7 @@ impl Crusty {
 			let mut overflow = 0_u32;
 			let mut last_overflow_check = Instant::now();
 			while let Ok(domain_str) = rx.recv_async().await {
-				if tx.try_send(domain_str.clone()).is_err() {
+				if tx.try_send(domain_str).is_err() {
 					overflow += 1;
 				}
 
@@ -550,8 +548,8 @@ impl Crusty {
 
 	fn domain_resolver(&mut self, rx_sig_term: Receiver<()>, tx_domain_insert: Vec<Sender<Domain>>) -> Sender<String> {
 		let cfg = config::config();
-		let (tx, rx) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
-		let (tx_out, rx_out) = bounded_ch::<String>(cfg.concurrency_profile.transit_buffer_size());
+		let (tx, rx) = self.ch_trans("domain_resolver_in");
+		let (tx_out, rx_out) = self.ch_trans("domain_resolver_out");
 
 		for _ in 0..cfg.resolver.concurrency {
 			let network_profile = cfg.networking_profile.clone().resolve().unwrap();
@@ -591,7 +589,7 @@ impl Crusty {
 			.unwrap();
 	}
 
-	async fn crawler(&mut self) -> Result<(MyMultiCrawler, Receiver<()>, Sender<QueueMeasurement>)> {
+	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurement>)> {
 		let cfg = config::config();
 
 		let network_profile = cfg.networking_profile.clone().resolve()?;
@@ -633,11 +631,9 @@ impl Crusty {
 		self.send_seed_jobs(tx_domain_read_notify.clone()).await;
 		self.job_sender(rx_domain_read_notify, tx_job, tx_metrics_db.clone());
 
-		{
-			let rx_dequeue_permit = self.dequeue_permit_emitter(rx_sig_term.clone());
-			for shard in scoped_shard_range.clone() {
-				self.domain_dequeue_processor(shard, rx_dequeue_permit.clone(), tx_domain_read_notify.clone());
-			}
+		let rx_dequeue_permit = self.dequeue_permit_emitter(rx_sig_term.clone());
+		for shard in scoped_shard_range.clone() {
+			self.domain_dequeue_processor(shard, rx_dequeue_permit.clone(), tx_domain_read_notify.clone());
 		}
 
 		let tx_domain_resolve = self.domain_resolver(rx_force_term.clone(), tx_domain_insert.clone());

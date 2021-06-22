@@ -162,7 +162,7 @@ default_crawling_settings:
 resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  concurrency: 50
+  concurrency: 150
 
 # domain discovery cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new Crusty nodes
@@ -200,4 +200,4 @@ concurrency_profile:
   # pin N parser threads to core
   parser_pin: 0
   # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
-  domain_concurrency: 100
+  domain_concurrency: 300

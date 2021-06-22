@@ -96,7 +96,7 @@ https://docs.docker.com/compose/install/
 
 then clone this repository && configure your machine manually(study the [script](./infra/lazy.sh)!) and don't forget [/etc/sysctl.conf](./infra/sysctl.conf) && [configure](./main/config.yaml) crusty
 
-- play with it
+- play with it ( !CHANGE example.com to some valid domain without outgoing links not protected by robots.txt! )
 
 ```
 CRUSTY_SEEDS=https://example.com docker-compose up -d --build
