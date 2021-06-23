@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624480181517,
+  "iteration": 1624486080391,
   "links": [],
   "panels": [
     {
@@ -479,7 +479,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT 'total' as p, count(created_at) as \"Term by error\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND term=1 AND term_reason  = '' AND term_kind = 'Error'",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Term by error\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624481492) AND created_at <= toDateTime(1624481794)  AND host = 'crawler-1' \n    AND term=1 AND term_reason  = '' AND term_kind = 'Error'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Term by error\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624488458) AND created_at <= toDateTime(1624488760)  AND host = 'crawler-1' \n    AND term=1 AND term_reason  = '' AND term_kind = 'Error'",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -492,7 +492,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT 'total' as p, count(created_at) as \"Term by panic\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND term=1 AND term_reason  = '' AND term_kind = 'Panic'",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Term by panic\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624481492) AND created_at <= toDateTime(1624481794)  AND host = 'crawler-1' \n    AND term=1 AND term_reason  = '' AND term_kind = 'Panic'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Term by panic\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624488458) AND created_at <= toDateTime(1624488760)  AND host = 'crawler-1' \n    AND term=1 AND term_reason  = '' AND term_kind = 'Panic'",
           "refId": "E",
           "round": "0s",
           "skip_comments": true
@@ -504,8 +504,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"Content Type\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND term=1 AND term_reason  = 'ContentType'",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Content Type\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624481492) AND created_at <= toDateTime(1624481794)  AND host = 'crawler-1' \n    AND term=1 AND term_reason  = 'ContentType'",
+          "query": "SELECT 'total' as p, count(created_at) as \"Content Type\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND term=1 AND term_reason  = 'ContentType' AND term_kind = 'Reason'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Content Type\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624488458) AND created_at <= toDateTime(1624488760)  AND host = 'crawler-1' \n    AND term=1 AND term_reason  = 'ContentType' AND term_kind = 'Reason'",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -517,8 +517,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"Redirect\"\r\n\r\nFROM $DB.metrics_task\r\n\r\nWHERE\r\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\r\n    AND term=1 AND term_reason  = 'Redirect'",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Redirect\"\r\n\r\nFROM crusty.metrics_task\r\n\r\nWHERE\r\n    created_at >= toDateTime(1624481492) AND created_at <= toDateTime(1624481794)  AND host = 'crawler-1' \r\n    AND term=1 AND term_reason  = 'Redirect'",
+          "query": "SELECT 'total' as p, count(created_at) as \"Redirect\"\r\n\r\nFROM $DB.metrics_task\r\n\r\nWHERE\r\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\r\n    AND term=1 AND term_reason  = 'Redirect' AND term_kind = 'Reason'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Redirect\"\r\n\r\nFROM crusty.metrics_task\r\n\r\nWHERE\r\n    created_at >= toDateTime(1624488458) AND created_at <= toDateTime(1624488760)  AND host = 'crawler-1' \r\n    AND term=1 AND term_reason  = 'Redirect' AND term_kind = 'Reason'",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
@@ -530,8 +530,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"Max Redirect\"\r\n\r\nFROM $DB.metrics_task\r\n\r\nWHERE\r\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\r\n    AND term=1 AND term_reason  = 'MaxRedirect'",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Max Redirect\"\r\n\r\nFROM crusty.metrics_task\r\n\r\nWHERE\r\n    created_at >= toDateTime(1624481492) AND created_at <= toDateTime(1624481794)  AND host = 'crawler-1' \r\n    AND term=1 AND term_reason  = 'MaxRedirect'",
+          "query": "SELECT 'total' as p, count(created_at) as \"Max Redirect\"\r\n\r\nFROM $DB.metrics_task\r\n\r\nWHERE\r\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\r\n    AND term=1 AND term_reason  = 'MaxRedirect' AND term_kind = 'Reason'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Max Redirect\"\r\n\r\nFROM crusty.metrics_task\r\n\r\nWHERE\r\n    created_at >= toDateTime(1624488458) AND created_at <= toDateTime(1624488760)  AND host = 'crawler-1' \r\n    AND term=1 AND term_reason  = 'MaxRedirect' AND term_kind = 'Reason'",
           "refId": "D",
           "round": "0s",
           "skip_comments": true
@@ -691,7 +691,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT 'total' as p, count(created_at) as \"Other Errors\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND error=1 AND error_known  = ''",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Other Errors\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624481901) AND created_at <= toDateTime(1624482203)  AND host = 'crawler-1' \n    AND error=1 AND error_known  = ''",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Other Errors\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624488054) AND created_at <= toDateTime(1624488356)  AND host = 'crawler-1' \n    AND error=1 AND error_known  = ''",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -703,8 +703,8 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"Status Timeout\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND error=1 AND error_known  = 'StatusTimeout'",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Status Timeout\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624481901) AND created_at <= toDateTime(1624482203)  AND host = 'crawler-1' \n    AND error=1 AND error_known  = 'StatusTimeout'",
+          "query": "SELECT 'total' as p, count(created_at) as \"Head Status Timeout\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND error=1 AND error_known  = 'HeadStatusTimeout'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Head Status Timeout\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624488054) AND created_at <= toDateTime(1624488356)  AND host = 'crawler-1' \n    AND error=1 AND error_known  = 'HeadStatusTimeout'",
           "refId": "E",
           "round": "0s",
           "skip_comments": true
@@ -716,9 +716,22 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "hide": false,
           "intervalFactor": 1,
-          "query": "SELECT 'total' as p, count(created_at) as \"Load Timeout\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND error=1 AND error_known  = 'LoadTimeout'",
-          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Load Timeout\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624481901) AND created_at <= toDateTime(1624482203)  AND host = 'crawler-1' \n    AND error=1 AND error_known  = 'LoadTimeout'",
+          "query": "SELECT 'total' as p, count(created_at) as \"Get Status Timeout\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND error=1 AND error_known  = 'StatusTimeout'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Get Status Timeout\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624488054) AND created_at <= toDateTime(1624488356)  AND host = 'crawler-1' \n    AND error=1 AND error_known  = 'StatusTimeout'",
           "refId": "B",
+          "round": "0s",
+          "skip_comments": true
+        },
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "hide": false,
+          "intervalFactor": 1,
+          "query": "SELECT 'total' as p, count(created_at) as \"Load Timeout\"\n\nFROM $DB.metrics_task\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND error=1 AND error_known  = 'LoadTimeout'",
+          "rawQuery": "SELECT 'total' as p, count(created_at) as \"Load Timeout\"\n\nFROM crusty.metrics_task\n\nWHERE\n    created_at >= toDateTime(1624488054) AND created_at <= toDateTime(1624488356)  AND host = 'crawler-1' \n    AND error=1 AND error_known  = 'LoadTimeout'",
+          "refId": "C",
           "round": "0s",
           "skip_comments": true
         }
