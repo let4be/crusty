@@ -41,8 +41,8 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   - This is widely used to avoid bombing same IP(or subnet if so desired) by concurrent requests
 
-  - Each domain belongs to some shard(`crc32(addr_key) % number_of_shards`), now each `Crusty` instance can read from a unique subset of all those shards while can write to all of them(so-called domain discovery).
-  Shards can be distributed across many redis instances.
+  - Each domain belongs to some shard(`crc32(addr_key) % number_of_shards`), now each `Crusty` instance can read/update from a subset of all those shards while can insert to all of them(so-called domain discovery).
+  Shards can be distributed across many redis instances if needed.
 
   - With careful planning and minimal changes this system should scale from a single core instance to a 100+ instances(with total of tens of thousands of cores)
 
