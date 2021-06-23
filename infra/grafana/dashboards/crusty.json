@@ -1763,28 +1763,6 @@
       {
         "current": {
           "selected": false,
-          "text": "crawler-1",
-          "value": "crawler-1"
-        },
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "label": null,
-        "name": "host",
-        "options": [
-          {
-            "selected": true,
-            "text": "Crawler-1",
-            "value": "Crawler-1"
-          }
-        ],
-        "query": "crawler-1",
-        "skipUrlSync": false,
-        "type": "textbox"
-      },
-      {
-        "current": {
-          "selected": false,
           "text": "crusty",
           "value": "crusty"
         },
@@ -1801,6 +1779,28 @@
           }
         ],
         "query": "crusty",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "crawler-1",
+          "value": "crawler-1"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "host",
+        "options": [
+          {
+            "selected": true,
+            "text": "Crawler-1",
+            "value": "Crawler-1"
+          }
+        ],
+        "query": "crawler-1",
         "skipUrlSync": false,
         "type": "textbox"
       }
