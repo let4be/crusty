@@ -59,6 +59,7 @@ impl ChMeasurements {
 
 pub struct Crusty {
 	ddc:             Arc<Mutex<TtlCache<String, ()>>>,
+	tld:             Arc<HashSet<&'static str>>,
 	handles:         Vec<tokio::task::JoinHandle<Result<()>>>,
 	ch_measurements: ChMeasurements,
 
@@ -166,11 +167,24 @@ impl Crusty {
 			.with_password(&cfg.clickhouse.password)
 			.with_database(&cfg.clickhouse.database);
 
+		let tld = include_str!("../tld.txt");
+
 		Self {
 			ddc: Arc::new(Mutex::new(TtlCache::new(cfg.ddc_cap))),
+			tld: Arc::new(
+				tld.split('\n')
+					.filter_map(|s| {
+						let s = s.trim();
+						if s.is_empty() || s.starts_with('#') {
+							return None
+						}
+						Some(s)
+					})
+					.collect(),
+			),
+
 			handles: vec![],
 			ch_measurements: ChMeasurements { list: vec![] },
-
 			client,
 		}
 	}
@@ -234,7 +248,7 @@ impl Crusty {
 		tx
 	}
 
-	fn metrics_task_handler(&mut self) -> Sender<TaskMeasurement> {
+	fn metrics_task_handler(&mut self) -> Sender<TaskMeasurementDBEntry> {
 		let cfg = config::config();
 		let (tx, rx) = self.ch_trans("metrics_task");
 
@@ -244,7 +258,7 @@ impl Crusty {
 			self.spawn(TracingTask::new(span!(), async move {
 				let cfg = config::config();
 				let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_task.clone());
-				writer.go_with_retry(client, rx, TaskMeasurementDBEntry::from).await
+				writer.go_with_retry(client, rx, |e| e).await
 			}));
 		}
 
@@ -323,11 +337,17 @@ impl Crusty {
 		lnk: &Arc<rt::Link>,
 		task_domain: &str,
 		ddc: &Arc<Mutex<TtlCache<String, ()>>>,
+		tld: &Arc<HashSet<&'static str>>,
 		cfg: &config::CrustyConfig,
 	) -> Option<String> {
 		let domain = lnk.host()?;
 
-		if domain.len() < 3 || !domain.contains('.') || domain == *task_domain {
+		if domain.len() < 4 || !domain.contains('.') || domain == *task_domain {
+			return None
+		}
+
+		let domain_tld = domain.split('.').last().unwrap().to_uppercase();
+		if !tld.contains(domain_tld.as_str()) {
 			return None
 		}
 
@@ -345,13 +365,14 @@ impl Crusty {
 
 	fn result_handler(
 		&mut self,
-		tx_metrics: Sender<TaskMeasurement>,
+		tx_metrics: Sender<TaskMeasurementDBEntry>,
 		tx_domain_insert: Sender<String>,
 		tx_domain_update: Vec<Sender<Domain>>,
 		rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
 	) {
 		let cfg = config::config();
 		let ddc = Arc::clone(&self.ddc);
+		let tld = Arc::clone(&self.tld);
 
 		self.spawn(TracingTask::new(span!(), async move {
 			while let Ok(r) = rx_job_state_update.recv_async().await {
@@ -360,8 +381,10 @@ impl Crusty {
 				let task_domain = r.task.link.host().unwrap();
 				match r.status {
 					rt::JobStatus::Processing(Ok(ref jp)) => {
-						let discovered_domains =
-							jp.links.iter().filter_map(|lnk| Crusty::domain_filter_map(&lnk, &task_domain, &ddc, &cfg));
+						let discovered_domains = jp
+							.links
+							.iter()
+							.filter_map(|lnk| Crusty::domain_filter_map(&lnk, &task_domain, &ddc, &tld, &cfg));
 
 						for domain in discovered_domains {
 							let _ = tx_domain_insert.send_async(domain).await;
@@ -404,6 +427,7 @@ impl Crusty {
 						.as_ref()
 						.map(|u| u.to_string())
 						.unwrap_or_else(|| format!("http://{}", &domain.domain));
+
 					let job_obj = Job::new_with_shared_settings(
 						&url,
 						Arc::clone(&default_crawling_settings),
@@ -498,16 +522,7 @@ impl Crusty {
 
 				match r {
 					Ok(addrs) => {
-						let addrs = addrs
-							.filter(|a| {
-								for net in crusty_core::resolver::RESERVED_SUBNETS.iter() {
-									if net.contains(&a.ip()) {
-										return false
-									}
-								}
-								a.ip().is_ipv4()
-							})
-							.collect::<Vec<_>>();
+						let addrs = addrs.filter(|a| a.ip().is_ipv4()).collect::<Vec<_>>();
 
 						// for now we process only domains with available ipv4 addresses, see https://github.com/let4be/crusty/issues/10
 						if addrs.is_empty() {

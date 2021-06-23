@@ -8,7 +8,6 @@ log:
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
   #filter: ["[task{name=TaskProcessor::go}]=warn", "[task{name=TaskScheduler::go}]=warn", "[task{name=Crawler::go}]=warn"]
 host: crawler-1 # for metrics
-app_id: crusty # for metrics
 
 # as soon as we see SIGTERM we stop consuming new jobs from redis queue and switch to one of shutdown states
 # graceful - we have time to spare
@@ -144,7 +143,9 @@ default_crawling_settings:
   delay: 1s
   # vary delay time by this jitter(0..)
   delay_jitter: 1s
-  # timeout for page loading and buffering
+  # timeout for status loading(headers only)
+  status_timeout: 5s
+  # timeout for page loading and buffering(data)
   load_timeout: 10s
   # after soft timeout elapses we no longer queue new tasks for domain
   job_soft_timeout: 30s
@@ -192,6 +193,8 @@ networking_profile:
           protocol: udp
     options:
       timeout: 5s
+  #optionally blacklist some nets, reserved ipv4 are already blacklisted
+  net_v4_blacklist: []
 
 #leave commented for auto-conf
 concurrency_profile:

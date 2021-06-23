@@ -259,8 +259,7 @@ impl Default for LogConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct CrustyConfig {
-	pub host:   String,
-	pub app_id: String,
+	pub host: String,
 
 	#[serde(default)]
 	pub shutdown: ShutdownConfig,

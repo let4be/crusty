@@ -22,7 +22,6 @@ impl ct::JobRules<JobState, TaskState, Document> for CrawlingRules {
 		let dedup_checking = crusty_core::task_filters::HashSetDedup::new(true);
 		let dedup_committing = dedup_checking.committing();
 		vec![
-			Box::new(crusty_core::task_filters::MaxRedirect::new(5)),
 			Box::new(crusty_core::task_filters::SkipNoFollowLinks::new()),
 			Box::new(crusty_core::task_filters::SameDomain::new(true)),
 			Box::new(dedup_checking),
@@ -36,13 +35,16 @@ impl ct::JobRules<JobState, TaskState, Document> for CrawlingRules {
 
 	fn status_filters(&self) -> ct::StatusFilters<JobState, TaskState> {
 		vec![
-			Box::new(crusty_core::status_filters::Redirect::new()),
+			Box::new(crusty_core::status_filters::Redirect::new(5)),
 			Box::new(crusty_core::status_filters::ContentType::new(vec!["text/html", "text/plain"])),
 		]
 	}
 
 	fn load_filters(&self) -> ct::LoadFilters<JobState, TaskState> {
-		vec![Box::new(crusty_core::load_filters::RobotsTxt::new())]
+		vec![
+			Box::new(crusty_core::load_filters::RobotsTxt::new()),
+			Box::new(crusty_core::load_filters::ContentType::new(vec!["text/html"])),
+		]
 	}
 
 	fn task_expanders(&self) -> ct::TaskExpanders<JobState, TaskState, Document> {

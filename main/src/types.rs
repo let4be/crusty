@@ -98,8 +98,7 @@ pub struct DBGenericNotification {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DBRWNotificationDBEntry {
-	host:          String,
-	app_id:        String,
+	host:          &'static str,
 	created_at:    u32,
 	table_name:    String,
 	label:         String,
@@ -123,8 +122,7 @@ impl<T: Clone + Send> From<DBNotification<T>> for DBGenericNotification {
 impl From<DBGenericNotification> for DBRWNotificationDBEntry {
 	fn from(s: DBGenericNotification) -> Self {
 		DBRWNotificationDBEntry {
-			host:          config().host.clone(),
-			app_id:        config().app_id.clone(),
+			host:          config().host.as_str(),
 			created_at:    now().as_secs() as u32,
 			table_name:    s.table_name,
 			label:         s.label,
@@ -135,73 +133,163 @@ impl From<DBGenericNotification> for DBRWNotificationDBEntry {
 	}
 }
 
-#[derive(Debug, Clone)]
-pub struct TaskMeasurementData {
-	pub status_code:    u16,
-	pub wait_time_ms:   u32,
-	pub status_time_ms: u32,
-	pub load_time_ms:   u32,
-	pub parse_time_ms:  u32,
-	pub write_size_b:   u32,
-	pub read_size_b:    u32,
-}
-
-#[derive(Clone, Debug)]
-pub struct TaskMeasurement {
-	pub time: u32,
-	pub url:  String,
-	pub md:   Option<TaskMeasurementData>,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct TaskMeasurementDBEntry {
-	host:           String,
-	app_id:         String,
-	created_at:     u32,
-	url:            String,
-	error:          u8,
-	status_code:    u16,
-	wait_time_ms:   u32,
-	status_time_ms: u32,
-	load_time_ms:   u32,
-	parse_time_ms:  u32,
-	write_size_b:   u32,
-	read_size_b:    u32,
+	host:             &'static str,
+	url:              String,
+	created_at:       u32,
+	//
+	term:             u8,
+	term_by_filter:   &'static str,
+	term_by_name:     &'static str,
+	term_kind:        &'static str, // Err/Panic/Reason
+	term_reason:      &'static str,
+	//
+	error:            u8,
+	error_known:      &'static str,
+	//
+	status_ok:        u8,
+	status_code:      u16,
+	wait_time_ms:     u32,
+	status_time_ms:   u32,
+	//
+	load_ok:          u8,
+	load_time_ms:     u32,
+	write_size_b:     u32,
+	read_size_b:      u32,
+	//
+	follow_ok:        u8,
+	parse_time_micro: u32,
 }
 
-impl From<TaskMeasurement> for TaskMeasurementDBEntry {
-	fn from(s: TaskMeasurement) -> Self {
-		if s.md.is_none() {
-			return Self {
-				host:           config().host.clone(),
-				app_id:         config().app_id.clone(),
-				created_at:     s.time,
-				url:            s.url,
-				error:          1,
-				status_code:    0,
-				wait_time_ms:   0,
-				status_time_ms: 0,
-				load_time_ms:   0,
-				parse_time_ms:  0,
-				write_size_b:   0,
-				read_size_b:    0,
+struct TaskTermBy {
+	term_by_filter: &'static str,
+	term_by_name:   &'static str,
+	term_kind:      &'static str,
+	term_reason:    &'static str,
+}
+
+impl From<&ct::ExtStatusError> for TaskTermBy {
+	fn from(s: &ct::ExtStatusError) -> Self {
+		match s {
+			ct::ExtStatusError::Err { kind, name, .. } => TaskTermBy {
+				term_by_filter: kind.into(),
+				term_by_name:   name,
+				term_kind:      "Error",
+				term_reason:    "",
+			},
+			ct::ExtStatusError::Panic { kind, name, .. } => TaskTermBy {
+				term_by_filter: kind.into(),
+				term_by_name:   name,
+				term_kind:      "Panic",
+				term_reason:    "",
+			},
+			ct::ExtStatusError::Term { kind, name, reason } => TaskTermBy {
+				term_by_filter: kind.into(),
+				term_by_name:   name,
+				term_kind:      "Reason",
+				term_reason:    reason,
+			},
+		}
+	}
+}
+
+impl TaskMeasurementDBEntry {
+	fn new(url: &str) -> TaskMeasurementDBEntry {
+		TaskMeasurementDBEntry {
+			host:       config().host.as_str(),
+			url:        String::from(url),
+			created_at: now().as_secs() as u32,
+
+			term:           0,
+			term_by_filter: "",
+			term_by_name:   "",
+			term_kind:      "", // Err/Panic/Reason:{}
+			term_reason:    "",
+
+			error:       0,
+			error_known: "",
+
+			status_ok:      0,
+			status_code:    0,
+			wait_time_ms:   0,
+			status_time_ms: 0,
+
+			load_ok:      0,
+			load_time_ms: 0,
+			write_size_b: 0,
+			read_size_b:  0,
+
+			follow_ok:        0,
+			parse_time_micro: 0,
+		}
+	}
+
+	fn set_term_by(&mut self, t: TaskTermBy) {
+		self.term = 1;
+		self.term_by_filter = t.term_by_filter;
+		self.term_by_name = t.term_by_name;
+		self.term_kind = t.term_kind;
+		self.term_reason = t.term_reason;
+	}
+}
+
+impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurementDBEntry {
+	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
+		let mut def = TaskMeasurementDBEntry::new(r.task.link.url.as_str());
+
+		if let ct::JobStatus::Processing(Ok(ref job_processing)) = r.status {
+			if let ct::StatusResult(Some(Ok(status_data))) = &job_processing.status {
+				def.status_ok = 1;
+				let m = &status_data.metrics;
+				def.status_code = status_data.code;
+				def.wait_time_ms = m.wait_duration.as_millis() as u32;
+				def.status_time_ms = m.duration.as_millis() as u32;
+
+				if let Some(err) = &status_data.filter_err {
+					def.set_term_by(err.into());
+				}
+			}
+			if let ct::LoadResult(Some(Ok(load_data))) = &job_processing.load {
+				def.load_ok = 1;
+				let m = &load_data.metrics;
+				def.load_time_ms = m.duration.as_millis() as u32;
+				def.write_size_b = m.write_size as u32;
+				def.read_size_b = m.read_size as u32;
+
+				if let Some(err) = &load_data.filter_err {
+					def.set_term_by(err.into());
+				}
+			}
+			if let ct::FollowResult(Some(Ok(follow_data))) = &job_processing.follow {
+				def.follow_ok = 1;
+				let m = &follow_data.metrics;
+				def.parse_time_micro = m.duration.as_micros() as u32;
+
+				if let Some(err) = &follow_data.filter_err {
+					def.set_term_by(err.into());
+				}
+			}
+
+			def.error = (job_processing.head_status.as_ref().map(|r| r.is_err()).unwrap_or(false)
+				|| job_processing.status.as_ref().map(|r| r.is_err()).unwrap_or(false)
+				|| job_processing.load.as_ref().map(|r| r.is_err()).unwrap_or(false)
+				|| job_processing.follow.as_ref().map(|r| r.is_err()).unwrap_or(false)) as u8;
+
+			if let Some(Err(ct::Error::StatusTimeout)) = &job_processing.head_status.0 {
+				def.error_known = "HeadStatusTimeout"
+			}
+
+			if let Some(Err(ct::Error::StatusTimeout)) = &job_processing.status.0 {
+				def.error_known = "StatusTimeout"
+			}
+
+			if let Some(Err(ct::Error::LoadTimeout)) = &job_processing.load.0 {
+				def.error_known = "LoadTimeout"
 			}
 		}
-		let md = s.md.unwrap();
-		Self {
-			host:           config().host.clone(),
-			app_id:         config().app_id.clone(),
-			created_at:     s.time,
-			url:            s.url,
-			error:          0,
-			status_code:    md.status_code,
-			wait_time_ms:   md.wait_time_ms,
-			status_time_ms: md.status_time_ms,
-			load_time_ms:   md.load_time_ms,
-			parse_time_ms:  md.parse_time_ms,
-			write_size_b:   md.write_size_b,
-			read_size_b:    md.read_size_b,
-		}
+
+		def
 	}
 }
 
@@ -215,8 +303,7 @@ pub struct QueueMeasurement {
 
 #[derive(Debug, Serialize, Deserialize, Row)]
 pub struct QueueMeasurementDBEntry {
-	host:       String,
-	app_id:     String,
+	host:       &'static str,
 	name:       String,
 	name_index: u32,
 	updated_at: u32,
@@ -226,50 +313,11 @@ pub struct QueueMeasurementDBEntry {
 impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 	fn from(s: QueueMeasurement) -> Self {
 		Self {
-			host:       config().host.clone(),
-			app_id:     config().app_id.clone(),
+			host:       config().host.as_str(),
 			updated_at: s.time.as_secs() as u32,
 			name:       s.name,
 			name_index: s.index as u32,
 			len:        s.len as u32,
 		}
-	}
-}
-impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurement {
-	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
-		if let ct::JobStatus::Processing(Ok(ref job_processing)) = r.status {
-			let parse_time_ms =
-				job_processing.follow.as_ref().map(|d| d.metrics.duration.as_millis() as u32).unwrap_or(0);
-
-			let (load_time_ms, write_size_b, read_size_b) = job_processing
-				.load
-				.as_ref()
-				.map(|load| {
-					(
-						load.metrics.duration.as_millis() as u32,
-						load.metrics.write_size as u32,
-						load.metrics.read_size as u32,
-					)
-				})
-				.unwrap_or((0, 0, 0));
-
-			if let Ok(status) = job_processing.status.as_ref() {
-				return TaskMeasurement {
-					time: now().as_secs() as u32,
-					url:  r.task.link.url.to_string(),
-					md:   Some(TaskMeasurementData {
-						status_code: status.code as u16,
-						wait_time_ms: status.metrics.wait_duration.as_millis() as u32,
-						status_time_ms: status.metrics.duration.as_millis() as u32,
-						load_time_ms,
-						write_size_b,
-						read_size_b,
-						parse_time_ms,
-					}),
-				}
-			}
-		}
-
-		TaskMeasurement { time: now().as_secs() as u32, url: r.task.link.url.to_string(), md: None }
 	}
 }
