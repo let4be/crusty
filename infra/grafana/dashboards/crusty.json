@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624528349322,
+  "iteration": 1624530725489,
   "links": [],
   "panels": [
     {
@@ -337,8 +337,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(created_at) * 1000 as time,\n    duration_sec\nFROM $DB.metrics_job\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n\nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(created_at) * 1000 as time,\n    duration_sec\nFROM crusty.metrics_job\n\nWHERE created_at >= toDateTime(1624529469) AND created_at <= toDateTime(1624529771)  AND host = 'crawler-1' \n\nORDER BY time",
+          "query": "SELECT\n    toUnixTimestamp(created_at) * 1000 as time,\n    duration_sec\nFROM $DB.metrics_job\n\nWHERE\n    $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n    AND term_by IN ($JobTermStatus)\nORDER BY time",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at) * 1000 as time,\n    duration_sec\nFROM crusty.metrics_job\n\nWHERE\n    created_at >= toDateTime(1624531922) AND created_at <= toDateTime(1624532224)  AND host = 'crawler-1' \n    AND term_by IN ('SoftTimeout','HardTimeout','Ok')\nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -2004,7 +2004,7 @@
     "list": [
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "crusty",
           "value": "crusty"
         },
@@ -2037,7 +2037,7 @@
         "name": "host",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "Crawler-1",
             "value": "Crawler-1"
           }
@@ -2045,6 +2045,47 @@
         "query": "crawler-1",
         "skipUrlSync": false,
         "type": "textbox"
+      },
+      {
+        "allValue": "",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Job Termination Status",
+        "multi": false,
+        "name": "JobTermStatus",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "SoftTimeout",
+            "value": "SoftTimeout"
+          },
+          {
+            "selected": false,
+            "text": "HardTimeout",
+            "value": "HardTimeout"
+          },
+          {
+            "selected": false,
+            "text": "Ok",
+            "value": "Ok"
+          }
+        ],
+        "query": "SoftTimeout,HardTimeout,Ok",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },

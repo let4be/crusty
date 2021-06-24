@@ -325,7 +325,7 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 			created_at: now().as_secs() as u32,
 
 			duration_sec: r.task.queued_at.elapsed().as_secs() as u32,
-			term_by:      "",
+			term_by:      "Ok",
 		};
 
 		if let ct::JobStatus::Finished(Err(ref err)) = r.status {
