@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624486080391,
+  "iteration": 1624522869288,
   "links": [],
   "panels": [
     {
@@ -1572,6 +1572,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1592,35 +1593,19 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "time"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": true,
-                  "tooltip": true,
-                  "viz": true
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Read"
             },
             "properties": [
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              },
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "blue",
                   "mode": "fixed"
                 }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
               }
             ]
           },
@@ -1698,6 +1683,187 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dequeue_permit_emitter, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(53, 77, 66, 1)",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job_state_update, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metrics_db, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metrics_queue, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metrics_task, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "parser, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "domain_resolver_in, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "domain_resolver_out, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "domain_enqueue, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "domain_finish, "
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1707,7 +1873,7 @@
         "x": 12,
         "y": 23
       },
-      "id": 11,
+      "id": 14,
       "options": {
         "legend": {
           "calcs": [
@@ -1720,7 +1886,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.0.0-beta3",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -1728,35 +1894,9 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as JobUpdate\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host)\r\n    AND name = 'job_state_update'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
-          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as JobUpdate\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624473123) AND updated_at <= toDateTime(1624473425)\r\n     AND host = 'crawler-1' \r\n    AND name = 'job_state_update'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
+          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    name,\r\n    sum(len) / greatest($interval, 3) as \"value\"\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host)\r\n    \r\nGROUP BY name, intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY name, time\r\n",
+          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    name,\r\n    sum(len) / greatest(1, 3) as \"value\"\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624525512) AND updated_at <= toDateTime(1624525814)\r\n     AND host = 'crawler-1' \r\n    \r\nGROUP BY name, intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY name, time",
           "refId": "A",
-          "round": "0s",
-          "skip_comments": true
-        },
-        {
-          "dateTimeType": "DATETIME",
-          "extrapolate": true,
-          "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "hide": false,
-          "intervalFactor": 1,
-          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Job\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host)\r\n    AND name = 'job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
-          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Job\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624473123) AND updated_at <= toDateTime(1624473425)\r\n     AND host = 'crawler-1' \r\n    AND name = 'job'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
-          "refId": "B",
-          "round": "0s",
-          "skip_comments": true
-        },
-        {
-          "dateTimeType": "DATETIME",
-          "extrapolate": true,
-          "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "hide": false,
-          "intervalFactor": 1,
-          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest($interval, 3) as Parse\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host)\r\n    AND name = 'parser'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY time\r\n",
-          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    sum(len) / greatest(1, 3) as Parse\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624473123) AND updated_at <= toDateTime(1624473425)\r\n     AND host = 'crawler-1' \r\n    AND name = 'parser'\r\n    \r\nGROUP BY intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY time",
-          "refId": "C",
           "round": "0s",
           "skip_comments": true
         }
@@ -1764,6 +1904,26 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Buffers",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "greater",
+                  "options": {
+                    "value": 100000000
+                  }
+                },
+                "fieldName": "parser, "
+              }
+            ],
+            "match": "any",
+            "type": "exclude"
+          }
+        }
+      ],
       "type": "timeseries"
     }
   ],

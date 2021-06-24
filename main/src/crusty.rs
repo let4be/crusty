@@ -563,7 +563,7 @@ impl Crusty {
 
 	fn domain_resolver(&mut self, rx_sig_term: Receiver<()>, tx_domain_insert: Vec<Sender<Domain>>) -> Sender<String> {
 		let cfg = config::config();
-		let (tx, rx) = self.ch_trans("domain_resolver_in");
+		let (tx, rx) = self.ch("domain_resolver_in", 0, cfg.resolver.concurrency);
 		let (tx_out, rx_out) = self.ch_trans("domain_resolver_out");
 
 		for _ in 0..cfg.resolver.concurrency {
@@ -644,11 +644,11 @@ impl Crusty {
 
 		let (tx_domain_read_notify, rx_domain_read_notify) = self.ch("domain_read_notify", 0, 1);
 		self.send_seed_jobs(tx_domain_read_notify.clone()).await;
-		self.job_sender(rx_domain_read_notify, tx_job, tx_metrics_db.clone());
 
 		let rx_dequeue_permit = self.dequeue_permit_emitter(rx_sig_term.clone());
 		for shard in scoped_shard_range.clone() {
 			self.domain_dequeue_processor(shard, rx_dequeue_permit.clone(), tx_domain_read_notify.clone());
+			self.job_sender(rx_domain_read_notify.clone(), tx_job.clone(), tx_metrics_db.clone());
 		}
 
 		let tx_domain_resolve = self.domain_resolver(rx_force_term.clone(), tx_domain_insert.clone());
