@@ -119,6 +119,20 @@ impl<T: Clone + Send> From<DBNotification<T>> for DBGenericNotification {
 	}
 }
 
+impl<A: Clone + Send> From<DBNotification<A>> for DBRWNotificationDBEntry {
+	fn from(s: DBNotification<A>) -> Self {
+		DBRWNotificationDBEntry {
+			host:          config().host.as_str(),
+			created_at:    now().as_secs() as u32,
+			table_name:    s.table_name,
+			label:         s.label,
+			took_ms:       s.duration.as_millis() as u32,
+			since_last_ms: s.since_last.as_millis() as u32,
+			items:         s.items.len() as u32,
+		}
+	}
+}
+
 impl From<DBGenericNotification> for DBRWNotificationDBEntry {
 	fn from(s: DBGenericNotification) -> Self {
 		DBRWNotificationDBEntry {
@@ -293,6 +307,38 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 	}
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Row)]
+pub struct JobMeasurementDBEntry {
+	host:         &'static str,
+	url:          String,
+	created_at:   u32,
+	//
+	duration_sec: u32,
+	term_by:      &'static str,
+}
+
+impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for JobMeasurementDBEntry {
+	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
+		let mut def = JobMeasurementDBEntry {
+			host:       config().host.as_str(),
+			url:        r.task.link.url.to_string(),
+			created_at: now().as_secs() as u32,
+
+			duration_sec: r.task.queued_at.elapsed().as_secs() as u32,
+			term_by:      "",
+		};
+
+		if let ct::JobStatus::Finished(Err(ref err)) = r.status {
+			def.term_by = match err {
+				ct::JobError::JobFinishedBySoftTimeout => "SoftTimeout",
+				ct::JobError::JobFinishedByHardTimeout => "HardTimeout",
+			};
+		}
+
+		def
+	}
+}
+
 #[derive(Debug, Clone)]
 pub struct QueueMeasurement {
 	pub time:  Duration,
@@ -301,7 +347,7 @@ pub struct QueueMeasurement {
 	pub len:   usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Row)]
+#[derive(Debug, Clone, Serialize, Deserialize, Row)]
 pub struct QueueMeasurementDBEntry {
 	host:       &'static str,
 	name:       String,

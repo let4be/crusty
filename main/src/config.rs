@@ -206,6 +206,7 @@ pub struct ClickhouseConfig {
 	pub metrics_queue: ClickhouseWriterConfig,
 	pub metrics_db:    ClickhouseWriterConfig,
 	pub metrics_task:  ClickhouseWriterConfig,
+	pub metrics_job:   ClickhouseWriterConfig,
 }
 
 impl Default for ClickhouseConfig {
@@ -236,6 +237,14 @@ impl Default for ClickhouseConfig {
 				table_name: String::from("metrics_task"),
 				label: String::from(""),
 				buffer_capacity: 10000,
+				check_for_force_write_duration: rc::CDuration::from_millis(100),
+				force_write_duration: rc::CDuration::from_millis(500),
+				concurrency: 3,
+			},
+			metrics_job:   ClickhouseWriterConfig {
+				table_name: String::from("metrics_job"),
+				label: String::from(""),
+				buffer_capacity: 100,
 				check_for_force_write_duration: rc::CDuration::from_millis(100),
 				force_write_duration: rc::CDuration::from_millis(500),
 				concurrency: 3,

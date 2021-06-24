@@ -2,6 +2,7 @@ use clickhouse::Client;
 use crusty_core::{self, resolver::Resolver, types as rt, MultiCrawler};
 use ttl_cache::TtlCache;
 
+use crate::config::ClickhouseWriterConfig;
 #[allow(unused_imports)]
 use crate::{
 	_prelude::*,
@@ -45,11 +46,11 @@ impl ChMeasurements {
 		self.list.iter().map(|measure| measure())
 	}
 
-	async fn monitor(self, rx_crawler_done: Receiver<()>, tx_metrics_queue: Sender<QueueMeasurement>) {
+	async fn monitor(self, rx_crawler_done: Receiver<()>, tx_metrics_queue: Sender<QueueMeasurementDBEntry>) {
 		let cfg = config::config();
 		while !rx_crawler_done.is_disconnected() {
 			for m in self.measure() {
-				let _ = tx_metrics_queue.send_async(m).await;
+				let _ = tx_metrics_queue.send_async(m.into()).await;
 			}
 
 			tokio::time::sleep(*cfg.queue_monitor_interval).await;
@@ -214,58 +215,27 @@ impl Crusty {
 		let _ = tokio::task::spawn(task.instrument());
 	}
 
-	fn metrics_queue_handler(&mut self) -> Sender<QueueMeasurement> {
-		let cfg = config::config();
-		let (tx, rx) = self.ch_trans("metrics_queue");
+	fn clickhouse_writer<T: clickhouse::Row + serde::Serialize + Clone + Debug + Send + Sync + 'static>(
+		&mut self,
+		name: &'static str,
+		cfg: ClickhouseWriterConfig,
+	) -> Sender<T> {
+		let (tx, rx) = self.ch_trans::<T>(name);
 
-		for _ in 0..cfg.clickhouse.metrics_queue.concurrency {
+		for _ in 0..cfg.concurrency {
 			let client = self.client.clone();
+			let rx = rx.clone();
 			let cfg = cfg.clone();
-			let rx = rx.clone();
 			self.spawn(TracingTask::new(span!(), async move {
-				let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_queue);
-				writer.go_with_retry(client, rx, QueueMeasurementDBEntry::from).await
+				let writer = clickhouse_utils::Writer::new(cfg);
+				writer.go_with_retry(client, rx).await
 			}));
 		}
 
 		tx
 	}
 
-	fn metrics_db_handler(&mut self) -> Sender<DBGenericNotification> {
-		let cfg = config::config();
-		let (tx, rx) = self.ch_trans("metrics_db");
-
-		for _ in 0..cfg.clickhouse.metrics_db.concurrency {
-			let client = self.client.clone();
-			let rx = rx.clone();
-			self.spawn(TracingTask::new(span!(), async move {
-				let cfg = config::config();
-				let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_db.clone());
-				writer.go_with_retry(client, rx, DBRWNotificationDBEntry::from).await
-			}));
-		}
-
-		tx
-	}
-
-	fn metrics_task_handler(&mut self) -> Sender<TaskMeasurementDBEntry> {
-		let cfg = config::config();
-		let (tx, rx) = self.ch_trans("metrics_task");
-
-		for _ in 0..cfg.clickhouse.metrics_task.concurrency {
-			let client = self.client.clone();
-			let rx = rx.clone();
-			self.spawn(TracingTask::new(span!(), async move {
-				let cfg = config::config();
-				let writer = clickhouse_utils::Writer::new(cfg.clickhouse.metrics_task.clone());
-				writer.go_with_retry(client, rx, |e| e).await
-			}));
-		}
-
-		tx
-	}
-
-	fn domain_enqueue_processor(&mut self, shard: usize, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
+	fn domain_enqueue_processor(&mut self, shard: usize, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<Domain> {
 		let cfg = config::config();
 		let (tx, rx) = self.ch_trans_with_index("domain_enqueue", shard);
 
@@ -281,7 +251,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_finish_processor(&mut self, shard: usize, tx_notify: Sender<DBGenericNotification>) -> Sender<Domain> {
+	fn domain_finish_processor(&mut self, shard: usize, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<Domain> {
 		let cfg = config::config();
 		let (tx, rx) = self.ch_trans_with_index("domain_finish", shard);
 
@@ -365,7 +335,8 @@ impl Crusty {
 
 	fn result_handler(
 		&mut self,
-		tx_metrics: Sender<TaskMeasurementDBEntry>,
+		tx_metrics_task: Sender<TaskMeasurementDBEntry>,
+		tx_metrics_job: Sender<JobMeasurementDBEntry>,
 		tx_domain_insert: Sender<String>,
 		tx_domain_update: Vec<Sender<Domain>>,
 		rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
@@ -389,16 +360,18 @@ impl Crusty {
 						for domain in discovered_domains {
 							let _ = tx_domain_insert.send_async(domain).await;
 						}
-						let _ = tx_metrics.send_async(r.into()).await;
+						let _ = tx_metrics_task.send_async(r.into()).await;
 					}
 					rt::JobStatus::Processing(Err(ref err)) => {
 						warn!(task = %r.task, err = ?err, "Error during task processing");
-						let _ = tx_metrics.send_async(r.into()).await;
+						let _ = tx_metrics_task.send_async(r.into()).await;
 					}
 					rt::JobStatus::Finished(ref _jd) => {
 						let selected_domain = { r.ctx.job_state.lock().unwrap().selected_domain.clone() };
 						let shard = selected_domain.calc_shard(cfg.jobs.shard_total);
 						let _ = tx_domain_update[shard].send_async(selected_domain).await;
+
+						let _ = tx_metrics_job.send_async(r.into()).await;
 					}
 				}
 			}
@@ -411,7 +384,7 @@ impl Crusty {
 		&mut self,
 		rx_domain_read_notify: Receiver<DBNotification<Domain>>,
 		tx_job: Arc<Sender<Job>>,
-		tx_metrics_db: Sender<DBGenericNotification>,
+		tx_metrics_db: Sender<DBRWNotificationDBEntry>,
 	) {
 		let cfg = config::config();
 
@@ -419,9 +392,7 @@ impl Crusty {
 			let default_crawling_settings = Arc::new(cfg.default_crawling_settings.clone());
 
 			while let Ok(notify) = rx_domain_read_notify.recv_async().await {
-				let _ = tx_metrics_db.send_async(DBGenericNotification::from(&notify)).await;
-
-				for domain in notify.items {
+				for domain in &notify.items {
 					let url = domain
 						.url
 						.as_ref()
@@ -449,6 +420,8 @@ impl Crusty {
 						Err(err) => warn!("->cannot create job for {:?}: {:#}", &domain, err),
 					}
 				}
+
+				let _ = tx_metrics_db.send_async(notify.into()).await;
 			}
 
 			Ok(())
@@ -604,7 +577,7 @@ impl Crusty {
 			.unwrap();
 	}
 
-	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurement>)> {
+	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurementDBEntry>)> {
 		let cfg = config::config();
 
 		let network_profile = cfg.networking_profile.clone().resolve()?;
@@ -626,9 +599,10 @@ impl Crusty {
 		self.ch_measurements.register("job", 0, SenderWeak(Arc::downgrade(&tx_job)));
 		self.ch_measurements.register("job_state_update", 0, ReceiverWeak(rx_job_state_update.clone()));
 
-		let tx_metrics_task = self.metrics_task_handler();
-		let tx_metrics_queue = self.metrics_queue_handler();
-		let tx_metrics_db = self.metrics_db_handler();
+		let tx_metrics_task = self.clickhouse_writer("metrics_task", cfg.clickhouse.metrics_task.clone());
+		let tx_metrics_job = self.clickhouse_writer("metrics_job", cfg.clickhouse.metrics_job.clone());
+		let tx_metrics_queue = self.clickhouse_writer("metrics_queue", cfg.clickhouse.metrics_queue.clone());
+		let tx_metrics_db = self.clickhouse_writer("metrics_db", cfg.clickhouse.metrics_db.clone());
 
 		let scoped_shard_range = cfg.jobs.shard_min..cfg.jobs.shard_max;
 		let total_shard_range = 0..cfg.jobs.shard_total;
@@ -656,6 +630,7 @@ impl Crusty {
 		for _ in 0..(concurrency_profile.domain_concurrency as f64 / 1000_f64).ceil() as usize {
 			self.result_handler(
 				tx_metrics_task.clone(),
+				tx_metrics_job.clone(),
 				tx_domain_resolve.clone(),
 				tx_domain_update.clone(),
 				rx_job_state_update.clone(),

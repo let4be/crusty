@@ -32,20 +32,14 @@ impl Writer {
 		Self { cfg }
 	}
 
-	pub async fn go_with_retry<
-		A: Clone + std::fmt::Debug + Send + 'static,
-		R: Row + Serialize + Send + Sync + 'static,
-		F: Fn(A) -> R + Send + Sync + 'static,
-	>(
+	pub async fn go_with_retry<A: Row + Serialize + Clone + Debug + Send + Sync + 'static>(
 		&self,
 		client: Client,
 		rx: Receiver<A>,
-		map: F,
 	) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
-		let map = Arc::new(map);
 		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {
-			Writer::go(self.cfg.clone(), client.clone(), rx.clone(), Arc::clone(&map), state.clone())
+			Writer::go(self.cfg.clone(), client.clone(), rx.clone(), state.clone())
 				.instrument()
 				.await
 				.map_err(backoff::Error::Transient)?;
@@ -54,15 +48,10 @@ impl Writer {
 		.await
 	}
 
-	pub fn go<
-		A: Clone + std::fmt::Debug + Send + 'static,
-		R: Row + Serialize + Send + Sync + 'static,
-		F: Fn(A) -> R + Send + Sync + 'static,
-	>(
+	pub fn go<A: Row + Serialize + Clone + Debug + Send + Sync + 'static>(
 		cfg: ClickhouseWriterConfig,
 		client: Client,
 		rx: Receiver<A>,
-		map: Arc<F>,
 		state: Arc<Mutex<WriterState<A>>>,
 	) -> TracingTask<'static> {
 		TracingTask::new(span!(), async move {
@@ -75,8 +64,7 @@ impl Writer {
 
 			let notify = { state.lock().unwrap().notify.clone() };
 			for el in notify.into_iter() {
-				let mapped = map(el);
-				inserter.write(&mapped).await?;
+				inserter.write(&el).await?;
 			}
 
 			let mut done = false;
@@ -106,7 +94,7 @@ impl Writer {
 					match r {
 						Ok(el) => {
 							state.lock().unwrap().notify.push(el.clone());
-							inserter.write(&map(el)).await.context("error during inserter.write")?;
+							inserter.write(&el).await.context("error during inserter.write")?;
 						}
 						_ => {
 							done = true;

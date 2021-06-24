@@ -51,3 +51,13 @@ CREATE TABLE metrics_task (
     follow_ok UInt8,
     parse_time_micro UInt32
 ) ENGINE = Memory;
+
+CREATE TABLE metrics_job (
+    host String,
+    url String,
+    created_date Date DEFAULT now(),
+    created_at DateTime,
+
+    duration_sec UInt32,
+    term_by String
+) ENGINE = Memory;

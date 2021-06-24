@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624522869288,
+  "iteration": 1624528349322,
   "links": [],
   "panels": [
     {
@@ -70,7 +70,7 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 6,
+        "w": 4,
         "x": 0,
         "y": 0
       },
@@ -229,8 +229,8 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 6,
-        "x": 6,
+        "w": 4,
+        "x": 4,
         "y": 0
       },
       "id": 12,
@@ -300,6 +300,75 @@
       "title": "General distribution",
       "transformations": [],
       "type": "piechart"
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "timeseries",
+      "datasource": "clickhouse",
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 15,
+      "legend": {
+        "show": false
+      },
+      "pluginVersion": "8.0.0-beta3",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    toUnixTimestamp(created_at) * 1000 as time,\n    duration_sec\nFROM $DB.metrics_job\n\nWHERE $timeFilterByColumn(created_at) $conditionalTest( AND host = '$host', $host)\n\nORDER BY time\n",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at) * 1000 as time,\n    duration_sec\nFROM crusty.metrics_job\n\nWHERE created_at >= toDateTime(1624529469) AND created_at <= toDateTime(1624529771)  AND host = 'crawler-1' \n\nORDER BY time",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Jobs",
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "short",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
     },
     {
       "datasource": "clickhouse",
@@ -445,8 +514,8 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 6,
-        "x": 12,
+        "w": 4,
+        "x": 16,
         "y": 0
       },
       "id": 8,
@@ -657,8 +726,8 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 20,
         "y": 0
       },
       "id": 13,

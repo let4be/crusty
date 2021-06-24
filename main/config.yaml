@@ -53,9 +53,19 @@ clickhouse:
     force_write_duration: 500ms
     concurrency: 3
 
-  # We persist metrics and various meta-data for each visited page
+  # We persist metrics and various meta-data for each completed TASK(page)
   metrics_task:
     table_name: metrics_task
+    label: ""
+    buffer_capacity: 25000
+    check_for_force_write_duration: 500ms
+    force_write_duration: 5000ms
+    concurrency: 3
+
+
+  # We persist metrics and various meta-data for each finished JOB(set of pages => basically a domain)
+  metrics_job:
+    table_name: metrics_job
     label: ""
     buffer_capacity: 25000
     check_for_force_write_duration: 500ms
