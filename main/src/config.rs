@@ -16,6 +16,29 @@ pub fn config<'a>() -> &'a CrustyConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct RulesConfig {
+	pub skip_no_follow_links:  bool,
+	pub total_link_budget:     usize,
+	pub links_per_task_budget: usize,
+	pub max_level:             usize,
+	pub robots_txt:            bool,
+	pub max_redirect:          usize,
+}
+
+impl Default for RulesConfig {
+	fn default() -> Self {
+		Self {
+			skip_no_follow_links:  true,
+			total_link_budget:     1000,
+			links_per_task_budget: 100,
+			max_level:             25,
+			robots_txt:            true,
+			max_redirect:          5,
+		}
+	}
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct ShutdownConfig {
 	pub graceful_timeout: rc::CDuration,
 }
@@ -270,6 +293,8 @@ impl Default for LogConfig {
 pub struct CrustyConfig {
 	pub host: String,
 
+	#[serde(default)]
+	pub rules: RulesConfig,
 	#[serde(default)]
 	pub shutdown: ShutdownConfig,
 	#[serde(default)]

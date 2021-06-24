@@ -5,7 +5,7 @@ pub use crate::html5ever_defs::*;
 #[cfg(feature = "lol_html_parser")]
 pub use crate::lolhtml_defs::*;
 #[allow(unused_imports)]
-use crate::{_prelude::*, lolhtml_parser::*, types::*};
+use crate::{_prelude::*, config, lolhtml_parser::*, types::*};
 
 #[derive(Debug, Clone)]
 pub struct JobState {
@@ -19,23 +19,33 @@ pub struct CrawlingRules {}
 
 impl ct::JobRules<JobState, TaskState, Document> for CrawlingRules {
 	fn task_filters(&self) -> ct::TaskFilters<JobState, TaskState> {
+		let rules = &config::config().rules;
+
 		let dedup_checking = crusty_core::task_filters::HashSetDedup::new(true);
 		let dedup_committing = dedup_checking.committing();
-		vec![
-			Box::new(crusty_core::task_filters::SkipNoFollowLinks::new()),
-			Box::new(crusty_core::task_filters::SameDomain::new(true)),
-			Box::new(dedup_checking),
-			Box::new(crusty_core::task_filters::TotalPageBudget::new(150)),
-			Box::new(crusty_core::task_filters::LinkPerPageBudget::new(100)),
-			Box::new(crusty_core::task_filters::PageLevel::new(25)),
-			Box::new(crusty_core::task_filters::RobotsTxt::new()),
-			Box::new(dedup_committing),
-		]
+
+		let mut filters: ct::TaskFilters<JobState, TaskState> =
+			vec![Box::new(dedup_checking), Box::new(crusty_core::task_filters::SameDomain::new(true))];
+		if rules.skip_no_follow_links {
+			filters.push(Box::new(crusty_core::task_filters::SkipNoFollowLinks::new()));
+		}
+		filters.push(Box::new(crusty_core::task_filters::TotalPageBudget::new(rules.total_link_budget)));
+		filters.push(Box::new(crusty_core::task_filters::LinkPerPageBudget::new(rules.links_per_task_budget)));
+		filters.push(Box::new(crusty_core::task_filters::PageLevel::new(rules.max_level)));
+
+		if rules.robots_txt {
+			filters.push(Box::new(crusty_core::task_filters::RobotsTxt::new()));
+		}
+		filters.push(Box::new(dedup_committing));
+
+		filters
 	}
 
 	fn status_filters(&self) -> ct::StatusFilters<JobState, TaskState> {
+		let rules = &config::config().rules;
+
 		vec![
-			Box::new(crusty_core::status_filters::Redirect::new(5)),
+			Box::new(crusty_core::status_filters::Redirect::new(rules.max_redirect)),
 			Box::new(crusty_core::status_filters::ContentType::new(vec!["text/html", "text/plain"])),
 		]
 	}

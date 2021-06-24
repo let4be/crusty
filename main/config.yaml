@@ -1,3 +1,10 @@
+#First of all let's settle on some widely used terminology - remember this, it's widely used everywhere ;)
+#	JOB(=domain, =set of TASKs)
+#	TASK(=page, =part of JOB)
+#
+#
+#
+
 log:
   # fancy some colors? - disable if redirect to file is intended
   ansi: false
@@ -71,6 +78,20 @@ clickhouse:
     check_for_force_write_duration: 500ms
     force_write_duration: 5000ms
     concurrency: 3
+
+# crawling rules
+rules:
+  skip_no_follow_links: true
+  # we limit N of links we can collect from a given JOB
+  total_link_budget: 1000
+  # we limit N of links we can collect from a given TASK
+  links_per_task_budget: 100
+  # do not go deeper than this level
+  max_level: 25
+  # should we respect robots.txt?
+  robots_txt: true
+  # after max redirects we stop trying to load a given page
+  max_redirect: 5
 
 jobs:
   # min shard number we have access to(so called scoped shards)
