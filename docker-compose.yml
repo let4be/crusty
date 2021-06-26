@@ -124,7 +124,6 @@ services:
         ipv4_address: 172.16.1.2
     links:
       - clickhouse
-      - redis-calc
     ports:
       - "0.0.0.0:3000:3000/tcp"
     logging:
@@ -137,7 +136,7 @@ services:
       - grafana-plugins:/grafana-plugins
       - /etc/localtime:/etc/localtime:ro
     environment:
-      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 2.3.1,redis-datasource 1.4.0
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 2.3.1
       - GF_PLUGIN_DIR=/grafana-plugins
 
   unbound:

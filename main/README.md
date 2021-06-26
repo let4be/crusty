@@ -1,7 +1,7 @@
 ![crates.io](https://img.shields.io/crates/v/crusty.svg)
 [![Dependency status](https://deps.rs/repo/github/let4be/crusty/status.svg)](https://deps.rs/repo/github/let4be/crusty)
 
-# Crusty - polite && scalable broad web crawler
+# Crusty - fast, polite && scalable broad web crawler
 
 ## Introduction
 Broad web crawling is an activity of going through practically boundless web by starting from a set of locations(urls) and following outgoing links.
@@ -18,33 +18,35 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   see a typical [config file](./main/config.yaml) with some explanations regarding available options
 
-- Fast single node performance (~10 gbit/s on 48 core(96HT) `c5.metal`)
+- Blazing fast single node performance (~10 gbit/s on 48 core(96HT) `c5.metal`)
 
-  - Crusty is written in `Rust` on top of green threads running on [tokio](https://github.com/tokio-rs/tokio), so it can achieve quite impressive single-node performance even on a moderate PC
+  - crusty is written in `Rust` on top of green threads running on [tokio](https://github.com/tokio-rs/tokio), so it can achieve quite impressive single-node performance while staying 100% scalable
 
-  - We parse HTML using [LoL HTML](https://github.com/cloudflare/lol-html) - it provides world-class speed, can work in tight memory boundaries and is easy to use
+  - we parse HTML using [LoL HTML](https://github.com/cloudflare/lol-html) - very fast speed, works in tight memory boundaries and is easy to use
+
+  - running at  light speed you will need to think twice what to do with such amount of data ;)
 
 - Stable performance and predictable resource consumption
 
   - `Crusty` has small, stable and predictable memory footprint and is usually cpu/network bound. There is no GC pressure and no war over memory.
 
-  - Built on top of buffered [Flume](https://github.com/zesterer/flume) channels - which helps to build system with predictable performance. Peak loads are getting buffered, continuous over-band loads lead to producer backoff.
+  - built on top of buffered [Flume](https://github.com/zesterer/flume) channels - which helps to build system with predictable performance && scalability. Peak loads are getting buffered, continuous over-band loads lead to producer backoff.
 
 - Scalability
 
-  - Each `Crusty` node is essentially an independent unit which we can run hundreds of in parallel(on different machines of course),
+  - each `Crusty` node is essentially an independent unit which we can run hundreds of in parallel(on different machines of course),
   the tricky part is job delegation and domain discovery which is solved by a high performance sharded queue-like structure built on top of redis.
 
-  - We leverage redis low-latency and use carefully picked up data structures along with careful memory management to achieve our goals
+  - we leverage redis low-latency and use carefully picked up data structures along with careful memory management to achieve our goals
 
-  - We shard all domains based on `addr_key`, where `addr_key` = First Lexicographically going IP && netmask, so it's possible to "compress" a given IP address and store all similar addresses under the same slot
+  - all domains are sharded based on `addr_key`, where `addr_key` = First Lexicographically going IP && netmask, so it's possible to "compress" a given IP address and store all similar addresses under the same slot
 
-  - This is widely used to avoid bombing same IP(or subnet if so desired) by concurrent requests
+  - this is used to avoid bombing same IP(or subnet if so desired) by concurrent requests
 
-  - Each domain belongs to some shard(`crc32(addr_key) % number_of_shards`), now each `Crusty` instance can read/update from a subset of all those shards while can insert to all of them(so-called domain discovery).
+  - each domain belongs to some shard(`crc32(addr_key) % number_of_shards`), now each `Crusty` instance can read/update from a subset of all those shards while can insert to all of them(so-called domain discovery).
   Shards can be distributed across many redis instances if needed.
 
-  - With careful planning and minimal changes this system should scale from a single core instance to a 100+ instances(with total of tens of thousands of cores)
+  - with careful planning and minimal changes this system should scale from a single core instance to a 100+ instances(with total of tens of thousands of cores) which can easily consume your whole DC, or several if you are persistent... ;)
 
  - Smart Queue implemented on top of `Redis Modules` system allows to:
     - ensure we check only one domain with same `addr_key`(no DDOS!)
@@ -130,12 +132,12 @@ In the real world usage scenario on high bandwidth channel docker might become a
 
 ### External service dependencies
 
+- redis - smart queue(custom redis module) && top-k(custom redis module), both are using an excellent [RedisBloom module](https://oss.redislabs.com/redisbloom/)
 - clickhouse - metrics
-- redis - smart queue
-- grafana - dashboard for metrics
+- grafana - dashboard for metrics stored in clickhouse
 - unbound(optional) - run your own caching/recursive DNS resolver server(for heavy-duty setups you most likely have to)
 
-just use `docker-compose`, it's the recommended way to play with `Crusty`(configured in `network_mode=host` because of speed constraints when using on ~10gbit/s channels, we don't really wanna pay docker vnet overheads)
+just use `docker-compose`, it's the recommended way to play with `Crusty`
 
 however...
 

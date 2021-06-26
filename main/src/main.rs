@@ -42,7 +42,7 @@ fn main() -> Result<()> {
 			println!("Loading config: ok");
 		}
 		Err(err) => {
-			println!("Loading config err: '{:?}' - using defaults", err)
+			println!("Loading config err: '{:?}'", err)
 		}
 	}
 	let cfg = config::config();
