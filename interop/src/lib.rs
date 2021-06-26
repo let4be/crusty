@@ -9,6 +9,13 @@ pub struct Domain {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TopHit {
+    pub tld: String,
+    pub domain: String,
+    pub hits: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DomainDescriptor {
     pub name: String,
     pub addr_key: String,

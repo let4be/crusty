@@ -61,7 +61,7 @@ fn main() -> Result<()> {
 	println!("Log system configured...: {} with filtering: {:?}", *cfg.log.level, cfg.log.filter);
 	println!("{:#?}", &cfg);
 
-	if cfg.jobs.reader.seeds.is_empty() {
+	if cfg.queue.jobs.reader.seeds.is_empty() {
 		return Err(anyhow!("Consider specifying one or more seed URLs in config.toml, see job_reader.seeds property"))
 	}
 

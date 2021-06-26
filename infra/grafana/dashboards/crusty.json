@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624530725489,
+  "iteration": 1624716608563,
   "links": [],
   "panels": [
     {
@@ -913,7 +913,7 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 9
       },
@@ -950,6 +950,92 @@
       "timeShift": null,
       "title": "Parsing time / 1mb of raw HTML Data",
       "type": "timeseries"
+    },
+    {
+      "datasource": "clickhouse",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 23,
+        "w": 8,
+        "x": 8,
+        "y": 9
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "values": [
+            "percent"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "dateTimeType": "DATETIME",
+          "extrapolate": true,
+          "format": "time_series",
+          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "intervalFactor": 1,
+          "query": "SELECT\n    now() as time,\n    domain,\n    argMax(hits, created_at) as hits\nFROM $DB.domain_topk\n\nWHERE tld = '$TopNDomainsTLD'\n\nGROUP BY domain\n\nORDER BY\n    hits DESC,\n    domain ASC\nLIMIT\n    $TopNDomainsSkip,\n    $TopNDomains",
+          "rawQuery": "SELECT\n    now() as time,\n    domain,\n    argMax(hits, created_at) as hits\nFROM crusty.domain_topk\nWHERE tld = ''\nGROUP BY domain\n\nORDER BY\n    hits DESC,\n    domain ASC\nLIMIT\n    0,\n    25",
+          "refId": "A",
+          "round": "0s",
+          "skip_comments": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Top $TopNDomains Most Linked Domains",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "greater",
+                  "options": {
+                    "value": 100000000
+                  }
+                },
+                "fieldName": "parser, "
+              }
+            ],
+            "match": "any",
+            "type": "exclude"
+          }
+        }
+      ],
+      "type": "piechart"
     },
     {
       "datasource": "clickhouse",
@@ -1075,8 +1161,8 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 16,
         "y": 9
       },
       "id": 7,
@@ -1242,8 +1328,8 @@
         ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
+        "h": 8,
+        "w": 8,
         "x": 0,
         "y": 16
       },
@@ -1402,9 +1488,9 @@
         ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
+        "h": 8,
+        "w": 8,
+        "x": 16,
         "y": 16
       },
       "id": 6,
@@ -1429,7 +1515,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Enqueue\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host)\n    AND table_name = 'domains' AND label = 'insert' \n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Enqueue\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1624473099) AND created_at <= toDateTime(1624473401)\n     AND host = 'crawler-1' \n    AND table_name = 'domains' AND label = 'insert' \n    \nORDER BY time",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Enqueue\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1624635329) AND created_at <= toDateTime(1624635631)\n     AND host = 'crawler-1' \n    AND table_name = 'domains' AND label = 'insert' \n    \nORDER BY time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -1442,7 +1528,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Finish\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host)\n    AND table_name = 'domains' AND label = 'update' \n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Finish\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1624473099) AND created_at <= toDateTime(1624473401)\n     AND host = 'crawler-1' \n    AND table_name = 'domains' AND label = 'update' \n    \nORDER BY time",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Finish\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1624635329) AND created_at <= toDateTime(1624635631)\n     AND host = 'crawler-1' \n    AND table_name = 'domains' AND label = 'update' \n    \nORDER BY time",
           "refId": "B",
           "round": "0s",
           "skip_comments": true
@@ -1455,7 +1541,7 @@
           "hide": false,
           "intervalFactor": 1,
           "query": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Dequeue\nFROM $DB.metrics_db\n\nWHERE\n    $timeFilterByColumn(created_at)\n    $conditionalTest(AND host = '$host', $host)\n    AND table_name = 'domains' AND label = 'read' \n    \nORDER BY time\n",
-          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Dequeue\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1624473099) AND created_at <= toDateTime(1624473401)\n     AND host = 'crawler-1' \n    AND table_name = 'domains' AND label = 'read' \n    \nORDER BY time",
+          "rawQuery": "SELECT\n    toUnixTimestamp(created_at)*1000 as time,\n    took_ms as Dequeue\nFROM crusty.metrics_db\n\nWHERE\n    created_at >= toDateTime(1624635329) AND created_at <= toDateTime(1624635631)\n     AND host = 'crawler-1' \n    AND table_name = 'domains' AND label = 'read' \n    \nORDER BY time",
           "refId": "C",
           "round": "0s",
           "skip_comments": true
@@ -1567,10 +1653,10 @@
         ]
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 8,
+        "w": 8,
         "x": 0,
-        "y": 23
+        "y": 24
       },
       "id": 3,
       "options": {
@@ -1607,7 +1693,6 @@
     },
     {
       "datasource": "clickhouse",
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1615,7 +1700,7 @@
           },
           "custom": {
             "axisLabel": "",
-            "axisPlacement": "right",
+            "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -1641,7 +1726,6 @@
               "mode": "off"
             }
           },
-          "decimals": 0,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1662,101 +1746,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Read"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Update"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Insert"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Job"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "JobUpdate"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Parse"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
+              "options": "time"
             },
             "properties": [
               {
@@ -1772,13 +1762,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "dequeue_permit_emitter, "
+              "options": "Error"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "rgba(53, 77, 66, 1)",
+                  "fixedColor": "red",
                   "mode": "fixed"
                 }
               }
@@ -1787,7 +1777,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "job, "
+              "options": "Ok"
             },
             "properties": [
               {
@@ -1798,151 +1788,16 @@
                 }
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "job_state_update, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "metrics_db, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "metrics_queue, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "metrics_task, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "light-purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "parser, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "domain_resolver_in, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "domain_resolver_out, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "domain_enqueue, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "domain_finish, "
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
           }
         ]
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 23
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 24
       },
-      "id": 14,
+      "id": 16,
       "options": {
         "legend": {
           "calcs": [
@@ -1955,16 +1810,16 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.0.0",
+      "pluginVersion": "8.0.0-beta3",
       "targets": [
         {
           "dateTimeType": "DATETIME",
-          "extrapolate": false,
+          "extrapolate": true,
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    name,\r\n    sum(len) / greatest($interval, 3) as \"value\"\r\nFROM $DB.metrics_queue\r\n\r\nWHERE\r\n    $timeFilterByColumn(updated_at)\r\n    $conditionalTest(AND host = '$host', $host)\r\n    \r\nGROUP BY name, intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\r\n    \r\nORDER BY name, time\r\n",
-          "rawQuery": "SELECT\r\n    toUnixTimestamp(max(updated_at))*1000 as time,\r\n    name,\r\n    sum(len) / greatest(1, 3) as \"value\"\r\nFROM crusty.metrics_queue\r\n\r\nWHERE\r\n    updated_at >= toDateTime(1624525512) AND updated_at <= toDateTime(1624525814)\r\n     AND host = 'crawler-1' \r\n    \r\nGROUP BY name, intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\r\n    \r\nORDER BY name, time",
+          "query": "SELECT\n    toUnixTimestamp(max(updated_at)) * 1000 as time,\n    name,\n    sum(len) / greatest($interval, 3) as \"value\"\nFROM $DB.metrics_queue\n\nWHERE $timeFilterByColumn(updated_at) $conditionalTest( AND host = '$host', $host)\n\nGROUP BY\n    name,\n    intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\nORDER BY\n    name,\n    time",
+          "rawQuery": "SELECT\n    toUnixTimestamp(max(updated_at)) * 1000 as time,\n    name,\n    sum(len) / greatest(1, 3) as \"value\"\nFROM crusty.metrics_queue\n\nWHERE updated_at >= toDateTime(1624635752) AND updated_at <= toDateTime(1624636054)  AND host = 'crawler-1' \n\nGROUP BY\n    name,\n    intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\nORDER BY\n    name,\n    time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -1982,7 +1837,7 @@
                 "config": {
                   "id": "greater",
                   "options": {
-                    "value": 100000000
+                    "value": 0
                   }
                 },
                 "fieldName": "parser, "
@@ -2049,7 +1904,7 @@
       {
         "allValue": "",
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -2086,6 +1941,72 @@
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "25",
+          "value": "25"
+        },
+        "description": "Display Top N Domains",
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "TopNDomains",
+        "options": [
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          }
+        ],
+        "query": "25",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "0",
+          "value": "0"
+        },
+        "description": "Skip Top N Domains",
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "TopNDomainsSkip",
+        "options": [
+          {
+            "selected": true,
+            "text": "0",
+            "value": "0"
+          }
+        ],
+        "query": "0",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "description": "Display Top N Domains With A Certain TLD",
+        "error": null,
+        "hide": 0,
+        "label": null,
+        "name": "TopNDomainsTLD",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
       }
     ]
   },

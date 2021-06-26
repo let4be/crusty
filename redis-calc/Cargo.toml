@@ -1,19 +1,21 @@
 [package]
-name = "queue"
+name = "redis-calc"
 version = "0.1.0"
 authors = ["Sergey F. <let4be@gmail.com>"]
 edition = "2018"
-description = "Crusty queue built as redis module"
+description = "Crusty topk calc and other stuff"
 readme = "README.md"
 license = "GPL-3.0"
 repository = "https://github.com/let4be/crusty"
-keywords = ["broad", "crawler", "rust", "async", "multi-threaded"]
+keywords = []
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
+redis-utils = {path = "../redis-utils"}
 interop = {path = "../interop"}
+
 anyhow = "~1.0.40"
 thiserror = "~1.0.24"
 serde = {version = "~1.0.125", features = ["derive"] }

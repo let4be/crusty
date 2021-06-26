@@ -10,6 +10,8 @@ opt-level = 3
 [workspace]
     members = [
         "main",
-        "queue",
-        "interop"
+        "interop",
+        "redis-utils",
+        "redis-queue",
+        "redis-calc",
     ]

@@ -1,9 +1,7 @@
 #[macro_use]
 extern crate redis_module;
 use redis_module::{Context, RedisResult};
-
-mod redis;
-use redis::Cmd;
+use redis_utils::Cmd;
 
 pub mod types;
 use types::*;
@@ -52,7 +50,9 @@ fn enqueue(ctx: &Context, args: Vec<String>) -> RedisResult {
     for (addr_key, domains) in domains_by_addr_key {
         let processing_domain_name = Cmd::new("GET", k_domain_in_processing(cmd.n, addr_key))
             .exec(ctx)
-            .str("")?;
+            .inner()?
+            .str()
+            .unwrap_or_else(|| "".into());
 
         let mut cmd_add_domain = Cmd::new("SADD", k_in_flight_domains_by_addr_key(cmd.n, addr_key));
 
@@ -66,7 +66,9 @@ fn enqueue(ctx: &Context, args: Vec<String>) -> RedisResult {
             let is_checked_before = Cmd::new("BF.EXISTS", k_domain_in_history(cmd.n))
                 .arg(&domain.name)
                 .exec(ctx)
-                .i64(0)?;
+                .inner()?
+                .i64()
+                .unwrap_or(0);
 
             if is_checked_before == 1 {
                 // bloom filter says we've dealt with this -exact- domain in the past
@@ -112,14 +114,19 @@ fn dequeue(ctx: &Context, args: Vec<String>) -> RedisResult {
     let available_addr_keys = Cmd::new("SPOP", k_in_flight_addr_keys(cmd.n))
         .arg(cmd.limit)
         .exec(ctx)
-        .strs(vec![])?;
+        .inner()?
+        .iter()
+        .map(|v| v.str().unwrap_or_else(|| "".into()))
+        .collect::<Vec<_>>();
 
     let available_addr_keys_len = available_addr_keys.len();
     let mut domains = vec![];
     for addr_key in available_addr_keys {
         let domain_str = Cmd::new("SPOP", k_in_flight_domains_by_addr_key(cmd.n, &addr_key))
             .exec(ctx)
-            .str("")?;
+            .inner()?
+            .str()
+            .unwrap_or_else(|| "".into());
 
         if domain_str.is_empty() {
             continue;
@@ -160,7 +167,9 @@ fn finish(ctx: &Context, args: Vec<String>) -> RedisResult {
             k_in_flight_domains_by_addr_key(cmd.n, &domain.addr_key),
         )
         .exec(ctx)
-        .i64(0)?;
+        .inner()?
+        .i64()
+        .unwrap_or(0);
 
         if remaining > 0 {
             cmd_add_inflight_addr_keys = cmd_add_inflight_addr_keys.arg(&domain.addr_key);
@@ -191,12 +200,12 @@ fn finish(ctx: &Context, args: Vec<String>) -> RedisResult {
 }
 
 redis_module! {
-    name: "crusty",
+    name: "crusty.queue",
     version: 1,
     data_types: [],
     commands: [
-        ["crusty.enqueue", enqueue, "", 0, 0, 0],
-        ["crusty.dequeue", dequeue, "", 0, 0, 0],
-        ["crusty.finish", finish, "", 0, 0, 0],
+        ["crusty.queue.enqueue", enqueue, "", 0, 0, 0],
+        ["crusty.queue.dequeue", dequeue, "", 0, 0, 0],
+        ["crusty.queue.finish", finish, "", 0, 0, 0],
     ],
 }

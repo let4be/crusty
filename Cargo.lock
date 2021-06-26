@@ -354,6 +354,7 @@ dependencies = [
  "http",
  "humanize-rs",
  "interop",
+ "itertools",
  "lol_html",
  "num_cpus",
  "once_cell",
@@ -484,6 +485,12 @@ checksum = "bde03329ae10e79ede66c9ce4dc930aa8599043b0743008548680f25b91502d6"
 dependencies = [
  "dtoa",
 ]
+
+[[package]]
+name = "either"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "encoding_rs"
@@ -1043,6 +1050,15 @@ name = "ipnet"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68f2d64f2edebec4ce84ad108148e67e1064789bee435edc5b60ad398714a3a9"
+
+[[package]]
+name = "itertools"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69ddb889f9d0d08a67338271fa9b62996bc788c7796a5c18cf057420aaed5eaf"
+dependencies = [
+ "either",
+]
 
 [[package]]
 name = "itoa"
@@ -1639,19 +1655,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f1383dff4092fe903ac180e391a8d4121cc48f08ccf850614b0290c6673b69d"
 
 [[package]]
-name = "queue"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "interop",
- "redis-module",
- "serde",
- "serde_json",
- "thiserror",
- "validator",
-]
-
-[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1899,6 +1902,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "redis-calc"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "interop",
+ "redis-module",
+ "redis-utils",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "validator",
+]
+
+[[package]]
 name = "redis-module"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1911,6 +1928,27 @@ dependencies = [
  "libc",
  "num-traits 0.2.14",
  "strum_macros",
+]
+
+[[package]]
+name = "redis-queue"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "interop",
+ "redis-module",
+ "redis-utils",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "validator",
+]
+
+[[package]]
+name = "redis-utils"
+version = "0.1.0"
+dependencies = [
+ "redis-module",
 ]
 
 [[package]]

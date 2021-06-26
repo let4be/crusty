@@ -98,13 +98,13 @@ pub struct DBGenericNotification {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
 pub struct DBRWNotificationDBEntry {
-	host:          &'static str,
-	created_at:    u32,
-	table_name:    String,
-	label:         String,
-	took_ms:       u32,
-	since_last_ms: u32,
-	items:         u32,
+	pub host:          &'static str,
+	pub created_at:    u32,
+	pub table_name:    String,
+	pub label:         String,
+	pub took_ms:       u32,
+	pub since_last_ms: u32,
+	pub items:         u32,
 }
 
 impl<T: Clone + Send> From<DBNotification<T>> for DBGenericNotification {
@@ -364,6 +364,25 @@ impl From<QueueMeasurement> for QueueMeasurementDBEntry {
 			name:       s.name,
 			name_index: s.index as u32,
 			len:        s.len as u32,
+		}
+	}
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Row)]
+pub struct TopHitsDBE {
+	pub created_at: u32,
+	pub tld:        String,
+	pub domain:     String,
+	pub hits:       u64,
+}
+
+impl From<&interop::TopHit> for TopHitsDBE {
+	fn from(s: &interop::TopHit) -> Self {
+		Self {
+			created_at: now().as_secs() as u32,
+			domain:     s.domain.clone(),
+			hits:       s.hits as u64,
+			tld:        s.tld.clone(),
 		}
 	}
 }

@@ -29,8 +29,92 @@ shutdown:
   graceful_timeout: 5s
 
 # Redis settings (queue)
-redis:
-  hosts: ["redis://172.16.2.1:6379/", "redis://172.16.2.2:6379/"]
+queue:
+  redis:
+    hosts: ["redis://172.16.2.1:6379/", "redis://172.16.2.2:6379/"]
+  jobs:
+    # min shard number we have access to(so called scoped shards)
+    shard_min: 0
+    # max shard number we have access to(so called scoped shards), effective scoped shards - 0, 1
+    shard_max: 2
+    # total number of all shards, in a multi-node setup shard_total >= shard_max - shard_min
+    shard_total: 2
+
+    # scoped shards - shards we dequeue jobs from and update job status at
+    # total shards - shards we insert into, this is always 0..shard_total
+
+    #we resolve IP of all discovered domains and calculate addr_key
+    #1. Take only ipv4
+    #2. Sort
+    #3. Take first IP and apply addr_key_mask masking
+    #4. addr_key = addr_key | addr_key_4_mask;
+    #we now use addr_key in shard calculation, we never select more than domain_top_n domains from a given addr_key
+    #this ensures we are being polite to websites with different domains hosted on the same IP(or subnet, depending on addr_key_4_mask)
+    addr_key_mask: 24 #read as /24 meaning first 24 bits are significant while last 8 are not(will be masked)
+    enqueue:
+      options:
+        # each added jobs has a TTL, we don't want jobs handing in redis memory forever...
+        # the nature of broad web crawling is - almost everything significant will be discovered, eventually
+        # dropping job here and there is no biggie
+        ttl: 10m
+      driver: #those are relabuf settings, see https://github.com/let4be/relabuf
+        soft_cap: 500       # release when we've buffered soft_cap or more
+        hard_cap: 1000      # do not buffer more than hard_cap, slow down the producer after hard_cap is reached
+        release_after: 1s   # release when release_after since last successful release(or start) has passed
+    finish:
+      options:
+        ttl: 10m
+        # initial in-history bloom filter capacity, keep this big enough.
+        # Scaling of bloom filter is relatively expensive and will affect performance of all future computations against this filter
+        bf_initial_capacity: 10000000
+        # we won't check bf_error_rate of all discovered domains... it's the price for predictable memory footprint && efficiency
+        bf_error_rate: 0.001
+        # when filter is at capacity expand it by multiplying current capacity by this factor
+        bf_expansion_factor: 2
+      driver:
+        soft_cap: 500
+        hard_cap: 1000
+        release_after: 1s
+    dequeue:
+      options:
+        # up to limit jobs at once
+        limit: 10000
+        # dequeued jobs are being put in the in-processing list with TTL in case of sudden Crusty node explosion
+        # we do NOT want jobs getting stuck "in processing" state forever!
+        # keep this strictly > reader.default_crawling_settings job_hard_timeout
+        ttl: 10m
+        # do not emit job permits more frequently than
+        emit_permit_delay: 1s
+      # we reuse the same relabuf functionality when looking for new jobs
+      # the basic concept is - we regularly emit so called job look permits, and the rest of relabuf rules apply(for releasing those permits)
+      driver:
+        # look for new jobs when internal buffer gets empty AND we have at least 1 outstanding permit
+        soft_cap: 1
+        # do not keep more than hard_cap permits(backoff permit producer)
+        hard_cap: 2
+        # look for new jobs also by time(if permit is available)
+        release_after: 1s
+    # select new jobs(domains) from a sharded queue stored in redis
+    reader:
+      # jobs are sharded, do not ask the same shard for job unless duration has passed since last time we asked
+      shard_min_last_read: 1s
+      # initial list of seed URLs to start the broad crawling from, additionally we also read seeds from CRUSTY_SEEDS env. variable
+      seeds: [ ]
+
+topk:
+  redis:
+    hosts: ["redis://172.16.3.1:6379/"]
+  options:
+    name: "top-domains"
+    k: 100
+    width: 25000
+    depth: 8
+    decay: 0.92
+    consume_interval: 15s
+  driver:
+    soft_cap: 250
+    hard_cap: 1000
+    release_after: 1s
 
 # Clickhouse database settings (metrics)
 clickhouse:
@@ -69,10 +153,18 @@ clickhouse:
     force_write_duration: 5000ms
     concurrency: 3
 
-
   # We persist metrics and various meta-data for each finished JOB(set of pages => basically a domain)
   metrics_job:
     table_name: metrics_job
+    label: ""
+    buffer_capacity: 25000
+    check_for_force_write_duration: 500ms
+    force_write_duration: 5000ms
+    concurrency: 3
+
+  # We persist TOP K domains from redis into clickhouse(heavy hitters, glued on top of "TOP-K from redisbloom")
+  topk:
+    table_name: domain_topk
     label: ""
     buffer_capacity: 25000
     check_for_force_write_duration: 500ms
@@ -92,75 +184,6 @@ rules:
   robots_txt: true
   # after max redirects we stop trying to load a given page
   max_redirect: 5
-
-jobs:
-  # min shard number we have access to(so called scoped shards)
-  shard_min: 0
-  # max shard number we have access to(so called scoped shards), effective scoped shards - 0, 1
-  shard_max: 2
-  # total number of all shards, in a multi-node setup shard_total >= shard_max - shard_min
-  shard_total: 2
-
-  # scoped shards - shards we dequeue jobs from and update job status at
-  # total shards - shards we insert into, this is always 0..shard_total
-
-  #we resolve IP of all discovered domains and calculate addr_key
-  #1. Take only ipv4
-  #2. Sort
-  #3. Take first IP and apply addr_key_mask masking
-  #4. addr_key = addr_key | addr_key_4_mask;
-  #we now use addr_key in shard calculation, we never select more than domain_top_n domains from a given addr_key
-  #this ensures we are being polite to websites with different domains hosted on the same IP(or subnet, depending on addr_key_4_mask)
-  addr_key_mask: 24 #read as /24 meaning first 24 bits are significant while last 8 are not(will be masked)
-  enqueue:
-    options:
-      # each added jobs has a TTL, we don't want jobs handing in redis memory forever...
-      # the nature of broad web crawling is - almost everything significant will be discovered, eventually
-      # dropping job here and there is no biggie
-      ttl: 10m
-    driver: #those are relabuf settings, see https://github.com/let4be/relabuf
-      soft_cap: 500       # release when we've buffered soft_cap or more
-      hard_cap: 1000      # do not buffer more than hard_cap, slow down the producer after hard_cap is reached
-      release_after: 1s   # release when release_after since last successful release(or start) has passed
-  finish:
-    options:
-      ttl: 10m
-      # initial in-history bloom filter capacity, keep this big enough.
-      # Scaling of bloom filter is relatively expensive and will affect performance of all future computations against this filter
-      bf_initial_capacity: 10000000
-      # we won't check bf_error_rate of all discovered domains... it's the price for predictable memory footprint && efficiency
-      bf_error_rate: 0.001
-      # when filter is at capacity expand it by multiplying current capacity by this factor
-      bf_expansion_factor: 2
-    driver:
-      soft_cap: 500
-      hard_cap: 1000
-      release_after: 1s
-  dequeue:
-    options:
-      # up to limit jobs at once
-      limit: 10000
-      # dequeued jobs are being put in the in-processing list with TTL in case of sudden Crusty node explosion
-      # we do NOT want jobs getting stuck "in processing" state forever!
-      # keep this strictly > reader.default_crawling_settings job_hard_timeout
-      ttl: 10m
-      # do not emit job permits more frequently than
-      emit_permit_delay: 1s
-    # we reuse the same relabuf functionality when looking for new jobs
-    # the basic concept is - we regularly emit so called job look permits, and the rest of relabuf rules apply(for releasing those permits)
-    driver:
-      # look for new jobs when internal buffer gets empty AND we have at least 1 outstanding permit
-      soft_cap: 1
-      # do not keep more than hard_cap permits(backoff permit producer)
-      hard_cap: 2
-      # look for new jobs also by time(if permit is available)
-      release_after: 1s
-  # select new jobs(domains) from a sharded queue stored in redis
-  reader:
-    # jobs are sharded, do not ask the same shard for job unless duration has passed since last time we asked
-    shard_min_last_read: 1s
-    # initial list of seed URLs to start the broad crawling from, additionally we also read seeds from CRUSTY_SEEDS env. variable
-    seeds: [ ]
 
 # those settings relate to a crawler running on some particular domain
 default_crawling_settings:

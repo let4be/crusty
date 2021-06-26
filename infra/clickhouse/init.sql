@@ -61,3 +61,11 @@ CREATE TABLE metrics_job (
     duration_sec UInt32,
     term_by String
 ) ENGINE = Memory;
+
+CREATE TABLE domain_topk (
+    tld String,
+    domain String,
+    hits UInt64,
+    created_date Date DEFAULT now(),
+    created_at DateTime
+) ENGINE = Memory;

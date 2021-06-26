@@ -9,3 +9,11 @@ datasources:
     jsonData:
       addCorsHeader: true
       usePOST: true
+  - name: redis-calc
+    type: redis-datasource
+    access: proxy
+    url: redis://redis-calc:6379
+    editable: true
+    jsonData:
+      addCorsHeader: true
+      usePOST: true

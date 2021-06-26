@@ -2,13 +2,16 @@ use clickhouse::Client;
 use crusty_core::{self, resolver::Resolver, types as rt, MultiCrawler};
 use ttl_cache::TtlCache;
 
-use crate::config::ClickhouseWriterConfig;
 #[allow(unused_imports)]
 use crate::{
 	_prelude::*,
 	config,
 	redis_utils::{RedisDriver, RedisOperator},
 	{clickhouse_utils, rules::*, types::*},
+};
+use crate::{
+	config::{ClickhouseWriterConfig, TopKOptions},
+	redis_utils::RedisFilterResult,
 };
 
 struct ChMeasurements {
@@ -33,10 +36,11 @@ impl<T: Send + 'static> LenGetter for ReceiverWeak<T> {
 }
 
 impl ChMeasurements {
-	fn register<F: LenGetter>(&mut self, name: &'static str, index: usize, len_getter: F) {
+	fn register<F: LenGetter, S: ToString>(&mut self, name: S, index: usize, len_getter: F) {
+		let name = Arc::new(name.to_string());
 		self.list.push(Box::new(move || QueueMeasurement {
 			time: now(),
-			name: String::from(name),
+			name: (*name).clone(),
 			index,
 			len: len_getter.len(),
 		}))
@@ -82,23 +86,49 @@ struct FinishOperator {
 	cfg:   config::JobsFinishOptions,
 }
 
-impl RedisOperator<Domain, Domain> for EnqueueOperator {
+#[derive(Debug, Clone)]
+struct DomainLinks {
+	name:  String,
+	links: Vec<String>,
+}
+
+impl DomainLinks {
+	fn new(name: &str, links: Vec<String>) -> Self {
+		Self { name: String::from(name), links }
+	}
+}
+
+struct DomainTopKWriterOperator {
+	options: TopKOptions,
+}
+
+struct DomainTopKSyncerOperator {
+	options: TopKOptions,
+}
+
+impl RedisOperator<Domain, Domain, Vec<String>> for EnqueueOperator {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, domains: &[Domain]) {
-		pipeline.cmd("crusty.enqueue").arg("N").arg(self.shard).arg("TTL").arg(self.cfg.ttl.as_secs()).arg("Domains");
+		pipeline
+			.cmd("crusty.queue.enqueue")
+			.arg("N")
+			.arg(self.shard)
+			.arg("TTL")
+			.arg(self.cfg.ttl.as_secs())
+			.arg("Domains");
 		for domain in domains {
 			pipeline.arg(serde_json::to_string(&domain.to_interop()).unwrap());
 		}
 	}
 
-	fn filter(&mut self, domains: Vec<Domain>, _: String) -> Vec<Domain> {
-		domains
+	fn filter(&mut self, domains: Vec<Domain>, _: Vec<String>) -> RedisFilterResult<Domain, Domain> {
+		Ok(domains)
 	}
 }
 
-impl RedisOperator<(), Domain> for DequeueOperator {
+impl RedisOperator<(), Domain, Vec<String>> for DequeueOperator {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, _: &[()]) {
 		pipeline
-			.cmd("crusty.dequeue")
+			.cmd("crusty.queue.dequeue")
 			.arg("N")
 			.arg(self.shard)
 			.arg("TTL")
@@ -107,16 +137,17 @@ impl RedisOperator<(), Domain> for DequeueOperator {
 			.arg(self.cfg.limit);
 	}
 
-	fn filter(&mut self, _: Vec<()>, r: String) -> Vec<Domain> {
+	fn filter(&mut self, _: Vec<()>, r: Vec<String>) -> RedisFilterResult<(), Domain> {
+		let r = r.into_iter().next().unwrap_or_else(|| String::from(""));
 		let domains: Vec<interop::Domain> = serde_json::from_str(&r).unwrap_or_else(|_| Vec::new());
-		domains.into_iter().map(Domain::from).collect()
+		Ok(domains.into_iter().map(Domain::from).collect())
 	}
 }
 
-impl RedisOperator<Domain, Domain> for FinishOperator {
+impl RedisOperator<Domain, Domain, Vec<String>> for FinishOperator {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, domains: &[Domain]) {
 		pipeline
-			.cmd("crusty.finish")
+			.cmd("crusty.queue.finish")
 			.arg("N")
 			.arg(self.shard)
 			.arg("TTL")
@@ -133,11 +164,56 @@ impl RedisOperator<Domain, Domain> for FinishOperator {
 		}
 	}
 
-	fn filter(&mut self, domains: Vec<Domain>, _: String) -> Vec<Domain> {
-		domains
+	fn filter(&mut self, domains: Vec<Domain>, _: Vec<String>) -> RedisFilterResult<Domain, Domain> {
+		Ok(domains)
 	}
 }
 
+impl RedisOperator<DomainLinks, DomainLinks, ()> for DomainTopKWriterOperator {
+	fn apply(&mut self, pipeline: &mut redis::Pipeline, domains: &[DomainLinks]) {
+		pipeline
+			.cmd("crusty.calc.topk.add")
+			.arg("def_topk")
+			.arg(self.options.k)
+			.arg("def_width")
+			.arg(self.options.width)
+			.arg("def_depth")
+			.arg(self.options.depth)
+			.arg("def_decay")
+			.arg(self.options.decay)
+			.arg("name")
+			.arg(&self.options.name)
+			.arg("items");
+
+		for domain in domains {
+			pipeline.arg(&domain.name);
+			for link in &domain.links {
+				pipeline.arg(link);
+			}
+		}
+	}
+
+	fn filter(&mut self, domains: Vec<DomainLinks>, _: ()) -> RedisFilterResult<DomainLinks, DomainLinks> {
+		Ok(domains)
+	}
+}
+
+impl RedisOperator<(), interop::TopHit, Vec<String>> for DomainTopKSyncerOperator {
+	fn apply(&mut self, pipeline: &mut redis::Pipeline, _permit: &[()]) {
+		pipeline
+			.cmd("crusty.calc.topk.consume")
+			.arg("name")
+			.arg(&self.options.name)
+			.arg("interval")
+			.arg(self.options.consume_interval.as_secs());
+	}
+
+	fn filter(&mut self, _: Vec<()>, r: Vec<String>) -> RedisFilterResult<(), interop::TopHit> {
+		let r = r.into_iter().next().unwrap_or_else(|| String::from(""));
+		let hits: Vec<interop::TopHit> = serde_json::from_str(&r).unwrap_or_else(|_| Vec::new());
+		Ok(hits)
+	}
+}
 type CrustyMultiCrawler = MultiCrawler<JobState, TaskState, Document>;
 
 pub struct CrustyHandle {
@@ -190,7 +266,7 @@ impl Crusty {
 		}
 	}
 
-	fn ch<T: Send + 'static>(&mut self, name: &'static str, index: usize, bounds: usize) -> (Sender<T>, Receiver<T>) {
+	fn ch<T: Send + 'static, S: ToString>(&mut self, name: S, index: usize, bounds: usize) -> (Sender<T>, Receiver<T>) {
 		let (tx, rx) = bounded_ch::<T>(bounds);
 
 		self.ch_measurements.register(name, index, ReceiverWeak(rx.clone()));
@@ -198,11 +274,15 @@ impl Crusty {
 		(tx, rx)
 	}
 
-	fn ch_trans_with_index<T: Send + 'static>(&mut self, name: &'static str, index: usize) -> (Sender<T>, Receiver<T>) {
+	fn ch_trans_with_index<T: Send + 'static, S: ToString>(
+		&mut self,
+		name: S,
+		index: usize,
+	) -> (Sender<T>, Receiver<T>) {
 		self.ch(name, index, config::config().concurrency_profile.transit_buffer_size())
 	}
 
-	fn ch_trans<T: Send + 'static>(&mut self, name: &'static str) -> (Sender<T>, Receiver<T>) {
+	fn ch_trans<T: Send + 'static, S: ToString>(&mut self, name: S) -> (Sender<T>, Receiver<T>) {
 		self.ch_trans_with_index(name, 0)
 	}
 
@@ -217,10 +297,9 @@ impl Crusty {
 
 	fn clickhouse_writer<T: clickhouse::Row + serde::Serialize + Clone + Debug + Send + Sync + 'static>(
 		&mut self,
-		name: &'static str,
 		cfg: ClickhouseWriterConfig,
 	) -> Sender<T> {
-		let (tx, rx) = self.ch_trans::<T>(name);
+		let (tx, rx) = self.ch_trans::<T, _>(&cfg.table_name);
 
 		for _ in 0..cfg.concurrency {
 			let client = self.client.clone();
@@ -235,8 +314,31 @@ impl Crusty {
 		tx
 	}
 
+	fn domain_topk_writer(&mut self, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<DomainLinks> {
+		let cfg = &config::config().topk;
+		let (tx, rx) = self.ch_trans_with_index("domain_topk_insert", 0);
+
+		self.spawn(TracingTask::new(span!(), async move {
+			RedisDriver::new(&cfg.redis.hosts[0], rx, "domain_topk", "insert", tx_notify)
+				.go(cfg.driver.clone().into(), Box::new(DomainTopKWriterOperator { options: cfg.options.clone() }))
+				.await
+		}));
+
+		tx
+	}
+
+	fn domain_topk_syncer(&mut self, rx_permit: Receiver<()>, tx_notify: Sender<DBNotification<interop::TopHit>>) {
+		let cfg = &config::config().topk;
+
+		self.spawn(TracingTask::new(span!(), async move {
+			RedisDriver::new(&cfg.redis.hosts[0], rx_permit, "domain_topk", "sync", tx_notify)
+				.go(cfg.driver.clone().into(), Box::new(DomainTopKSyncerOperator { options: cfg.options.clone() }))
+				.await
+		}));
+	}
+
 	fn domain_enqueue_processor(&mut self, shard: usize, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<Domain> {
-		let cfg = config::config();
+		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_enqueue", shard);
 
 		self.spawn(TracingTask::new(span!(), async move {
@@ -252,7 +354,7 @@ impl Crusty {
 	}
 
 	fn domain_finish_processor(&mut self, shard: usize, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<Domain> {
-		let cfg = config::config();
+		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_finish", shard);
 
 		self.spawn(TracingTask::new(span!(), async move {
@@ -273,7 +375,7 @@ impl Crusty {
 		rx_permit: Receiver<()>,
 		tx_notify: Sender<DBNotification<Domain>>,
 	) {
-		let cfg = config::config();
+		let cfg = &config::config().queue;
 
 		self.spawn(TracingTask::new(span!(), async move {
 			RedisDriver::new(&cfg.redis.hosts[shard], rx_permit, "domains", "read", tx_notify)
@@ -285,15 +387,13 @@ impl Crusty {
 		}));
 	}
 
-	fn dequeue_permit_emitter(&mut self, rx_sig_term: Receiver<()>) -> Receiver<()> {
-		let cfg = config::config();
-		let (tx, rx) = self.ch("dequeue_permit_emitter", 0, 1);
+	fn permit_emitter(&mut self, name: &'static str, delay: Duration, rx_sig_term: Receiver<()>) -> Receiver<()> {
+		let (tx, rx) = self.ch(name, 0, 1);
 
-		let emit_permit_delay = *cfg.jobs.dequeue.options.emit_permit_delay;
 		self.spawn(TracingTask::new(span!(), async move {
 			while tx.send_async(()).await.is_ok() {
 				tokio::select! {
-					_ = time::sleep(emit_permit_delay) => {},
+					_ = time::sleep(delay) => {},
 					_ = rx_sig_term.recv_async() => break
 				}
 			}
@@ -303,36 +403,6 @@ impl Crusty {
 		rx
 	}
 
-	fn domain_filter_map(
-		lnk: &Arc<rt::Link>,
-		task_domain: &str,
-		ddc: &Arc<Mutex<TtlCache<String, ()>>>,
-		tld: &Arc<HashSet<&'static str>>,
-		cfg: &config::CrustyConfig,
-	) -> Option<String> {
-		let domain = lnk.host()?;
-
-		if domain.len() < 4 || !domain.contains('.') || domain == *task_domain {
-			return None
-		}
-
-		let domain_tld = domain.split('.').last().unwrap().to_uppercase();
-		if !tld.contains(domain_tld.as_str()) {
-			return None
-		}
-
-		{
-			let mut ddc = ddc.lock().unwrap();
-			if ddc.contains_key(&domain) {
-				return None
-			}
-			ddc.insert(domain.clone(), (), *cfg.ddc_lifetime);
-		}
-
-		info!("new domain discovered: {}", &domain);
-		Some(domain)
-	}
-
 	fn result_handler(
 		&mut self,
 		tx_metrics_task: Sender<TaskMeasurementDBEntry>,
@@ -340,8 +410,9 @@ impl Crusty {
 		tx_domain_insert: Sender<String>,
 		tx_domain_update: Vec<Sender<Domain>>,
 		rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
+		tx_domain_links: Sender<DomainLinks>,
 	) {
-		let cfg = config::config();
+		let cfg = &config::config().queue;
 		let ddc = Arc::clone(&self.ddc);
 		let tld = Arc::clone(&self.tld);
 
@@ -350,12 +421,37 @@ impl Crusty {
 				info!("- {}", r);
 
 				let task_domain = r.task.link.host().unwrap();
+
+				let domain_filter_map = |lnk: &Arc<rt::Link>| {
+					let cfg = config::config();
+					let domain = lnk.host()?;
+
+					if domain.len() < 4 || !domain.contains('.') || domain == *task_domain {
+						return None
+					}
+
+					let domain_tld = domain.split('.').last().unwrap().to_uppercase();
+					if !tld.contains(domain_tld.as_str()) {
+						return None
+					}
+
+					r.ctx.job_state.lock().unwrap().link_domain(&domain);
+
+					{
+						let mut ddc = ddc.lock().unwrap();
+						if ddc.contains_key(&domain) {
+							return None
+						}
+						ddc.insert(domain.clone(), (), *cfg.ddc_lifetime);
+					}
+
+					info!("new domain discovered: {}", &domain);
+					Some(domain)
+				};
+
 				match r.status {
 					rt::JobStatus::Processing(Ok(ref jp)) => {
-						let discovered_domains = jp
-							.links
-							.iter()
-							.filter_map(|lnk| Crusty::domain_filter_map(&lnk, &task_domain, &ddc, &tld, &cfg));
+						let discovered_domains = jp.links.iter().filter_map(domain_filter_map);
 
 						for domain in discovered_domains {
 							let _ = tx_domain_insert.send_async(domain).await;
@@ -367,10 +463,14 @@ impl Crusty {
 						let _ = tx_metrics_task.send_async(r.into()).await;
 					}
 					rt::JobStatus::Finished(ref _jd) => {
-						let selected_domain = { r.ctx.job_state.lock().unwrap().selected_domain.clone() };
+						let (selected_domain, linked_domains) = {
+							let js = r.ctx.job_state.lock().unwrap();
+							(js.selected_domain.clone(), js.linked_domains())
+						};
 						let shard = selected_domain.calc_shard(cfg.jobs.shard_total);
-						let _ = tx_domain_update[shard].send_async(selected_domain).await;
 
+						let _ = tx_domain_links.send_async(DomainLinks::new(&linked_domains.0, linked_domains.1)).await;
+						let _ = tx_domain_update[shard].send_async(selected_domain).await;
 						let _ = tx_metrics_job.send_async(r.into()).await;
 					}
 				}
@@ -403,7 +503,7 @@ impl Crusty {
 						&url,
 						Arc::clone(&default_crawling_settings),
 						CrawlingRules {},
-						JobState { selected_domain: domain.clone() },
+						JobState::new(&domain),
 					);
 
 					match job_obj {
@@ -484,7 +584,7 @@ impl Crusty {
 		rx: Receiver<String>,
 		tx_domain_insert: Vec<Sender<Domain>>,
 	) -> TracingTask<'static> {
-		let cfg = config::config();
+		let cfg = &config::config().queue;
 
 		TracingTask::new(span!(), async move {
 			while let Ok(domain_str) = rx.recv_async().await {
@@ -554,8 +654,26 @@ impl Crusty {
 		tx_out
 	}
 
+	fn domain_topk_plex(
+		&mut self,
+		rx_notify: Receiver<DBNotification<interop::TopHit>>,
+		tx_ch: Sender<TopHitsDBE>,
+		tx_metrics_db: Sender<DBRWNotificationDBEntry>,
+	) {
+		self.spawn(TracingTask::new(span!(), async move {
+			while let Ok(notify) = rx_notify.recv_async().await {
+				for th in &notify.items {
+					let _ = tx_ch.send_async(th.into()).await;
+				}
+				let _ = tx_metrics_db.send_async(notify.into()).await;
+			}
+
+			Ok(())
+		}));
+	}
+
 	async fn send_seed_jobs(&self, tx_domain_read_notify: Sender<DBNotification<Domain>>) {
-		let cfg = config::config();
+		let cfg = &config::config().queue;
 		let seed_domains: Vec<_> = cfg
 			.jobs
 			.reader
@@ -578,7 +696,7 @@ impl Crusty {
 	}
 
 	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurementDBEntry>)> {
-		let cfg = config::config();
+		let cfg = &config::config();
 
 		let network_profile = cfg.networking_profile.clone().resolve()?;
 		info!("Resolved Network Profile: {:?}", &network_profile);
@@ -599,13 +717,22 @@ impl Crusty {
 		self.ch_measurements.register("job", 0, SenderWeak(Arc::downgrade(&tx_job)));
 		self.ch_measurements.register("job_state_update", 0, ReceiverWeak(rx_job_state_update.clone()));
 
-		let tx_metrics_task = self.clickhouse_writer("metrics_task", cfg.clickhouse.metrics_task.clone());
-		let tx_metrics_job = self.clickhouse_writer("metrics_job", cfg.clickhouse.metrics_job.clone());
-		let tx_metrics_queue = self.clickhouse_writer("metrics_queue", cfg.clickhouse.metrics_queue.clone());
-		let tx_metrics_db = self.clickhouse_writer("metrics_db", cfg.clickhouse.metrics_db.clone());
+		let tx_metrics_task = self.clickhouse_writer(cfg.clickhouse.metrics_task.clone());
+		let tx_metrics_job = self.clickhouse_writer(cfg.clickhouse.metrics_job.clone());
+		let tx_metrics_queue = self.clickhouse_writer(cfg.clickhouse.metrics_queue.clone());
+		let tx_metrics_db = self.clickhouse_writer(cfg.clickhouse.metrics_db.clone());
+		let tx_ch_topk = self.clickhouse_writer(cfg.clickhouse.topk.clone());
 
-		let scoped_shard_range = cfg.jobs.shard_min..cfg.jobs.shard_max;
-		let total_shard_range = 0..cfg.jobs.shard_total;
+		//
+		let (tx_domain_topk_notify, rx_domain_topk_notify) = self.ch_trans("domain_topk_notify");
+		let rx_domain_topk_permit =
+			self.permit_emitter("domain_topk_permit", *cfg.topk.options.consume_interval, rx_sig_term.clone());
+		self.domain_topk_syncer(rx_domain_topk_permit, tx_domain_topk_notify);
+		self.domain_topk_plex(rx_domain_topk_notify, tx_ch_topk, tx_metrics_db.clone());
+		//
+
+		let scoped_shard_range = cfg.queue.jobs.shard_min..cfg.queue.jobs.shard_max;
+		let total_shard_range = 0..cfg.queue.jobs.shard_total;
 
 		let tx_domain_insert = total_shard_range
 			.clone()
@@ -616,10 +743,12 @@ impl Crusty {
 			.map(|shard| self.domain_finish_processor(shard, tx_metrics_db.clone()))
 			.collect::<Vec<_>>();
 
+		let tx_domain_links = self.domain_topk_writer(tx_metrics_db.clone());
+
 		let (tx_domain_read_notify, rx_domain_read_notify) = self.ch("domain_read_notify", 0, 1);
 		self.send_seed_jobs(tx_domain_read_notify.clone()).await;
 
-		let rx_dequeue_permit = self.dequeue_permit_emitter(rx_sig_term.clone());
+		let rx_dequeue_permit = self.permit_emitter("dequeue_permit", Duration::from_secs(1), rx_sig_term.clone());
 		for shard in scoped_shard_range.clone() {
 			self.domain_dequeue_processor(shard, rx_dequeue_permit.clone(), tx_domain_read_notify.clone());
 			self.job_sender(rx_domain_read_notify.clone(), tx_job.clone(), tx_metrics_db.clone());
@@ -634,6 +763,7 @@ impl Crusty {
 				tx_domain_resolve.clone(),
 				tx_domain_update.clone(),
 				rx_job_state_update.clone(),
+				tx_domain_links.clone(),
 			);
 		}
 

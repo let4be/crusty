@@ -50,6 +50,29 @@ impl Default for ShutdownConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct QueueConfig {
+	pub redis: RedisConfig,
+	pub jobs:  JobsConfig,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct TopKOptions {
+	pub name:             String,
+	pub k:                usize,
+	pub width:            usize,
+	pub depth:            usize,
+	pub decay:            f64,
+	pub consume_interval: rc::CDuration,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct TopKConfig {
+	pub redis:   RedisConfig,
+	pub options: TopKOptions,
+	pub driver:  RedisDriverConfig,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct RedisConfig {
 	pub hosts: Vec<String>,
 }
@@ -230,6 +253,7 @@ pub struct ClickhouseConfig {
 	pub metrics_db:    ClickhouseWriterConfig,
 	pub metrics_task:  ClickhouseWriterConfig,
 	pub metrics_job:   ClickhouseWriterConfig,
+	pub topk:          ClickhouseWriterConfig,
 }
 
 impl Default for ClickhouseConfig {
@@ -272,6 +296,14 @@ impl Default for ClickhouseConfig {
 				force_write_duration: rc::CDuration::from_millis(500),
 				concurrency: 3,
 			},
+			topk:          ClickhouseWriterConfig {
+				table_name: String::from("domain_topk"),
+				label: String::from(""),
+				buffer_capacity: 100,
+				check_for_force_write_duration: rc::CDuration::from_millis(100),
+				force_write_duration: rc::CDuration::from_millis(500),
+				concurrency: 3,
+			},
 		}
 	}
 }
@@ -293,25 +325,15 @@ impl Default for LogConfig {
 pub struct CrustyConfig {
 	pub host: String,
 
-	#[serde(default)]
 	pub rules: RulesConfig,
-	#[serde(default)]
 	pub shutdown: ShutdownConfig,
-	#[serde(default)]
 	pub log: LogConfig,
-	#[serde(default)]
 	pub clickhouse: ClickhouseConfig,
-	#[serde(default)]
-	pub redis: RedisConfig,
-	#[serde(default)]
-	pub jobs: JobsConfig,
-	#[serde(default)]
+	pub queue: QueueConfig,
+	pub topk: TopKConfig,
 	pub resolver: ResolverConfig,
-	#[serde(default)]
 	pub networking_profile: rc::NetworkingProfile,
-	#[serde(default)]
 	pub concurrency_profile: rc::ConcurrencyProfile,
-	#[serde(default)]
 	pub default_crawling_settings: rc::CrawlingSettings,
 
 	pub ddc_cap:                     usize,
@@ -352,6 +374,7 @@ pub fn load() -> Result<()> {
 
 	if let Ok(seeds) = env::var("CRUSTY_SEEDS") {
 		config
+			.queue
 			.jobs
 			.reader
 			.seeds

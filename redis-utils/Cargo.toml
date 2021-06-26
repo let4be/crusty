@@ -1,0 +1,13 @@
+[package]
+name = "redis-utils"
+version = "0.1.0"
+authors = ["Sergey F. <let4be@gmail.com>"]
+edition = "2018"
+description = "Shared utils for writing redis modules in RUST"
+readme = "README.md"
+license = "GPL-3.0"
+repository = "https://github.com/let4be/crusty"
+keywords = []
+
+[dependencies]
+redis-module = "~0.18.0"

@@ -9,6 +9,7 @@ pub struct RedisDriver<
 	T: 'static + Send + Sync + Debug,
 	R: 'static + Send + Sync + Debug + Clone,
 	N: From<DBNotification<R>>,
+	X: redis::FromRedisValue,
 > {
 	table_name: String,
 	label:      String,
@@ -17,17 +18,29 @@ pub struct RedisDriver<
 	rx:        Receiver<T>,
 	tx_notify: Sender<N>,
 	_r:        PhantomData<R>,
+	_x:        PhantomData<X>,
 }
 
 pub type Thresholds = relabuf::RelaBufConfig;
 
-pub trait RedisOperator<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone> {
-	fn apply(&mut self, pipeline: &mut redis::Pipeline, items: &[T]);
-	fn filter(&mut self, items: Vec<T>, response: String) -> Vec<R>;
+pub struct RedisFilterError<T: 'static + Send + Sync + Debug> {
+	pub items: Vec<T>,
+	pub err:   anyhow::Error,
 }
 
-impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone, N: From<DBNotification<R>>>
-	RedisDriver<T, R, N>
+pub type RedisFilterResult<T, R> = std::result::Result<Vec<R>, RedisFilterError<T>>;
+
+pub trait RedisOperator<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone, X> {
+	fn apply(&mut self, pipeline: &mut redis::Pipeline, items: &[T]);
+	fn filter(&mut self, items: Vec<T>, response: X) -> RedisFilterResult<T, R>;
+}
+
+impl<
+		T: 'static + Send + Sync + Debug,
+		R: 'static + Send + Sync + Debug + Clone,
+		N: From<DBNotification<R>>,
+		X: redis::FromRedisValue,
+	> RedisDriver<T, R, N, X>
 {
 	pub fn new(host: &str, rx: Receiver<T>, table_name: &str, label: &str, tx_notify: Sender<N>) -> Self {
 		Self {
@@ -37,13 +50,14 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone,
 			label: String::from(label),
 			tx_notify,
 			_r: PhantomData::default(),
+			_x: PhantomData::default(),
 		}
 	}
 
 	pub async fn go(
 		self,
 		thresholds: Thresholds,
-		mut operator: Box<dyn RedisOperator<T, R> + Send + Sync>,
+		mut operator: Box<dyn RedisOperator<T, R, X> + Send + Sync>,
 	) -> Result<()> {
 		let client = Client::open(self.host.as_str())?;
 
@@ -56,7 +70,7 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone,
 		let mut last_query = Instant::now();
 
 		let mut con = None;
-		while let Ok(released) = buffer.next().await {
+		while let Ok(mut released) = buffer.next().await {
 			if con.is_none() {
 				let connection = client.get_async_connection().await;
 				if let Err(err) = connection {
@@ -76,7 +90,7 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone,
 			last_query = Instant::now();
 
 			let t = Instant::now();
-			let r = atomic_pipe.query_async::<_, Vec<String>>(con.as_mut().unwrap()).await;
+			let r = atomic_pipe.query_async::<_, X>(con.as_mut().unwrap()).await;
 			let query_took = t.elapsed();
 
 			match r {
@@ -86,9 +100,23 @@ impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone,
 					con = None;
 				}
 				Ok(r) => {
+					let mut items = vec![];
+					std::mem::swap(&mut items, &mut released.items);
+
+					let out_items = match operator.filter(items, r) {
+						Ok(r) => r,
+						Err(err) => {
+							warn!(
+								"Error during redis operation during filtering: {:?} - returning back to buffer",
+								err.err
+							);
+							released.items = err.items;
+							released.return_on_err();
+							continue
+						}
+					};
 					released.confirm();
-					let out_items =
-						operator.filter(released.items, r.into_iter().next().unwrap_or_else(|| String::from("")));
+
 					let _ = self
 						.tx_notify
 						.send_async(
