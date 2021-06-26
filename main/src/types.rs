@@ -66,6 +66,18 @@ impl Domain {
 }
 
 #[derive(Debug, Clone)]
+pub struct DomainLinks {
+	pub name:           String,
+	pub linked_domains: Vec<String>,
+}
+
+impl DomainLinks {
+	pub fn new(name: &str, links: Vec<String>) -> Self {
+		Self { name: String::from(name), linked_domains: links }
+	}
+}
+
+#[derive(Debug, Clone)]
 pub struct DBNotification<A: Clone + Send> {
 	pub table_name: String,
 	pub label:      String,

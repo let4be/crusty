@@ -10,7 +10,7 @@ use html5ever::{
 	},
 };
 
-use crate::{_prelude::*, html5ever_defs::*, rules::*};
+use crate::{_prelude::*, parsers::html5ever_defs::*, rules::*};
 
 #[derive(Debug, Default)]
 pub struct LinkData {

@@ -3,7 +3,7 @@ use std::io;
 use crusty_core::{task_expanders, types as ct};
 use lol_html::{element, HtmlRewriter, Settings};
 
-use crate::{_prelude::*, lolhtml_defs::*, rules::*};
+use crate::{_prelude::*, parsers::lolhtml_defs::*, rules::*};
 
 #[derive(Debug, Default)]
 pub struct LinkData {

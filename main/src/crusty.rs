@@ -3,12 +3,8 @@ use crusty_core::{self, resolver::Resolver, types as rt, MultiCrawler};
 use ttl_cache::TtlCache;
 
 use crate::{
-	_prelude::*,
-	clickhouse_utils, config,
-	config::{ClickhouseWriterConfig, TopKOptions},
-	redis_utils::{RedisDriver, RedisFilterResult, RedisOperator},
-	rules::*,
-	types::*,
+	_prelude::*, clickhouse_utils, config, config::ClickhouseWriterConfig, redis_operators, redis_utils::RedisDriver,
+	rules::*, types::*,
 };
 
 struct ChMeasurements {
@@ -68,150 +64,6 @@ pub struct Crusty {
 	client: Client,
 }
 
-struct EnqueueOperator {
-	shard: usize,
-	cfg:   config::JobsEnqueueOptions,
-}
-
-struct DequeueOperator {
-	shard: usize,
-	cfg:   config::JobsDequeueOptions,
-}
-
-struct FinishOperator {
-	shard: usize,
-	cfg:   config::JobsFinishOptions,
-}
-
-#[derive(Debug, Clone)]
-struct DomainLinks {
-	name:           String,
-	linked_domains: Vec<String>,
-}
-
-impl DomainLinks {
-	fn new(name: &str, links: Vec<String>) -> Self {
-		Self { name: String::from(name), linked_domains: links }
-	}
-}
-
-struct DomainTopKWriterOperator {
-	options: TopKOptions,
-}
-
-struct DomainTopKSyncerOperator {
-	options: TopKOptions,
-}
-
-impl RedisOperator<Domain, Domain, Vec<String>> for EnqueueOperator {
-	fn apply(&mut self, pipeline: &mut redis::Pipeline, domains: &[Domain]) {
-		pipeline
-			.cmd("crusty.queue.enqueue")
-			.arg("N")
-			.arg(self.shard)
-			.arg("TTL")
-			.arg(self.cfg.ttl.as_secs())
-			.arg("Domains");
-		for domain in domains {
-			pipeline.arg(serde_json::to_string(&domain.to_interop()).unwrap());
-		}
-	}
-
-	fn filter(&mut self, domains: Vec<Domain>, _: Vec<String>) -> RedisFilterResult<Domain, Domain> {
-		Ok(domains)
-	}
-}
-
-impl RedisOperator<(), Domain, Vec<interop::Domain>> for DequeueOperator {
-	fn apply(&mut self, pipeline: &mut redis::Pipeline, _: &[()]) {
-		pipeline
-			.cmd("crusty.queue.dequeue")
-			.arg("N")
-			.arg(self.shard)
-			.arg("TTL")
-			.arg(self.cfg.ttl.as_secs())
-			.arg("Limit")
-			.arg(self.cfg.limit);
-	}
-
-	fn filter(&mut self, _: Vec<()>, domains: Vec<interop::Domain>) -> RedisFilterResult<(), Domain> {
-		Ok(domains.into_iter().map(Domain::from).collect())
-	}
-}
-
-impl RedisOperator<Domain, Domain, Vec<String>> for FinishOperator {
-	fn apply(&mut self, pipeline: &mut redis::Pipeline, domains: &[Domain]) {
-		pipeline
-			.cmd("crusty.queue.finish")
-			.arg("N")
-			.arg(self.shard)
-			.arg("TTL")
-			.arg(self.cfg.ttl.as_secs())
-			.arg("BF_Capacity")
-			.arg(self.cfg.bf_initial_capacity)
-			.arg("BF_Error_Rate")
-			.arg(self.cfg.bf_error_rate)
-			.arg("BF_EXPANSION")
-			.arg(self.cfg.bf_expansion_factor)
-			.arg("Domains");
-		for domain in domains {
-			pipeline.arg(serde_json::to_string(&domain.to_interop_descriptor()).unwrap());
-		}
-	}
-
-	fn filter(&mut self, domains: Vec<Domain>, _: Vec<String>) -> RedisFilterResult<Domain, Domain> {
-		Ok(domains)
-	}
-}
-
-impl RedisOperator<DomainLinks, DomainLinks, ()> for DomainTopKWriterOperator {
-	fn apply(&mut self, pipeline: &mut redis::Pipeline, domains: &[DomainLinks]) {
-		let mut domains_cnt = HashMap::new();
-		for domain in domains {
-			*domains_cnt.entry(&domain.name).or_insert(0_u32) += 1;
-			for linked_domain in &domain.linked_domains {
-				*domains_cnt.entry(linked_domain).or_insert(0) += 1;
-			}
-		}
-
-		pipeline
-			.cmd("crusty.calc.topk.add")
-			.arg("def_topk")
-			.arg(self.options.k)
-			.arg("def_width")
-			.arg(self.options.width)
-			.arg("def_depth")
-			.arg(self.options.depth)
-			.arg("def_decay")
-			.arg(self.options.decay)
-			.arg("name")
-			.arg(&self.options.name)
-			.arg("items");
-
-		for (domain, cnt) in domains_cnt {
-			pipeline.arg(format!("{}:{}", domain, cnt));
-		}
-	}
-
-	fn filter(&mut self, domains: Vec<DomainLinks>, _: ()) -> RedisFilterResult<DomainLinks, DomainLinks> {
-		Ok(domains)
-	}
-}
-
-impl RedisOperator<(), interop::TopHit, Vec<interop::TopHit>> for DomainTopKSyncerOperator {
-	fn apply(&mut self, pipeline: &mut redis::Pipeline, _permit: &[()]) {
-		pipeline
-			.cmd("crusty.calc.topk.consume")
-			.arg("name")
-			.arg(&self.options.name)
-			.arg("interval")
-			.arg(self.options.consume_interval.as_secs());
-	}
-
-	fn filter(&mut self, _: Vec<()>, hits: Vec<interop::TopHit>) -> RedisFilterResult<(), interop::TopHit> {
-		Ok(hits)
-	}
-}
 type CrustyMultiCrawler = MultiCrawler<JobState, TaskState, Document>;
 
 pub struct CrustyHandle {
@@ -318,7 +170,10 @@ impl Crusty {
 
 		self.spawn(TracingTask::new(span!(), async move {
 			RedisDriver::new(&cfg.redis.hosts[0], rx, "domain_topk", "insert", tx_notify)
-				.go(cfg.driver.clone().into(), Box::new(DomainTopKWriterOperator { options: cfg.options.clone() }))
+				.go(
+					cfg.driver.clone().into(),
+					Box::new(redis_operators::DomainTopKWriter { options: cfg.options.clone() }),
+				)
 				.await
 		}));
 
@@ -330,7 +185,10 @@ impl Crusty {
 
 		self.spawn(TracingTask::new(span!(), async move {
 			RedisDriver::new(&cfg.redis.hosts[0], rx_permit, "domain_topk", "sync", tx_notify)
-				.go(cfg.driver.clone().into(), Box::new(DomainTopKSyncerOperator { options: cfg.options.clone() }))
+				.go(
+					cfg.driver.clone().into(),
+					Box::new(redis_operators::DomainTopKSyncer { options: cfg.options.clone() }),
+				)
 				.await
 		}));
 	}
@@ -343,7 +201,7 @@ impl Crusty {
 			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "insert", tx_notify)
 				.go(
 					cfg.jobs.enqueue.driver.clone().into(),
-					Box::new(EnqueueOperator { shard, cfg: cfg.jobs.enqueue.options.clone() }),
+					Box::new(redis_operators::Enqueue { shard, cfg: cfg.jobs.enqueue.options.clone() }),
 				)
 				.await
 		}));
@@ -359,7 +217,7 @@ impl Crusty {
 			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "update", tx_notify)
 				.go(
 					cfg.jobs.finish.driver.clone().into(),
-					Box::new(FinishOperator { shard, cfg: cfg.jobs.finish.options.clone() }),
+					Box::new(redis_operators::Finish { shard, cfg: cfg.jobs.finish.options.clone() }),
 				)
 				.await
 		}));
@@ -379,7 +237,7 @@ impl Crusty {
 			RedisDriver::new(&cfg.redis.hosts[shard], rx_permit, "domains", "read", tx_notify)
 				.go(
 					cfg.jobs.dequeue.driver.clone().into(),
-					Box::new(DequeueOperator { shard, cfg: cfg.jobs.dequeue.options.clone() }),
+					Box::new(redis_operators::Dequeue { shard, cfg: cfg.jobs.dequeue.options.clone() }),
 				)
 				.await
 		}));

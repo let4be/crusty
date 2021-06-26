@@ -1,17 +1,10 @@
-#[cfg(feature = "html5ever")]
-mod html5ever_defs;
-#[cfg(feature = "lol_html_parser")]
-mod lolhtml_defs;
-
-#[cfg(feature = "html5ever")]
-mod html5ever_parser;
-#[cfg(feature = "lol_html_parser")]
-mod lolhtml_parser;
+mod parsers;
 
 mod _prelude;
 mod clickhouse_utils;
 mod config;
 mod crusty;
+mod redis_operators;
 mod redis_utils;
 mod rules;
 mod types;

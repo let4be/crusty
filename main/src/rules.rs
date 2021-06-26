@@ -1,10 +1,10 @@
 use crusty_core::types as ct;
 
 #[cfg(feature = "html5ever")]
-pub use crate::html5ever_defs::*;
+pub use crate::parsers::html5ever_defs::*;
 #[cfg(feature = "lol_html_parser")]
-pub use crate::lolhtml_defs::*;
-use crate::{_prelude::*, config, lolhtml_parser::*, types::*};
+pub use crate::parsers::lolhtml_defs::*;
+use crate::{_prelude::*, config, parsers::lolhtml::*, types::*};
 
 #[derive(Debug, Clone)]
 pub struct JobState {
