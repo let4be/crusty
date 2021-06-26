@@ -3,7 +3,6 @@ use std::{fmt::Debug, marker::PhantomData};
 use redis::Client;
 use serde::de::DeserializeOwned;
 
-#[allow(unused_imports)]
 use crate::{_prelude::*, types::*};
 
 pub struct RedisDriver<

@@ -2,9 +2,7 @@ use backoff::{future::retry, ExponentialBackoff};
 use clickhouse::{Client, Row};
 use serde::Serialize;
 
-#[allow(unused_imports)]
-use crate::_prelude::*;
-use crate::{config::*, types::*};
+use crate::{_prelude::*, config::*, types::*};
 
 #[derive(Clone)]
 pub struct Writer {

@@ -10,7 +10,6 @@ use html5ever::{
 	},
 };
 
-#[allow(unused_imports)]
 use crate::{_prelude::*, html5ever_defs::*, rules::*};
 
 #[derive(Debug, Default)]

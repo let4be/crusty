@@ -2,16 +2,13 @@ use clickhouse::Client;
 use crusty_core::{self, resolver::Resolver, types as rt, MultiCrawler};
 use ttl_cache::TtlCache;
 
-#[allow(unused_imports)]
 use crate::{
 	_prelude::*,
-	config,
-	redis_utils::{RedisDriver, RedisOperator},
-	{clickhouse_utils, rules::*, types::*},
-};
-use crate::{
+	clickhouse_utils, config,
 	config::{ClickhouseWriterConfig, TopKOptions},
-	redis_utils::RedisFilterResult,
+	redis_utils::{RedisDriver, RedisFilterResult, RedisOperator},
+	rules::*,
+	types::*,
 };
 
 struct ChMeasurements {

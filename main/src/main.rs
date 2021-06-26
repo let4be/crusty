@@ -18,12 +18,7 @@ mod types;
 
 use tracing_subscriber::EnvFilter;
 
-#[allow(unused_imports)]
-use crate::{
-	_prelude::*,
-	crusty::Crusty,
-	{config::CrustyConfig, rules::*, types::*},
-};
+use crate::{_prelude::*, crusty::Crusty, types::*};
 
 fn main() -> Result<()> {
 	println!("Starting Crusty...");

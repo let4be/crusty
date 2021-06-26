@@ -4,7 +4,6 @@ use clickhouse::Row;
 use crusty_core::types as ct;
 use serde::{Deserialize, Serialize};
 
-#[allow(unused_imports)]
 use crate::{_prelude::*, config::config};
 
 pub type Result<T> = anyhow::Result<T>;

@@ -4,7 +4,6 @@ use crusty_core::config as rc;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
 
-#[allow(unused_imports)]
 use crate::{_prelude::*, types::*};
 
 pub static CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
