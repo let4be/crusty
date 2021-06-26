@@ -1,4 +1,4 @@
-FROM redis:6.2
+FROM redis:6.2.4
 RUN apt-get update && apt-get -y install git build-essential cmake
 RUN mkdir /app && cd /app && git clone https://github.com/RedisBloom/RedisBloom && cd RedisBloom && git submodule update --init --recursive && make
 COPY redis.conf /usr/local/etc/redis/redis.conf
