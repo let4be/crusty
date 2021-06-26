@@ -1,15 +1,17 @@
 ![crates.io](https://img.shields.io/crates/v/crusty.svg)
 [![Dependency status](https://deps.rs/repo/github/let4be/crusty/status.svg)](https://deps.rs/repo/github/let4be/crusty)
 
-# Crusty - fast, polite && scalable broad web crawler
+# Crusty - fast, scalable && polite broad web crawler
 
 ## Introduction
 Broad web crawling is an activity of going through practically boundless web by starting from a set of locations(urls) and following outgoing links.
 Usually it doesn't matter where you start from as long as it has outgoing links to external domains.
 
-It presents unique set of challenges one must overcome to get a stable and scalable system, `Crusty` is an attempt to tackle on some of those challenges to see what's out here while having fun with `Rust` ;)
+It presents unique set of challenges one must overcome to get a stable, scalable && polite system, `Crusty` is an attempt to tackle on some of those challenges to see what's out here while having fun with `Rust` ;)
 
-This particular implementation could be used to quickly fetch a subset of all observable internet and for example, discover most popular domains/links
+This particular implementation could be used to quickly fetch a subset of all observable internet && discover most popular domains
+
+The whole system is designed to be minimalistic in nature and does not bring any heavy artillery(like graph database or distributed file systems). If needed, this can be connected externally.
 
 Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handles all low-level aspects of web crawling
 
