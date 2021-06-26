@@ -11,7 +11,8 @@ It presents unique set of challenges one must overcome to get a stable, scalable
 
 This particular implementation could be used to quickly fetch a subset of all observable internet && discover most popular domains
 
-The whole system is designed to be minimalistic in nature and does not bring any heavy artillery(like graph database or distributed file systems). If needed, this can be connected externally.
+The whole system is designed to be minimalistic in nature and does not bring any heavy artillery(like graph database or distributed file system). If needed, this can be connected externally.
+Also, internally some trade-off have been made(see Tradeoffs/limitations section).
 
 Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handles all low-level aspects of web crawling
 
@@ -146,6 +147,16 @@ however...
 to create / clean db use [this sql](./infra/clickhouse/init.sql)(must be fed to `clickhouse client` -in context- of clickhouse docker container)
 
 grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.json)
+
+## Tradeoffs / limitations
+
+- `Crusty` not only writes `top-k` in redis but also attempts to bring aggregated data into clickhouse regularly, the whole thing implemented in a way that does not create issues with concurrency(`SET NX`, i.e. some running `Crusty` instance will pick aggregated data up) - it's perfectly fine to run multiple `Crusty` instances
+
+- top-k functionality isn't sharded, so there might be a point where it becomes a bottleneck(setting higher buffering on Crusty and optionally discarding all low profile hits might help though)
+
+- while Crusty is blazing fast you probably would like to do something with your 10 gbit/sec data stream, this is where the real struggle begins ;)
+
+- being minimalistic in design `Crusty` does not bring any heavy artillery(like a recommended Graph Database, or a recommended way to aggregate / persist collected data) - so bring your own
 
 ## Development
 
