@@ -166,9 +166,9 @@ clickhouse:
   topk:
     table_name: domain_topk
     label: ""
-    buffer_capacity: 25000
-    check_for_force_write_duration: 500ms
-    force_write_duration: 5000ms
+    buffer_capacity: 2500
+    check_for_force_write_duration: 2500ms
+    force_write_duration: 15000ms
     concurrency: 3
 
 # crawling rules

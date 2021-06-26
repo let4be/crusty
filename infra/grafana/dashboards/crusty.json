@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624716608563,
+  "iteration": 1624716608585,
   "links": [],
   "panels": [
     {
@@ -1006,7 +1006,7 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
           "query": "SELECT\n    now() as time,\n    domain,\n    argMax(hits, created_at) as hits\nFROM $DB.domain_topk\n\nWHERE tld = '$TopNDomainsTLD'\n\nGROUP BY domain\n\nORDER BY\n    hits DESC,\n    domain ASC\nLIMIT\n    $TopNDomainsSkip,\n    $TopNDomains",
-          "rawQuery": "SELECT\n    now() as time,\n    domain,\n    argMax(hits, created_at) as hits\nFROM crusty.domain_topk\nWHERE tld = ''\nGROUP BY domain\n\nORDER BY\n    hits DESC,\n    domain ASC\nLIMIT\n    0,\n    25",
+          "rawQuery": "SELECT\n    now() as time,\n    domain,\n    argMax(hits, created_at) as hits\nFROM crusty.domain_topk\n\nWHERE tld = 'ru'\n\nGROUP BY domain\n\nORDER BY\n    hits DESC,\n    domain ASC\nLIMIT\n    0,\n    25",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -1014,7 +1014,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Top $TopNDomains Most Linked Domains",
+      "title": "Top $TopNDomains Most Linked Domains($TopNDomainsTLD)",
       "transformations": [
         {
           "id": "filterByValue",
@@ -1989,8 +1989,8 @@
       {
         "current": {
           "selected": false,
-          "text": "",
-          "value": ""
+          "text": "ru",
+          "value": "ru"
         },
         "description": "Display Top N Domains With A Certain TLD",
         "error": null,
@@ -2000,11 +2000,11 @@
         "options": [
           {
             "selected": true,
-            "text": "",
-            "value": ""
+            "text": "ru",
+            "value": "ru"
           }
         ],
-        "query": "",
+        "query": "ru",
         "skipUrlSync": false,
         "type": "textbox"
       }
