@@ -127,24 +127,10 @@ impl<'a> Cmd<'a> {
         self
     }
 
-    pub fn exec_test(self, ctx: &Context) -> RedisResult {
-        ctx.call(
-            &self.name,
-            &self
-                .args
-                .iter()
-                .map(|a| match a {
-                    ArgValue::Str(s) => *s,
-                    ArgValue::String(s) => s.as_str(),
-                })
-                .collect::<Vec<_>>(),
-        )
-    }
-
     pub fn exec(self, ctx: &Context) -> ReResult {
         ReResult::new(
             ctx.call(
-                &self.name,
+                self.name,
                 &self
                     .args
                     .iter()

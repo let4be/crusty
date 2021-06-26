@@ -504,7 +504,7 @@ impl Crusty {
 						&url,
 						Arc::clone(&default_crawling_settings),
 						CrawlingRules {},
-						JobState::new(&domain),
+						JobState::new(domain),
 					);
 
 					match job_obj {

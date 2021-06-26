@@ -50,13 +50,13 @@ fn topk_add(ctx: &Context, args: Vec<String>) -> RedisResult {
             .exec(ctx)
             .check()?;
 
-        let ok_topk = Cmd::new("TOPK.INFO", k_topk(&cmd.name, &tld))
+        let ok_topk = Cmd::new("TOPK.INFO", k_topk(&cmd.name, tld))
             .exec(ctx)
             .check()
             .is_ok();
 
         if !ok_topk {
-            Cmd::new("TOPK.RESERVE", k_topk(&cmd.name, &tld))
+            Cmd::new("TOPK.RESERVE", k_topk(&cmd.name, tld))
                 .arg(cmd.def_topk)
                 .arg(cmd.def_width)
                 .arg(cmd.def_depth)
@@ -65,7 +65,7 @@ fn topk_add(ctx: &Context, args: Vec<String>) -> RedisResult {
                 .check()?;
         }
 
-        let mut add_cmd = Cmd::new("TOPK.INCRBY", k_topk(&cmd.name, &tld));
+        let mut add_cmd = Cmd::new("TOPK.INCRBY", k_topk(&cmd.name, tld));
         for (domain, incr_by) in domains {
             add_cmd = add_cmd.arg(domain).arg(incr_by);
         }
