@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624716608585,
+  "iteration": 1624735412619,
   "links": [],
   "panels": [
     {
@@ -1703,7 +1703,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 20,
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -1711,7 +1711,7 @@
               "viz": false
             },
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -1726,6 +1726,7 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1742,54 +1743,7 @@
           },
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "time"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": true,
-                  "tooltip": true,
-                  "viz": true
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Error"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ok"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -1810,7 +1764,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.0.0-beta3",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
           "dateTimeType": "DATETIME",
@@ -1818,8 +1772,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT\n    toUnixTimestamp(max(updated_at)) * 1000 as time,\n    name,\n    sum(len) / greatest($interval, 3) as \"value\"\nFROM $DB.metrics_queue\n\nWHERE $timeFilterByColumn(updated_at) $conditionalTest( AND host = '$host', $host)\n\nGROUP BY\n    name,\n    intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\nORDER BY\n    name,\n    time",
-          "rawQuery": "SELECT\n    toUnixTimestamp(max(updated_at)) * 1000 as time,\n    name,\n    sum(len) / greatest(1, 3) as \"value\"\nFROM crusty.metrics_queue\n\nWHERE updated_at >= toDateTime(1624635752) AND updated_at <= toDateTime(1624636054)  AND host = 'crawler-1' \n\nGROUP BY\n    name,\n    intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\nORDER BY\n    name,\n    time",
+          "query": "SELECT time, max(value), name FROM (\n    SELECT\n        toUnixTimestamp(max(updated_at)) * 1000 as time,\n        sum(len) / greatest($interval, 3) as \"value\",\n        name\n    FROM $DB.metrics_queue\n    \n    WHERE $timeFilterByColumn(updated_at) $conditionalTest( AND host = '$host', $host)\n    \n    GROUP BY\n        name,\n        intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\n    ORDER BY\n        name,\n        time\n)\nGROUP BY time, name",
+          "rawQuery": "SELECT time, max(value), name FROM (\n    SELECT\n        toUnixTimestamp(max(updated_at)) * 1000 as time,\n        sum(len) / greatest(1, 3) as \"value\",\n        name\n    FROM crusty.metrics_queue\n    \n    WHERE updated_at >= toDateTime(1624743635) AND updated_at <= toDateTime(1624743937)  AND host = 'crawler-1' \n    \n    GROUP BY\n        name,\n        intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\n    ORDER BY\n        name,\n        time\n)\nGROUP BY time, name",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
@@ -1828,26 +1782,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Buffers",
-      "transformations": [
-        {
-          "id": "filterByValue",
-          "options": {
-            "filters": [
-              {
-                "config": {
-                  "id": "greater",
-                  "options": {
-                    "value": 0
-                  }
-                },
-                "fieldName": "parser, "
-              }
-            ],
-            "match": "any",
-            "type": "exclude"
-          }
-        }
-      ],
+      "transformations": [],
       "type": "timeseries"
     }
   ],
@@ -1892,7 +1827,7 @@
         "name": "host",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "Crawler-1",
             "value": "Crawler-1"
           }
@@ -1955,7 +1890,7 @@
         "name": "TopNDomains",
         "options": [
           {
-            "selected": false,
+            "selected": true,
             "text": "10",
             "value": "10"
           }
@@ -1989,8 +1924,8 @@
       {
         "current": {
           "selected": false,
-          "text": "ru",
-          "value": "ru"
+          "text": "",
+          "value": ""
         },
         "description": "Display Top N Domains With A Certain TLD",
         "error": null,
@@ -2000,11 +1935,11 @@
         "options": [
           {
             "selected": true,
-            "text": "ru",
-            "value": "ru"
+            "text": "",
+            "value": ""
           }
         ],
-        "query": "ru",
+        "query": "",
         "skipUrlSync": false,
         "type": "textbox"
       }
