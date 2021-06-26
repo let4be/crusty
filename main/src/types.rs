@@ -66,18 +66,6 @@ impl Domain {
 	}
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Row)]
-pub struct DomainDBEntry {
-	pub domain: String,
-	pub addrs:  Vec<SocketAddr>,
-}
-
-impl From<Domain> for DomainDBEntry {
-	fn from(s: Domain) -> Self {
-		Self { domain: s.domain, addrs: s.addrs }
-	}
-}
-
 #[derive(Debug, Clone)]
 pub struct DBNotification<A: Clone + Send> {
 	pub table_name: String,
@@ -96,8 +84,20 @@ pub struct DBGenericNotification {
 	pub items:      usize,
 }
 
+impl<A: Clone + Send> From<&DBNotification<A>> for DBGenericNotification {
+	fn from(s: &DBNotification<A>) -> Self {
+		DBGenericNotification {
+			table_name: s.table_name.clone(),
+			label:      s.label.clone(),
+			since_last: s.since_last,
+			duration:   s.duration,
+			items:      s.items.len(),
+		}
+	}
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
-pub struct DBRWNotificationDBEntry {
+pub struct DBNotificationDBE {
 	pub host:          &'static str,
 	pub created_at:    u32,
 	pub table_name:    String,
@@ -119,9 +119,9 @@ impl<T: Clone + Send> From<DBNotification<T>> for DBGenericNotification {
 	}
 }
 
-impl<A: Clone + Send> From<DBNotification<A>> for DBRWNotificationDBEntry {
+impl<A: Clone + Send> From<DBNotification<A>> for DBNotificationDBE {
 	fn from(s: DBNotification<A>) -> Self {
-		DBRWNotificationDBEntry {
+		DBNotificationDBE {
 			host:          config().host.as_str(),
 			created_at:    now().as_secs() as u32,
 			table_name:    s.table_name,
@@ -133,9 +133,9 @@ impl<A: Clone + Send> From<DBNotification<A>> for DBRWNotificationDBEntry {
 	}
 }
 
-impl From<DBGenericNotification> for DBRWNotificationDBEntry {
+impl From<DBGenericNotification> for DBNotificationDBE {
 	fn from(s: DBGenericNotification) -> Self {
-		DBRWNotificationDBEntry {
+		DBNotificationDBE {
 			host:          config().host.as_str(),
 			created_at:    now().as_secs() as u32,
 			table_name:    s.table_name,
@@ -148,7 +148,7 @@ impl From<DBGenericNotification> for DBRWNotificationDBEntry {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
-pub struct TaskMeasurementDBEntry {
+pub struct TaskMeasurementDBE {
 	host:             &'static str,
 	url:              String,
 	created_at:       u32,
@@ -208,9 +208,9 @@ impl From<&ct::ExtStatusError> for TaskTermBy {
 	}
 }
 
-impl TaskMeasurementDBEntry {
-	fn new(url: &str) -> TaskMeasurementDBEntry {
-		TaskMeasurementDBEntry {
+impl TaskMeasurementDBE {
+	fn new(url: &str) -> TaskMeasurementDBE {
+		TaskMeasurementDBE {
 			host:       config().host.as_str(),
 			url:        String::from(url),
 			created_at: now().as_secs() as u32,
@@ -248,9 +248,9 @@ impl TaskMeasurementDBEntry {
 	}
 }
 
-impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurementDBEntry {
+impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for TaskMeasurementDBE {
 	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
-		let mut def = TaskMeasurementDBEntry::new(r.task.link.url.as_str());
+		let mut def = TaskMeasurementDBE::new(r.task.link.url.as_str());
 
 		if let ct::JobStatus::Processing(Ok(ref job_processing)) = r.status {
 			if let ct::StatusResult(Some(Ok(status_data))) = &job_processing.status {
@@ -308,7 +308,7 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Row)]
-pub struct JobMeasurementDBEntry {
+pub struct JobMeasurementDBE {
 	host:         &'static str,
 	url:          String,
 	created_at:   u32,
@@ -317,9 +317,9 @@ pub struct JobMeasurementDBEntry {
 	term_by:      &'static str,
 }
 
-impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for JobMeasurementDBEntry {
+impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for JobMeasurementDBE {
 	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
-		let mut def = JobMeasurementDBEntry {
+		let mut def = JobMeasurementDBE {
 			host:       config().host.as_str(),
 			url:        r.task.link.url.to_string(),
 			created_at: now().as_secs() as u32,
@@ -348,7 +348,7 @@ pub struct QueueMeasurement {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Row)]
-pub struct QueueMeasurementDBEntry {
+pub struct QueueMeasurementDBE {
 	host:       &'static str,
 	name:       String,
 	name_index: u32,
@@ -356,7 +356,7 @@ pub struct QueueMeasurementDBEntry {
 	len:        u32,
 }
 
-impl From<QueueMeasurement> for QueueMeasurementDBEntry {
+impl From<QueueMeasurement> for QueueMeasurementDBE {
 	fn from(s: QueueMeasurement) -> Self {
 		Self {
 			host:       config().host.as_str(),

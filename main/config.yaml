@@ -191,8 +191,6 @@ default_crawling_settings:
   concurrency: 2
   internal_read_buffer_size: 32kib
   max_response_size: 2mib
-  # follow up to N redirects before giving up
-  max_redirect: 5
   # 1s-5s is a safe bet to keep to avoid extra stress
   delay: 1s
   # vary delay time by this jitter(0..)

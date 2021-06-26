@@ -50,7 +50,7 @@ impl ChMeasurements {
 		self.list.iter().map(|measure| measure())
 	}
 
-	async fn monitor(self, rx_crawler_done: Receiver<()>, tx_metrics_queue: Sender<QueueMeasurementDBEntry>) {
+	async fn monitor(self, rx_crawler_done: Receiver<()>, tx_metrics_queue: Sender<QueueMeasurementDBE>) {
 		let cfg = config::config();
 		while !rx_crawler_done.is_disconnected() {
 			for m in self.measure() {
@@ -315,7 +315,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_topk_writer(&mut self, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<DomainLinks> {
+	fn domain_topk_writer(&mut self, tx_notify: Sender<DBNotificationDBE>) -> Sender<DomainLinks> {
 		let cfg = &config::config().topk;
 		let (tx, rx) = self.ch_trans_with_index("domain_topk_insert", 0);
 
@@ -338,7 +338,7 @@ impl Crusty {
 		}));
 	}
 
-	fn domain_enqueue_processor(&mut self, shard: usize, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<Domain> {
+	fn domain_enqueue_processor(&mut self, shard: usize, tx_notify: Sender<DBNotificationDBE>) -> Sender<Domain> {
 		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_enqueue", shard);
 
@@ -354,7 +354,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_finish_processor(&mut self, shard: usize, tx_notify: Sender<DBRWNotificationDBEntry>) -> Sender<Domain> {
+	fn domain_finish_processor(&mut self, shard: usize, tx_notify: Sender<DBNotificationDBE>) -> Sender<Domain> {
 		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_finish", shard);
 
@@ -406,8 +406,8 @@ impl Crusty {
 
 	fn result_handler(
 		&mut self,
-		tx_metrics_task: Sender<TaskMeasurementDBEntry>,
-		tx_metrics_job: Sender<JobMeasurementDBEntry>,
+		tx_metrics_task: Sender<TaskMeasurementDBE>,
+		tx_metrics_job: Sender<JobMeasurementDBE>,
 		tx_domain_insert: Sender<String>,
 		tx_domain_update: Vec<Sender<Domain>>,
 		rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
@@ -485,7 +485,7 @@ impl Crusty {
 		&mut self,
 		rx_domain_read_notify: Receiver<DBNotification<Domain>>,
 		tx_job: Arc<Sender<Job>>,
-		tx_metrics_db: Sender<DBRWNotificationDBEntry>,
+		tx_metrics_db: Sender<DBNotificationDBE>,
 	) {
 		let cfg = config::config();
 
@@ -659,7 +659,7 @@ impl Crusty {
 		&mut self,
 		rx_notify: Receiver<DBNotification<interop::TopHit>>,
 		tx_ch: Sender<TopHitsDBE>,
-		tx_metrics_db: Sender<DBRWNotificationDBEntry>,
+		tx_metrics_db: Sender<DBNotificationDBE>,
 	) {
 		self.spawn(TracingTask::new(span!(), async move {
 			while let Ok(notify) = rx_notify.recv_async().await {
@@ -696,7 +696,7 @@ impl Crusty {
 			.unwrap();
 	}
 
-	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurementDBEntry>)> {
+	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurementDBE>)> {
 		let cfg = &config::config();
 
 		let network_profile = cfg.networking_profile.clone().resolve()?;

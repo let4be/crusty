@@ -15,18 +15,6 @@ pub struct WriterState<A: Clone + Send> {
 	notify: Vec<A>,
 }
 
-impl<A: Clone + Send> From<&DBNotification<A>> for DBGenericNotification {
-	fn from(s: &DBNotification<A>) -> Self {
-		DBGenericNotification {
-			table_name: s.table_name.clone(),
-			label:      s.label.clone(),
-			since_last: s.since_last,
-			duration:   s.duration,
-			items:      s.items.len(),
-		}
-	}
-}
-
 impl Writer {
 	pub fn new(cfg: ClickhouseWriterConfig) -> Self {
 		Self { cfg }
