@@ -55,7 +55,7 @@ impl ct::JobRules<JobState, TaskState, Document> for CrawlingRules {
 		let dedup_committing = dedup_checking.committing();
 
 		let mut filters: ct::TaskFilters<JobState, TaskState> =
-			vec![Box::new(dedup_checking), Box::new(crusty_core::task_filters::SameDomain::new(true))];
+			vec![Box::new(dedup_checking), Box::new(crusty_core::task_filters::SameDomain::new(false))];
 		if rules.skip_no_follow_links {
 			filters.push(Box::new(crusty_core::task_filters::SkipNoFollowLinks::new()));
 		}
