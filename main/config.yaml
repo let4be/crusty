@@ -114,7 +114,7 @@ topk:
   driver:
     soft_cap: 250
     hard_cap: 1000
-    release_after: 1s
+    release_after: 10s
 
 # Clickhouse database settings (metrics)
 clickhouse:

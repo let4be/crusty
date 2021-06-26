@@ -1,6 +1,7 @@
 use std::{fmt::Debug, marker::PhantomData};
 
 use redis::Client;
+use serde::de::DeserializeOwned;
 
 #[allow(unused_imports)]
 use crate::{_prelude::*, types::*};
@@ -9,7 +10,6 @@ pub struct RedisDriver<
 	T: 'static + Send + Sync + Debug,
 	R: 'static + Send + Sync + Debug + Clone,
 	N: From<DBNotification<R>>,
-	X: redis::FromRedisValue,
 > {
 	table_name: String,
 	label:      String,
@@ -18,7 +18,6 @@ pub struct RedisDriver<
 	rx:        Receiver<T>,
 	tx_notify: Sender<N>,
 	_r:        PhantomData<R>,
-	_x:        PhantomData<X>,
 }
 
 pub type Thresholds = relabuf::RelaBufConfig;
@@ -35,12 +34,8 @@ pub trait RedisOperator<T: 'static + Send + Sync + Debug, R: 'static + Send + Sy
 	fn filter(&mut self, items: Vec<T>, response: X) -> RedisFilterResult<T, R>;
 }
 
-impl<
-		T: 'static + Send + Sync + Debug,
-		R: 'static + Send + Sync + Debug + Clone,
-		N: From<DBNotification<R>>,
-		X: redis::FromRedisValue,
-	> RedisDriver<T, R, N, X>
+impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone, N: From<DBNotification<R>>>
+	RedisDriver<T, R, N>
 {
 	pub fn new(host: &str, rx: Receiver<T>, table_name: &str, label: &str, tx_notify: Sender<N>) -> Self {
 		Self {
@@ -50,11 +45,10 @@ impl<
 			label: String::from(label),
 			tx_notify,
 			_r: PhantomData::default(),
-			_x: PhantomData::default(),
 		}
 	}
 
-	pub async fn go(
+	pub async fn go<X: Default + DeserializeOwned>(
 		self,
 		thresholds: Thresholds,
 		mut operator: Box<dyn RedisOperator<T, R, X> + Send + Sync>,
@@ -90,7 +84,7 @@ impl<
 			last_query = Instant::now();
 
 			let t = Instant::now();
-			let r = atomic_pipe.query_async::<_, X>(con.as_mut().unwrap()).await;
+			let r = atomic_pipe.query_async::<_, Vec<String>>(con.as_mut().unwrap()).await;
 			let query_took = t.elapsed();
 
 			match r {
@@ -100,10 +94,21 @@ impl<
 					con = None;
 				}
 				Ok(r) => {
+					let v = r
+						.first()
+						.map(|v| {
+							if v == "OK" {
+								return None
+							}
+							serde_json::from_str(v).ok()
+						})
+						.unwrap_or_else(|| Some(X::default()))
+						.unwrap_or_else(X::default);
+
 					let mut items = vec![];
 					std::mem::swap(&mut items, &mut released.items);
 
-					let out_items = match operator.filter(items, r) {
+					let out_items = match operator.filter(items, v) {
 						Ok(r) => r,
 						Err(err) => {
 							warn!(

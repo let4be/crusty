@@ -1907,6 +1907,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "interop",
+ "itertools",
  "redis-module",
  "redis-utils",
  "serde",

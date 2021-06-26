@@ -35,13 +35,13 @@ fn topk_add(ctx: &Context, args: Vec<String>) -> RedisResult {
     println!("topk_add called with {}", cmd.name);
 
     let mut by_tld = HashMap::new();
-    for domain in &cmd.items {
+    for (domain, incr_by) in &cmd.items {
         if let Some(tld) = domain.split('.').last() {
-            let domains = by_tld.entry(String::from(tld)).or_insert_with(Vec::new);
-            domains.push(domain);
+            let domains = by_tld.entry(tld).or_insert_with(Vec::new);
+            domains.push((domain, incr_by));
         }
-        let gen_domains = by_tld.entry(String::from("")).or_insert_with(Vec::new);
-        gen_domains.push(domain);
+        let gen_domains = by_tld.entry("").or_insert_with(Vec::new);
+        gen_domains.push((domain, incr_by));
     }
 
     for (tld, domains) in by_tld {
@@ -65,9 +65,9 @@ fn topk_add(ctx: &Context, args: Vec<String>) -> RedisResult {
                 .check()?;
         }
 
-        let mut add_cmd = Cmd::new("TOPK.ADD", k_topk(&cmd.name, &tld));
-        for domain in domains {
-            add_cmd = add_cmd.arg(domain);
+        let mut add_cmd = Cmd::new("TOPK.INCRBY", k_topk(&cmd.name, &tld));
+        for (domain, incr_by) in domains {
+            add_cmd = add_cmd.arg(domain).arg(incr_by);
         }
         add_cmd.exec(ctx).check()?;
     }

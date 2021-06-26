@@ -1,6 +1,7 @@
 use crate::types::*;
 
 use anyhow::{anyhow, Context};
+use itertools::Itertools;
 use validator::Validate;
 
 #[derive(Debug, Validate)]
@@ -10,7 +11,7 @@ pub(crate) struct TopKAdd {
     pub def_width: u32,
     pub def_depth: u32,
     pub def_decay: f64,
-    pub items: Vec<String>,
+    pub items: Vec<(String, u32)>,
 }
 
 #[derive(Debug, Validate)]
@@ -106,7 +107,13 @@ impl TopKAdd {
             def_depth: def_depth.ok_or_else(|| anyhow!("def_depth not found"))?,
             def_decay: def_decay.ok_or_else(|| anyhow!("def_decay not found"))?,
             name: name.ok_or_else(|| anyhow!("Name not found"))?,
-            items,
+            items: items
+                .into_iter()
+                .map(|v| {
+                    let (name, incr) = v.split(':').next_tuple().unwrap();
+                    (String::from(name), incr.parse().unwrap_or(1))
+                })
+                .collect(),
         };
 
         r.validate().context("validation: invalid arguments")?;

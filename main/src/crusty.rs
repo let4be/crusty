@@ -88,13 +88,13 @@ struct FinishOperator {
 
 #[derive(Debug, Clone)]
 struct DomainLinks {
-	name:  String,
-	links: Vec<String>,
+	name:           String,
+	linked_domains: Vec<String>,
 }
 
 impl DomainLinks {
 	fn new(name: &str, links: Vec<String>) -> Self {
-		Self { name: String::from(name), links }
+		Self { name: String::from(name), linked_domains: links }
 	}
 }
 
@@ -125,7 +125,7 @@ impl RedisOperator<Domain, Domain, Vec<String>> for EnqueueOperator {
 	}
 }
 
-impl RedisOperator<(), Domain, Vec<String>> for DequeueOperator {
+impl RedisOperator<(), Domain, Vec<interop::Domain>> for DequeueOperator {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, _: &[()]) {
 		pipeline
 			.cmd("crusty.queue.dequeue")
@@ -137,9 +137,7 @@ impl RedisOperator<(), Domain, Vec<String>> for DequeueOperator {
 			.arg(self.cfg.limit);
 	}
 
-	fn filter(&mut self, _: Vec<()>, r: Vec<String>) -> RedisFilterResult<(), Domain> {
-		let r = r.into_iter().next().unwrap_or_else(|| String::from(""));
-		let domains: Vec<interop::Domain> = serde_json::from_str(&r).unwrap_or_else(|_| Vec::new());
+	fn filter(&mut self, _: Vec<()>, domains: Vec<interop::Domain>) -> RedisFilterResult<(), Domain> {
 		Ok(domains.into_iter().map(Domain::from).collect())
 	}
 }
@@ -171,6 +169,14 @@ impl RedisOperator<Domain, Domain, Vec<String>> for FinishOperator {
 
 impl RedisOperator<DomainLinks, DomainLinks, ()> for DomainTopKWriterOperator {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, domains: &[DomainLinks]) {
+		let mut domains_cnt = HashMap::new();
+		for domain in domains {
+			*domains_cnt.entry(&domain.name).or_insert(0_u32) += 1;
+			for linked_domain in &domain.linked_domains {
+				*domains_cnt.entry(linked_domain).or_insert(0) += 1;
+			}
+		}
+
 		pipeline
 			.cmd("crusty.calc.topk.add")
 			.arg("def_topk")
@@ -185,11 +191,8 @@ impl RedisOperator<DomainLinks, DomainLinks, ()> for DomainTopKWriterOperator {
 			.arg(&self.options.name)
 			.arg("items");
 
-		for domain in domains {
-			pipeline.arg(&domain.name);
-			for link in &domain.links {
-				pipeline.arg(link);
-			}
+		for (domain, cnt) in domains_cnt {
+			pipeline.arg(format!("{}:{}", domain, cnt));
 		}
 	}
 
@@ -198,7 +201,7 @@ impl RedisOperator<DomainLinks, DomainLinks, ()> for DomainTopKWriterOperator {
 	}
 }
 
-impl RedisOperator<(), interop::TopHit, Vec<String>> for DomainTopKSyncerOperator {
+impl RedisOperator<(), interop::TopHit, Vec<interop::TopHit>> for DomainTopKSyncerOperator {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, _permit: &[()]) {
 		pipeline
 			.cmd("crusty.calc.topk.consume")
@@ -208,9 +211,7 @@ impl RedisOperator<(), interop::TopHit, Vec<String>> for DomainTopKSyncerOperato
 			.arg(self.options.consume_interval.as_secs());
 	}
 
-	fn filter(&mut self, _: Vec<()>, r: Vec<String>) -> RedisFilterResult<(), interop::TopHit> {
-		let r = r.into_iter().next().unwrap_or_else(|| String::from(""));
-		let hits: Vec<interop::TopHit> = serde_json::from_str(&r).unwrap_or_else(|_| Vec::new());
+	fn filter(&mut self, _: Vec<()>, hits: Vec<interop::TopHit>) -> RedisFilterResult<(), interop::TopHit> {
 		Ok(hits)
 	}
 }
