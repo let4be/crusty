@@ -9,8 +9,27 @@ pub struct Writer {
 	cfg: ClickhouseWriterConfig,
 }
 
-pub struct WriterState<A: Clone + Send> {
-	notify: Vec<A>,
+pub struct WriterState<A: Send> {
+	buffer: Vec<A>,
+}
+
+struct LocalWriterState<A: Send> {
+	items: Vec<A>,
+	state: Arc<Mutex<WriterState<A>>>,
+}
+
+impl<A: Send> From<Arc<Mutex<WriterState<A>>>> for LocalWriterState<A> {
+	fn from(state: Arc<Mutex<WriterState<A>>>) -> Self {
+		let mut items = vec![];
+		std::mem::swap(&mut state.lock().unwrap().buffer, &mut items);
+		Self { items, state }
+	}
+}
+
+impl<A: Send> Drop for LocalWriterState<A> {
+	fn drop(&mut self) {
+		std::mem::swap(&mut self.state.lock().unwrap().buffer, &mut self.items);
+	}
 }
 
 impl Writer {
@@ -18,12 +37,12 @@ impl Writer {
 		Self { cfg }
 	}
 
-	pub async fn go_with_retry<A: Row + Serialize + Clone + Debug + Send + Sync + 'static>(
+	pub async fn go_with_retry<A: Row + Serialize + Debug + Send + Sync + 'static>(
 		&self,
 		client: Client,
 		rx: Receiver<A>,
 	) -> Result<()> {
-		let state = Arc::new(Mutex::new(WriterState { notify: Vec::new() }));
+		let state = Arc::new(Mutex::new(WriterState { buffer: Vec::new() }));
 		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {
 			let cfg = self.cfg.clone();
 			let client = client.clone();
@@ -37,9 +56,9 @@ impl Writer {
 
 				let mut last_write = Instant::now();
 
-				let notify = state.lock().unwrap().notify.clone();
-				for el in notify {
-					inserter.write(&el).await?;
+				let mut state = LocalWriterState::from(state);
+				for el in &state.items {
+					inserter.write(el).await?;
 				}
 
 				loop {
@@ -59,14 +78,15 @@ impl Writer {
 							since_last.as_millis(),
 							write_took.as_millis()
 						);
-						state.lock().unwrap().notify.clear();
+						state.items.clear();
 						last_write = Instant::now();
 					}
 
 					if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
 						if let Ok(el) = r {
-							state.lock().unwrap().notify.push(el.clone());
-							inserter.write(&el).await.context("error during inserter.write")?;
+							let res = inserter.write(&el).await.context("error during inserter.write");
+							state.items.push(el);
+							res?;
 						} else {
 							break
 						}
