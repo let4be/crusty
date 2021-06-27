@@ -1,5 +1,3 @@
-use std::{fmt::Debug, marker::PhantomData};
-
 use redis::Client;
 use serde::de::DeserializeOwned;
 
@@ -8,14 +6,13 @@ use crate::{_prelude::*, types::*};
 pub trait Record: 'static + Send + Sync + Debug {}
 impl<T: 'static + Send + Sync + Debug> Record for T {}
 
-pub struct RedisDriver<T: Record, R: Record, N: From<DBNotification<R>>> {
-	table_name: String,
-	label:      String,
+pub struct RedisDriver<T: Record> {
+	table_name: &'static str,
+	label:      &'static str,
 
-	host:      String,
-	rx:        Receiver<T>,
-	tx_notify: Sender<N>,
-	_r:        PhantomData<R>,
+	host:       String,
+	rx:         Receiver<T>,
+	thresholds: Thresholds,
 }
 
 pub type Thresholds = relabuf::RelaBufConfig;
@@ -32,27 +29,26 @@ pub trait RedisOperator<T: Record, R: Record, X> {
 	fn filter(&mut self, items: Vec<T>, response: X) -> RedisFilterResult<T, R>;
 }
 
-impl<T: Record, R: Record, N: From<DBNotification<R>>> RedisDriver<T, R, N> {
-	pub fn new(host: &str, rx: Receiver<T>, table_name: &str, label: &str, tx_notify: Sender<N>) -> Self {
-		Self {
-			host: String::from(host),
-			rx,
-			table_name: String::from(table_name),
-			label: String::from(label),
-			tx_notify,
-			_r: PhantomData::default(),
-		}
+impl<T: Record> RedisDriver<T> {
+	pub fn new(
+		host: &str,
+		rx: Receiver<T>,
+		table_name: &'static str,
+		label: &'static str,
+		thresholds: Thresholds,
+	) -> Self {
+		Self { host: String::from(host), rx, table_name, label, thresholds }
 	}
 
-	pub async fn go<X: Default + DeserializeOwned>(
+	pub async fn go<X: Default + DeserializeOwned, R: Record, N: From<DBNotification<R>>>(
 		self,
-		thresholds: Thresholds,
 		mut operator: Box<dyn RedisOperator<T, R, X> + Send + Sync>,
+		tx_notify: Sender<N>,
 	) -> Result<()> {
 		let client = Client::open(self.host.as_str())?;
 
 		let rx = self.rx.clone();
-		let buffer = relabuf::RelaBuf::<T>::new(thresholds, move || {
+		let buffer = relabuf::RelaBuf::<T>::new(self.thresholds, move || {
 			let rx = rx.clone();
 			Box::pin(async move { rx.recv_async().await.context("cannot read") })
 		});
@@ -118,12 +114,11 @@ impl<T: Record, R: Record, N: From<DBNotification<R>>> RedisDriver<T, R, N> {
 					};
 					released.confirm();
 
-					let _ = self
-						.tx_notify
+					let _ = tx_notify
 						.send_async(
 							DBNotification {
-								table_name: self.table_name.clone(),
-								label:      self.label.clone(),
+								table_name: self.table_name,
+								label:      self.label,
 								since_last: since_last_elapsed,
 								duration:   query_took,
 								items:      out_items,

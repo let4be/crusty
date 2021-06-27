@@ -166,11 +166,8 @@ impl Crusty {
 		let (tx, rx) = self.ch_trans_with_index("domain_topk_insert", 0);
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[0], rx, "domain_topk", "insert", tx_notify)
-				.go(
-					cfg.driver.clone().into(),
-					Box::new(redis_operators::DomainTopKWriter { options: cfg.options.clone() }),
-				)
+			RedisDriver::new(&cfg.redis.hosts[0], rx, "domain_topk", "insert", cfg.driver.clone().into())
+				.go(Box::new(redis_operators::DomainTopKWriter { options: cfg.options.clone() }), tx_notify)
 				.await
 		}));
 
@@ -181,11 +178,8 @@ impl Crusty {
 		let cfg = &config::config().topk;
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[0], rx_permit, "domain_topk", "sync", tx_notify)
-				.go(
-					cfg.driver.clone().into(),
-					Box::new(redis_operators::DomainTopKSyncer { options: cfg.options.clone() }),
-				)
+			RedisDriver::new(&cfg.redis.hosts[0], rx_permit, "domain_topk", "sync", cfg.driver.clone().into())
+				.go(Box::new(redis_operators::DomainTopKSyncer { options: cfg.options.clone() }), tx_notify)
 				.await
 		}));
 	}
@@ -195,11 +189,8 @@ impl Crusty {
 		let (tx, rx) = self.ch_trans_with_index("domain_enqueue", shard);
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "insert", tx_notify)
-				.go(
-					cfg.jobs.enqueue.driver.clone().into(),
-					Box::new(redis_operators::Enqueue { shard, cfg: cfg.jobs.enqueue.options.clone() }),
-				)
+			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "insert", cfg.jobs.enqueue.driver.clone().into())
+				.go(Box::new(redis_operators::Enqueue { shard, cfg: cfg.jobs.enqueue.options.clone() }), tx_notify)
 				.await
 		}));
 
@@ -211,11 +202,8 @@ impl Crusty {
 		let (tx, rx) = self.ch_trans_with_index("domain_finish", shard);
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "update", tx_notify)
-				.go(
-					cfg.jobs.finish.driver.clone().into(),
-					Box::new(redis_operators::Finish { shard, cfg: cfg.jobs.finish.options.clone() }),
-				)
+			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "update", cfg.jobs.finish.driver.clone().into())
+				.go(Box::new(redis_operators::Finish { shard, cfg: cfg.jobs.finish.options.clone() }), tx_notify)
 				.await
 		}));
 
@@ -226,12 +214,15 @@ impl Crusty {
 		let cfg = &config::config().queue;
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[shard], rx_permit, "domains", "read", tx_notify)
-				.go(
-					cfg.jobs.dequeue.driver.clone().into(),
-					Box::new(redis_operators::Dequeue { shard, cfg: cfg.jobs.dequeue.options.clone() }),
-				)
-				.await
+			RedisDriver::new(
+				&cfg.redis.hosts[shard],
+				rx_permit,
+				"domains",
+				"read",
+				cfg.jobs.dequeue.driver.clone().into(),
+			)
+			.go(Box::new(redis_operators::Dequeue { shard, cfg: cfg.jobs.dequeue.options.clone() }), tx_notify)
+			.await
 		}));
 	}
 
@@ -533,8 +524,8 @@ impl Crusty {
 
 		tx_domain_read_notify
 			.send_async(DBNotification {
-				table_name: String::from("domains"),
-				label:      String::from("insert"),
+				table_name: "domains",
+				label:      "insert",
 				since_last: Duration::from_secs(0),
 				duration:   Duration::from_secs(0),
 				items:      seed_domains,

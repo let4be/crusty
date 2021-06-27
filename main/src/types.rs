@@ -79,8 +79,8 @@ impl DomainLinks {
 
 #[derive(Debug)]
 pub struct DBNotification<A: Send> {
-	pub table_name: String,
-	pub label:      String,
+	pub table_name: &'static str,
+	pub label:      &'static str,
 	pub since_last: Duration,
 	pub duration:   Duration,
 	pub items:      Vec<A>,
@@ -88,8 +88,8 @@ pub struct DBNotification<A: Send> {
 
 #[derive(Debug)]
 pub struct DBGenericNotification {
-	pub table_name: String,
-	pub label:      String,
+	pub table_name: &'static str,
+	pub label:      &'static str,
 	pub since_last: Duration,
 	pub duration:   Duration,
 	pub items:      usize,
@@ -98,8 +98,8 @@ pub struct DBGenericNotification {
 impl<A: Send> From<&DBNotification<A>> for DBGenericNotification {
 	fn from(s: &DBNotification<A>) -> Self {
 		DBGenericNotification {
-			table_name: s.table_name.clone(),
-			label:      s.label.clone(),
+			table_name: s.table_name,
+			label:      s.label,
 			since_last: s.since_last,
 			duration:   s.duration,
 			items:      s.items.len(),
@@ -111,8 +111,8 @@ impl<A: Send> From<&DBNotification<A>> for DBGenericNotification {
 pub struct DBNotificationDBE {
 	pub host:          &'static str,
 	pub created_at:    u32,
-	pub table_name:    String,
-	pub label:         String,
+	pub table_name:    &'static str,
+	pub label:         &'static str,
 	pub took_ms:       u32,
 	pub since_last_ms: u32,
 	pub items:         u32,
