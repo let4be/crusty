@@ -49,66 +49,72 @@ impl Writer {
 			.with_context(|| format!("error during {}", msg))?)
 	}
 
+	fn writer<A: Record>(
+		&self,
+		client: Client,
+		rx: Receiver<A>,
+		state: Arc<Mutex<WriterState<A>>>,
+	) -> TracingTask<'static> {
+		let cfg = self.cfg.clone();
+
+		TracingTask::new(span!(), async move {
+			let mut inserter = client
+				.inserter(cfg.table_name.as_str())?
+				.with_max_entries(cfg.buffer_capacity as u64)
+				.with_max_duration(*cfg.force_write_duration);
+
+			let mut last_write = Instant::now();
+
+			let mut state = LocalWriterState::from(state);
+			for el in &state.items {
+				Self::timeout(inserter.write(el), "inserter.writer while restoring from state").await?;
+			}
+
+			loop {
+				let t = Instant::now();
+
+				let s = Self::timeout(inserter.commit(), "inserter.commit").await?;
+
+				if s.entries > 0 {
+					let since_last = last_write.elapsed();
+					let write_took = t.elapsed();
+					info!(
+						"Clickhouse write to {}/{}({} rows, {} transactions, {}ms since last) finished for {}ms.",
+						&cfg.table_name,
+						&cfg.label,
+						s.entries,
+						s.transactions,
+						since_last.as_millis(),
+						write_took.as_millis()
+					);
+					state.items.clear();
+					last_write = Instant::now();
+				}
+
+				if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
+					if let Ok(el) = r {
+						let res = Self::timeout(inserter.write(&el), "inserter.write").await;
+						state.items.push(el);
+						res?;
+					} else {
+						break
+					}
+				}
+			}
+
+			let _ = Self::timeout(inserter.end(), "inserter.end").await?;
+			Ok(())
+		})
+	}
+
 	pub async fn go_with_retry<A: Record>(&self, client: Client, rx: Receiver<A>) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { buffer: Vec::new() }));
+
 		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {
-			let cfg = self.cfg.clone();
-			let client = client.clone();
-			let rx = rx.clone();
-			let state = state.clone();
-
-			TracingTask::new(span!(), async move {
-				let mut inserter = client
-					.inserter(cfg.table_name.as_str())?
-					.with_max_entries(cfg.buffer_capacity as u64)
-					.with_max_duration(*cfg.force_write_duration);
-
-				let mut last_write = Instant::now();
-
-				let mut state = LocalWriterState::from(state);
-				for el in &state.items {
-					Self::timeout(inserter.write(el), "inserter.writer while restoring from state").await?;
-				}
-
-				loop {
-					let t = Instant::now();
-
-					let s = Self::timeout(inserter.commit(), "inserter.commit").await?;
-
-					if s.entries > 0 {
-						let since_last = last_write.elapsed();
-						let write_took = t.elapsed();
-						info!(
-							"Clickhouse write to {}/{}({} rows, {} transactions, {}ms since last) finished for {}ms.",
-							&cfg.table_name,
-							&cfg.label,
-							s.entries,
-							s.transactions,
-							since_last.as_millis(),
-							write_took.as_millis()
-						);
-						state.items.clear();
-						last_write = Instant::now();
-					}
-
-					if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
-						if let Ok(el) = r {
-							let res = Self::timeout(inserter.write(&el), "inserter.write").await;
-							state.items.push(el);
-							res?;
-						} else {
-							break
-						}
-					}
-				}
-
-				let _ = Self::timeout(inserter.end(), "inserter.end").await?;
-				Ok(())
-			})
-			.instrument()
-			.await
-			.map_err(backoff::Error::Transient)?;
-			Ok(())
+			self.writer(client.clone(), rx.clone(), Arc::clone(&state))
+				.instrument()
+				.await
+				.map_err(backoff::Error::Transient)
 		})
 		.await
 	}
