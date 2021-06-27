@@ -592,8 +592,11 @@ impl Crusty {
 		let (tx_domain_read_notify, rx_domain_read_notify) = self.ch("domain_read_notify", 0, 1);
 		self.send_seed_jobs(tx_domain_read_notify.clone()).await;
 
-		let rx_domain_read_permit =
-			self.permit_emitter("domain_read_permit", Duration::from_secs(1), rx_sig_term.clone());
+		let rx_domain_read_permit = self.permit_emitter(
+			"domain_read_permit",
+			*cfg.queue.jobs.dequeue.options.emit_permit_delay,
+			rx_sig_term.clone(),
+		);
 		for shard in scoped_shard_range.clone() {
 			self.domain_reader(shard, rx_domain_read_permit.clone(), tx_domain_read_notify.clone());
 			self.job_sender(rx_domain_read_notify.clone(), tx_job.clone(), tx_ch_metrics_db.clone());
