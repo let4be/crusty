@@ -30,13 +30,11 @@ impl<T: Send + 'static> LenGetter for ReceiverWeak<T> {
 
 impl ChMeasurements {
 	fn register<F: LenGetter, S: ToString>(&mut self, name: S, index: usize, len_getter: F) {
-		let name = Arc::new(name.to_string());
-		self.list.push(Box::new(move |time: Duration| QueueMeasurement {
-			time,
-			name: (*name).clone(),
-			index,
-			len: len_getter.len(),
-		}))
+		let name = name.to_string();
+		self.list.push(Box::new(move |time: Duration| {
+			let name = name.clone();
+			QueueMeasurement { time, name, index, len: len_getter.len() }
+		}));
 	}
 
 	fn measure(&self, time: Duration) -> impl Iterator<Item = QueueMeasurement> + '_ {
@@ -519,13 +517,20 @@ impl Crusty {
 			.seeds
 			.iter()
 			.filter_map(|seed| Url::parse(seed).ok())
-			.map(|seed| Domain::new(seed.domain().unwrap().into(), vec![], cfg.jobs.addr_key_mask, Some(seed.clone())))
+			.filter_map(|seed| {
+				if let Some(domain) = seed.domain() {
+					Some(Domain::new(domain.into(), vec![], cfg.jobs.addr_key_mask, Some(seed)))
+				} else {
+					warn!("Seed url {} has no domain name - skipping!", seed.to_string());
+					None
+				}
+			})
 			.collect();
 
 		tx_domain_read_notify
 			.send_async(DBNotification {
 				table_name: "domains",
-				label:      "insert",
+				label:      "seeded",
 				since_last: Duration::from_secs(0),
 				duration:   Duration::from_secs(0),
 				items:      seed_domains,
