@@ -8,7 +8,7 @@ use crate::{
 };
 
 struct ChMeasurements {
-	list: Vec<Box<dyn Fn() -> QueueMeasurement + Send + Sync + 'static>>,
+	list: Vec<Box<dyn Fn(Duration) -> QueueMeasurement + Send + Sync + 'static>>,
 }
 
 struct SenderWeak<T>(Weak<Sender<T>>);
@@ -31,22 +31,23 @@ impl<T: Send + 'static> LenGetter for ReceiverWeak<T> {
 impl ChMeasurements {
 	fn register<F: LenGetter, S: ToString>(&mut self, name: S, index: usize, len_getter: F) {
 		let name = Arc::new(name.to_string());
-		self.list.push(Box::new(move || QueueMeasurement {
-			time: now(),
+		self.list.push(Box::new(move |time: Duration| QueueMeasurement {
+			time,
 			name: (*name).clone(),
 			index,
 			len: len_getter.len(),
 		}))
 	}
 
-	fn measure(&self) -> impl Iterator<Item = QueueMeasurement> + '_ {
-		self.list.iter().map(|measure| measure())
+	fn measure(&self, time: Duration) -> impl Iterator<Item = QueueMeasurement> + '_ {
+		self.list.iter().map(move |measure| measure(time))
 	}
 
 	async fn monitor(self, rx_crawler_done: Receiver<()>, tx_metrics_queue: Sender<QueueMeasurementDBE>) {
 		let cfg = config::config();
 		while !rx_crawler_done.is_disconnected() {
-			for m in self.measure() {
+			let now = now();
+			for m in self.measure(now) {
 				let _ = tx_metrics_queue.send_async(m.into()).await;
 			}
 
