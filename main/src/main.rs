@@ -87,7 +87,13 @@ fn main() -> Result<()> {
 		)
 	});
 
-	let rt = tokio::runtime::Runtime::new().unwrap();
+	let rt = tokio::runtime::Builder::new_multi_thread()
+		.enable_all()
+		.worker_threads(cmp::max(num_cpus::get_physical() / 4, 4))
+		.max_blocking_threads(1)
+		.build()
+		.unwrap();
+
 	rt.block_on(async move {
 		let crusty = Crusty::new();
 		crusty.go(tx_crusty, rx_crawler_done).instrument().await
