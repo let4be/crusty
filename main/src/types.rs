@@ -69,8 +69,8 @@ pub struct DomainLinks {
 }
 
 impl DomainLinks {
-	pub fn new(name: &str, links: Vec<String>) -> Self {
-		Self { name: String::from(name), linked_domains: links }
+	pub fn new(name: &str, linked_domains: Vec<String>) -> Self {
+		Self { name: String::from(name), linked_domains }
 	}
 }
 

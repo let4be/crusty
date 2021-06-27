@@ -10,7 +10,7 @@ pub static CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
 static DEFAULT_CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
 static DEFAULT_CONFIG_STR: &str = include_str!("../config.yaml");
 
-pub fn config<'a>() -> &'a CrustyConfig {
+pub fn config() -> &'static CrustyConfig {
 	CONFIG.get().unwrap()
 }
 
@@ -228,12 +228,7 @@ pub fn load() -> Result<()> {
 	});
 
 	if let Ok(seeds) = env::var("CRUSTY_SEEDS") {
-		config
-			.queue
-			.jobs
-			.reader
-			.seeds
-			.extend(seeds.split(',').filter(|v| !v.is_empty()).map(String::from).collect::<Vec<_>>());
+		config.queue.jobs.reader.seeds.extend(seeds.split(',').filter(|v| !v.is_empty()).map(String::from));
 	}
 
 	CONFIG.set(config).unwrap();
