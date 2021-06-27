@@ -54,7 +54,11 @@ fn main() -> Result<()> {
 	}
 
 	let new_fd_lim = fdlimit::raise_fd_limit();
-	println!("New FD limit set: {:?}", new_fd_lim);
+	if let Some(new_fd_lim) = new_fd_lim {
+		println!("New FD limit set: {:?}", new_fd_lim);
+	} else {
+		warn!("Could not raise FD limit!");
+	}
 
 	let (tx_crusty, rx_crusty) = std::sync::mpsc::channel::<crusty::CrustyHandle>();
 	let (tx_crawler_done, rx_crawler_done) = unbounded_ch();

@@ -36,8 +36,8 @@ impl JobState {
 		self.linked_domains_set.insert(sld);
 	}
 
-	pub fn linked_domains(&self) -> (String, Vec<String>) {
-		(self.linked_from_sld.clone(), self.linked_domains_set.iter().cloned().collect())
+	pub fn linked_domains(&self) -> DomainLinks {
+		DomainLinks::new(&self.linked_from_sld, self.linked_domains_set.iter().cloned().collect())
 	}
 }
 

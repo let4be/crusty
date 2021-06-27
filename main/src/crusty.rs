@@ -86,6 +86,19 @@ impl Crusty {
 		Err(anyhow!("something went wrong"))
 	}
 
+	fn parse_tld() -> HashSet<&'static str> {
+		include_str!("../tld.txt")
+			.split('\n')
+			.filter_map(|s| {
+				let s = s.trim();
+				if s.is_empty() || s.starts_with('#') {
+					return None
+				}
+				Some(s)
+			})
+			.collect()
+	}
+
 	pub fn new() -> Self {
 		let cfg = config::config();
 		let client = Client::default()
@@ -94,21 +107,9 @@ impl Crusty {
 			.with_password(&cfg.clickhouse.password)
 			.with_database(&cfg.clickhouse.database);
 
-		let tld = include_str!("../tld.txt");
-
 		Self {
 			ddc: Arc::new(Mutex::new(TtlCache::new(cfg.ddc_cap))),
-			tld: Arc::new(
-				tld.split('\n')
-					.filter_map(|s| {
-						let s = s.trim();
-						if s.is_empty() || s.starts_with('#') {
-							return None
-						}
-						Some(s)
-					})
-					.collect(),
-			),
+			tld: Arc::new(Self::parse_tld()),
 
 			handles: vec![],
 			ch_measurements: ChMeasurements { list: vec![] },
@@ -193,7 +194,7 @@ impl Crusty {
 		}));
 	}
 
-	fn domain_enqueue_processor(&mut self, shard: usize, tx_notify: Sender<DBNotificationDBE>) -> Sender<Domain> {
+	fn domain_inserter(&mut self, shard: usize, tx_notify: Sender<DBNotificationDBE>) -> Sender<Domain> {
 		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_enqueue", shard);
 
@@ -209,7 +210,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_finish_processor(&mut self, shard: usize, tx_notify: Sender<DBNotificationDBE>) -> Sender<Domain> {
+	fn domain_updater(&mut self, shard: usize, tx_notify: Sender<DBNotificationDBE>) -> Sender<Domain> {
 		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_finish", shard);
 
@@ -225,12 +226,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_dequeue_processor(
-		&mut self,
-		shard: usize,
-		rx_permit: Receiver<()>,
-		tx_notify: Sender<DBNotification<Domain>>,
-	) {
+	fn domain_reader(&mut self, shard: usize, rx_permit: Receiver<()>, tx_notify: Sender<DBNotification<Domain>>) {
 		let cfg = &config::config().queue;
 
 		self.spawn(TracingTask::new(span!(), async move {
@@ -325,7 +321,7 @@ impl Crusty {
 						};
 						let shard = selected_domain.calc_shard(cfg.jobs.shard_total);
 
-						let _ = tx_domain_links.send_async(DomainLinks::new(&linked_domains.0, linked_domains.1)).await;
+						let _ = tx_domain_links.send_async(linked_domains).await;
 						let _ = tx_domain_update[shard].send_async(selected_domain).await;
 						let _ = tx_metrics_job.send_async(r.into()).await;
 					}
@@ -573,10 +569,10 @@ impl Crusty {
 		self.ch_measurements.register("job", 0, SenderWeak(Arc::downgrade(&tx_job)));
 		self.ch_measurements.register("job_state_update", 0, ReceiverWeak(rx_job_state_update.clone()));
 
-		let tx_metrics_task = self.clickhouse_writer(cfg.clickhouse.metrics_task.clone());
-		let tx_metrics_job = self.clickhouse_writer(cfg.clickhouse.metrics_job.clone());
-		let tx_metrics_queue = self.clickhouse_writer(cfg.clickhouse.metrics_queue.clone());
-		let tx_metrics_db = self.clickhouse_writer(cfg.clickhouse.metrics_db.clone());
+		let tx_ch_metrics_task = self.clickhouse_writer(cfg.clickhouse.metrics_task.clone());
+		let tx_ch_metrics_job = self.clickhouse_writer(cfg.clickhouse.metrics_job.clone());
+		let tx_ch_metrics_queue = self.clickhouse_writer(cfg.clickhouse.metrics_queue.clone());
+		let tx_ch_metrics_db = self.clickhouse_writer(cfg.clickhouse.metrics_db.clone());
 		let tx_ch_topk = self.clickhouse_writer(cfg.clickhouse.topk.clone());
 
 		//
@@ -584,7 +580,7 @@ impl Crusty {
 		let rx_domain_topk_permit =
 			self.permit_emitter("domain_topk_permit", *cfg.topk.options.consume_interval, rx_sig_term.clone());
 		self.domain_topk_syncer(rx_domain_topk_permit, tx_domain_topk_notify);
-		self.domain_topk_plex(rx_domain_topk_notify, tx_ch_topk, tx_metrics_db.clone());
+		self.domain_topk_plex(rx_domain_topk_notify, tx_ch_topk, tx_ch_metrics_db.clone());
 		//
 
 		let scoped_shard_range = cfg.queue.jobs.shard_min..cfg.queue.jobs.shard_max;
@@ -592,30 +588,31 @@ impl Crusty {
 
 		let tx_domain_insert = total_shard_range
 			.clone()
-			.map(|shard| self.domain_enqueue_processor(shard, tx_metrics_db.clone()))
+			.map(|shard| self.domain_inserter(shard, tx_ch_metrics_db.clone()))
 			.collect::<Vec<_>>();
 		let tx_domain_update = scoped_shard_range
 			.clone()
-			.map(|shard| self.domain_finish_processor(shard, tx_metrics_db.clone()))
+			.map(|shard| self.domain_updater(shard, tx_ch_metrics_db.clone()))
 			.collect::<Vec<_>>();
 
-		let tx_domain_links = self.domain_topk_writer(tx_metrics_db.clone());
+		let tx_domain_links = self.domain_topk_writer(tx_ch_metrics_db.clone());
 
 		let (tx_domain_read_notify, rx_domain_read_notify) = self.ch("domain_read_notify", 0, 1);
 		self.send_seed_jobs(tx_domain_read_notify.clone()).await;
 
-		let rx_dequeue_permit = self.permit_emitter("dequeue_permit", Duration::from_secs(1), rx_sig_term.clone());
+		let rx_domain_read_permit =
+			self.permit_emitter("domain_read_permit", Duration::from_secs(1), rx_sig_term.clone());
 		for shard in scoped_shard_range.clone() {
-			self.domain_dequeue_processor(shard, rx_dequeue_permit.clone(), tx_domain_read_notify.clone());
-			self.job_sender(rx_domain_read_notify.clone(), tx_job.clone(), tx_metrics_db.clone());
+			self.domain_reader(shard, rx_domain_read_permit.clone(), tx_domain_read_notify.clone());
+			self.job_sender(rx_domain_read_notify.clone(), tx_job.clone(), tx_ch_metrics_db.clone());
 		}
 
 		let tx_domain_resolve = self.domain_resolver(rx_force_term.clone(), tx_domain_insert.clone());
 
 		for _ in 0..(concurrency_profile.domain_concurrency as f64 / 1000_f64).ceil() as usize {
 			self.result_handler(
-				tx_metrics_task.clone(),
-				tx_metrics_job.clone(),
+				tx_ch_metrics_task.clone(),
+				tx_ch_metrics_job.clone(),
 				tx_domain_resolve.clone(),
 				tx_domain_update.clone(),
 				rx_job_state_update.clone(),
@@ -623,7 +620,7 @@ impl Crusty {
 			);
 		}
 
-		Ok((crawler, rx_force_term, tx_metrics_queue))
+		Ok((crawler, rx_force_term, tx_ch_metrics_queue))
 	}
 
 	pub fn go(
