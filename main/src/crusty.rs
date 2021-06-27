@@ -166,7 +166,7 @@ impl Crusty {
 		let (tx, rx) = self.ch_trans_with_index("domain_topk_insert", 0);
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[0], rx, "domain_topk", "insert", cfg.driver.clone().into())
+			RedisDriver::new(&cfg.redis.hosts[0], rx, "domain_topk", "insert", cfg.driver.to_thresholds())
 				.go(Box::new(redis_operators::DomainTopKWriter { options: cfg.options.clone() }), tx_notify)
 				.await
 		}));
@@ -178,7 +178,7 @@ impl Crusty {
 		let cfg = &config::config().topk;
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[0], rx_permit, "domain_topk", "sync", cfg.driver.clone().into())
+			RedisDriver::new(&cfg.redis.hosts[0], rx_permit, "domain_topk", "sync", cfg.driver.to_thresholds())
 				.go(Box::new(redis_operators::DomainTopKSyncer { options: cfg.options.clone() }), tx_notify)
 				.await
 		}));
@@ -189,7 +189,7 @@ impl Crusty {
 		let (tx, rx) = self.ch_trans_with_index("domain_enqueue", shard);
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "insert", cfg.jobs.enqueue.driver.clone().into())
+			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "insert", cfg.jobs.enqueue.driver.to_thresholds())
 				.go(Box::new(redis_operators::Enqueue { shard, cfg: cfg.jobs.enqueue.options.clone() }), tx_notify)
 				.await
 		}));
@@ -202,7 +202,7 @@ impl Crusty {
 		let (tx, rx) = self.ch_trans_with_index("domain_finish", shard);
 
 		self.spawn(TracingTask::new(span!(), async move {
-			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "update", cfg.jobs.finish.driver.clone().into())
+			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "update", cfg.jobs.finish.driver.to_thresholds())
 				.go(Box::new(redis_operators::Finish { shard, cfg: cfg.jobs.finish.options.clone() }), tx_notify)
 				.await
 		}));
@@ -219,7 +219,7 @@ impl Crusty {
 				rx_permit,
 				"domains",
 				"read",
-				cfg.jobs.dequeue.driver.clone().into(),
+				cfg.jobs.dequeue.driver.to_thresholds(),
 			)
 			.go(Box::new(redis_operators::Dequeue { shard, cfg: cfg.jobs.dequeue.options.clone() }), tx_notify)
 			.await

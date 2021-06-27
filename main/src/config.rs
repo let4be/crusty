@@ -78,9 +78,8 @@ pub struct RedisDriverConfig {
 	pub release_after: rc::CDuration,
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<relabuf::RelaBufConfig> for RedisDriverConfig {
-	fn into(self) -> relabuf::RelaBufConfig {
+impl RedisDriverConfig {
+	pub fn to_thresholds(&self) -> relabuf::RelaBufConfig {
 		relabuf::RelaBufConfig {
 			release_after: *self.release_after,
 			soft_cap:      self.soft_cap,
