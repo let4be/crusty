@@ -23,13 +23,10 @@ impl From<interop::Domain> for Domain {
 }
 
 impl Domain {
-	pub fn new(domain: String, addrs: Vec<SocketAddr>, addr_key_mask: u8, url: Option<Url>) -> Domain {
-		let mut addrs_sorted = addrs.clone();
-		addrs_sorted.sort_unstable();
-		let mut addr = addrs_sorted
-			.into_iter()
-			.next()
-			.filter(|a| a.ip().is_ipv4())
+	pub fn new(domain: String, mut addrs: Vec<SocketAddr>, addr_key_mask: u8, url: Option<Url>) -> Domain {
+		addrs.sort_unstable();
+		let mut addr = addrs
+			.get(0)
 			.map(|ip| if let IpAddr::V4(ip) = ip.ip() { ip.octets() } else { panic!("not supposed to happen") })
 			.unwrap_or([255, 255, 255, 255]);
 
