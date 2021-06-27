@@ -40,6 +40,16 @@ impl Writer {
 		Self { cfg }
 	}
 
+	async fn timeout<X, E: std::error::Error + Send + Sync + 'static, T: Future<Output = std::result::Result<X, E>>>(
+		future: T,
+		msg: &'static str,
+	) -> Result<X> {
+		Ok(timeout(Duration::from_secs(10), future)
+			.await
+			.with_context(|| format!("timeout during {}", msg))?
+			.with_context(|| format!("error during {}", msg))?)
+	}
+
 	pub async fn go_with_retry<A: Record>(&self, client: Client, rx: Receiver<A>) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { buffer: Vec::new() }));
 		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {
@@ -47,7 +57,6 @@ impl Writer {
 			let client = client.clone();
 			let rx = rx.clone();
 			let state = state.clone();
-			let timeout_dur = Duration::from_secs(10);
 
 			TracingTask::new(span!(), async move {
 				let mut inserter = client
@@ -59,13 +68,13 @@ impl Writer {
 
 				let mut state = LocalWriterState::from(state);
 				for el in &state.items {
-					timeout(timeout_dur, inserter.write(el)).await??;
+					Self::timeout(inserter.write(el), "inserter.writer while restoring from state").await?;
 				}
 
 				loop {
 					let t = Instant::now();
 
-					let s = timeout(timeout_dur, inserter.commit()).await?.context("error during inserter.commit")?;
+					let s = Self::timeout(inserter.commit(), "inserter.commit").await?;
 
 					if s.entries > 0 {
 						let since_last = last_write.elapsed();
@@ -85,17 +94,16 @@ impl Writer {
 
 					if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
 						if let Ok(el) = r {
-							let res = timeout(timeout_dur, inserter.write(&el)).await;
+							let res = Self::timeout(inserter.write(&el), "inserter.write").await;
 							state.items.push(el);
-							res?.context("error during inserter.write")?;
+							res?;
 						} else {
 							break
 						}
 					}
 				}
 
-				timeout(timeout_dur, inserter.end()).await?.context("error during inserter.end")?;
-
+				let _ = Self::timeout(inserter.end(), "inserter.end").await?;
 				Ok(())
 			})
 			.instrument()

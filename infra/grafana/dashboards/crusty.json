@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1624800463052,
+  "iteration": 1624803614622,
   "links": [],
   "panels": [
     {
@@ -1772,8 +1772,8 @@
           "format": "time_series",
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "intervalFactor": 1,
-          "query": "SELECT time, max(value), name FROM (\n    SELECT\n        toUnixTimestamp(max(updated_at)) * 1000 as time,\n        sum(len) / greatest($interval, 3) as \"value\",\n        name\n    FROM $DB.metrics_queue\n    \n    WHERE $timeFilterByColumn(updated_at) $conditionalTest( AND host = '$host', $host)\n    \n    GROUP BY\n        name,\n        intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\n    ORDER BY\n        name,\n        time\n)\nGROUP BY name, time",
-          "rawQuery": "SELECT time, max(value), name FROM (\n    SELECT\n        toUnixTimestamp(max(updated_at)) * 1000 as time,\n        sum(len) / greatest(1, 3) as \"value\",\n        name\n    FROM crusty.metrics_queue\n    \n    WHERE updated_at >= toDateTime(1624800819) AND updated_at <= toDateTime(1624801121)  AND host = 'crawler-1' \n    \n    GROUP BY\n        name,\n        intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\n    ORDER BY\n        name,\n        time\n)\nGROUP BY name, time",
+          "query": "SELECT time, max(value), name FROM (\n    SELECT\n        toUnixTimestamp(max(updated_at)) * 1000 as time,\n        sum(len) / greatest($interval, 3) as \"value\",\n        name\n    FROM $DB.metrics_queue\n    \n    WHERE $timeFilterByColumn(updated_at) $conditionalTest( AND host = '$host', $host)\n    \n    GROUP BY\n        name,\n        intDiv(toRelativeSecondNum(updated_at), greatest($interval, 3))\n    ORDER BY\n        name,\n        time\n)\nGROUP BY name, time\nORDER BY name,time",
+          "rawQuery": "SELECT time, max(value), name FROM (\n    SELECT\n        toUnixTimestamp(max(updated_at)) * 1000 as time,\n        sum(len) / greatest(1, 3) as \"value\",\n        name\n    FROM crusty.metrics_queue\n    \n    WHERE updated_at >= toDateTime(1624803361) AND updated_at <= toDateTime(1624803663)  AND host = 'crawler-1' \n    \n    GROUP BY\n        name,\n        intDiv(toRelativeSecondNum(updated_at), greatest(1, 3))\n    ORDER BY\n        name,\n        time\n)\nGROUP BY name, time\nORDER BY name,time",
           "refId": "A",
           "round": "0s",
           "skip_comments": true
