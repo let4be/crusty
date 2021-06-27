@@ -5,11 +5,10 @@ use serde::de::DeserializeOwned;
 
 use crate::{_prelude::*, types::*};
 
-pub struct RedisDriver<
-	T: 'static + Send + Sync + Debug,
-	R: 'static + Send + Sync + Debug + Clone,
-	N: From<DBNotification<R>>,
-> {
+pub trait Record: 'static + Send + Sync + Debug {}
+impl<T: 'static + Send + Sync + Debug> Record for T {}
+
+pub struct RedisDriver<T: Record, R: Record, N: From<DBNotification<R>>> {
 	table_name: String,
 	label:      String,
 
@@ -21,21 +20,19 @@ pub struct RedisDriver<
 
 pub type Thresholds = relabuf::RelaBufConfig;
 
-pub struct RedisFilterError<T: 'static + Send + Sync + Debug> {
+pub struct RedisFilterError<T: Record> {
 	pub items: Vec<T>,
 	pub err:   anyhow::Error,
 }
 
 pub type RedisFilterResult<T, R> = std::result::Result<Vec<R>, RedisFilterError<T>>;
 
-pub trait RedisOperator<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone, X> {
+pub trait RedisOperator<T: Record, R: Record, X> {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, items: &[T]);
 	fn filter(&mut self, items: Vec<T>, response: X) -> RedisFilterResult<T, R>;
 }
 
-impl<T: 'static + Send + Sync + Debug, R: 'static + Send + Sync + Debug + Clone, N: From<DBNotification<R>>>
-	RedisDriver<T, R, N>
-{
+impl<T: Record, R: Record, N: From<DBNotification<R>>> RedisDriver<T, R, N> {
 	pub fn new(host: &str, rx: Receiver<T>, table_name: &str, label: &str, tx_notify: Sender<N>) -> Self {
 		Self {
 			host: String::from(host),

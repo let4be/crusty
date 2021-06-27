@@ -65,7 +65,7 @@ impl Domain {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DomainLinks {
 	pub name:           String,
 	pub linked_domains: Vec<String>,
@@ -77,8 +77,8 @@ impl DomainLinks {
 	}
 }
 
-#[derive(Debug, Clone)]
-pub struct DBNotification<A: Clone + Send> {
+#[derive(Debug)]
+pub struct DBNotification<A: Send> {
 	pub table_name: String,
 	pub label:      String,
 	pub since_last: Duration,
@@ -86,7 +86,7 @@ pub struct DBNotification<A: Clone + Send> {
 	pub items:      Vec<A>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DBGenericNotification {
 	pub table_name: String,
 	pub label:      String,
@@ -95,7 +95,7 @@ pub struct DBGenericNotification {
 	pub items:      usize,
 }
 
-impl<A: Clone + Send> From<&DBNotification<A>> for DBGenericNotification {
+impl<A: Send> From<&DBNotification<A>> for DBGenericNotification {
 	fn from(s: &DBNotification<A>) -> Self {
 		DBGenericNotification {
 			table_name: s.table_name.clone(),
@@ -118,7 +118,7 @@ pub struct DBNotificationDBE {
 	pub items:         u32,
 }
 
-impl<T: Clone + Send> From<DBNotification<T>> for DBGenericNotification {
+impl<T: Send> From<DBNotification<T>> for DBGenericNotification {
 	fn from(s: DBNotification<T>) -> Self {
 		DBGenericNotification {
 			table_name: s.table_name,
@@ -130,7 +130,7 @@ impl<T: Clone + Send> From<DBNotification<T>> for DBGenericNotification {
 	}
 }
 
-impl<A: Clone + Send> From<DBNotification<A>> for DBNotificationDBE {
+impl<A: Send> From<DBNotification<A>> for DBNotificationDBE {
 	fn from(s: DBNotification<A>) -> Self {
 		DBNotificationDBE {
 			host:          config().host.as_str(),
@@ -350,7 +350,7 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct QueueMeasurement {
 	pub time:  Duration,
 	pub name:  String,
