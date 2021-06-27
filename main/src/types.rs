@@ -107,7 +107,7 @@ impl<A: Clone + Send> From<&DBNotification<A>> for DBGenericNotification {
 	}
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Row)]
+#[derive(Debug, Serialize, Deserialize, Row)]
 pub struct DBNotificationDBE {
 	pub host:          &'static str,
 	pub created_at:    u32,
@@ -158,7 +158,7 @@ impl From<DBGenericNotification> for DBNotificationDBE {
 	}
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Row)]
+#[derive(Debug, Serialize, Deserialize, Row)]
 pub struct TaskMeasurementDBE {
 	host:             &'static str,
 	url:              String,
@@ -318,7 +318,7 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 	}
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Row)]
+#[derive(Debug, Serialize, Deserialize, Row)]
 pub struct JobMeasurementDBE {
 	host:         &'static str,
 	url:          String,
@@ -358,7 +358,7 @@ pub struct QueueMeasurement {
 	pub len:   usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Row)]
+#[derive(Debug, Serialize, Deserialize, Row)]
 pub struct QueueMeasurementDBE {
 	host:       &'static str,
 	name:       String,
@@ -379,7 +379,7 @@ impl From<QueueMeasurement> for QueueMeasurementDBE {
 	}
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Row)]
+#[derive(Debug, Serialize, Deserialize, Row)]
 pub struct TopHitsDBE {
 	pub created_at: u32,
 	pub tld:        String,
