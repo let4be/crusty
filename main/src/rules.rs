@@ -26,7 +26,11 @@ impl JobState {
 	}
 
 	fn transform_domain(domain: &str) -> String {
-		String::from(domain.strip_prefix("www.").unwrap_or(domain))
+		if config::config().topk.collect.second_level_only {
+			domain.split('.').rev().take(2).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join(".")
+		} else {
+			String::from(domain.strip_prefix("www.").unwrap_or(domain))
+		}
 	}
 
 	pub fn link_domain(&mut self, domain: &str) {

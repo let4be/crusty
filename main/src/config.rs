@@ -51,8 +51,15 @@ pub struct TopKOptions {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct TopKCollectConfig {
+	pub second_level_only: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TopKConfig {
 	pub redis:   RedisConfig,
+	pub collect: TopKCollectConfig,
 	pub options: TopKOptions,
 	pub driver:  RedisDriverConfig,
 }

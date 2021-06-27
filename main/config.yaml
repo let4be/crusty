@@ -104,6 +104,8 @@ queue:
 topk:
   redis:
     hosts: ["redis://172.16.3.1:6379/"]
+  collect:
+    second_level_only: false
   options:
     name: "top-domains"
     k: 100
