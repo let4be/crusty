@@ -1,6 +1,7 @@
 use backoff::{future::retry, ExponentialBackoff};
 use clickhouse::{Client, Row};
 use serde::Serialize;
+use tokio::time::timeout;
 
 use crate::{_prelude::*, config::*, types::*};
 
@@ -47,6 +48,8 @@ impl Writer {
 			let client = client.clone();
 			let rx = rx.clone();
 			let state = state.clone();
+			let timeout_dur = Duration::from_secs(10);
+
 			TracingTask::new(span!(), async move {
 				let mut inserter = client
 					.inserter(cfg.table_name.as_str())?
@@ -57,13 +60,13 @@ impl Writer {
 
 				let mut state = LocalWriterState::from(state);
 				for el in &state.items {
-					inserter.write(el).await?;
+					timeout(timeout_dur, inserter.write(el)).await??;
 				}
 
 				loop {
 					let t = Instant::now();
 
-					let s = inserter.commit().await.context("error during inserter.commit")?;
+					let s = timeout(timeout_dur, inserter.commit()).await?.context("error during inserter.commit")?;
 
 					if s.entries > 0 {
 						let since_last = last_write.elapsed();
@@ -83,16 +86,16 @@ impl Writer {
 
 					if let Ok(r) = timeout(*cfg.check_for_force_write_duration, rx.recv_async()).await {
 						if let Ok(el) = r {
-							let res = inserter.write(&el).await.context("error during inserter.write");
+							let res = timeout(timeout_dur, inserter.write(&el)).await;
 							state.items.push(el);
-							res?;
+							res?.context("error during inserter.write")?;
 						} else {
 							break
 						}
 					}
 				}
 
-				inserter.end().await?;
+				timeout(timeout_dur, inserter.end()).await?.context("error during inserter.end")?;
 
 				Ok(())
 			})
