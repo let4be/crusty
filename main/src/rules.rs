@@ -6,6 +6,8 @@ pub use crate::parsers::html5ever_defs::*;
 pub use crate::parsers::lolhtml_defs::*;
 use crate::{_prelude::*, config, parsers::lolhtml::*, types::*};
 
+pub type CrustyMultiCrawler = crusty_core::MultiCrawler<JobState, TaskState, Document>;
+
 #[derive(Debug, Clone)]
 pub struct JobState {
 	pub selected_domain: Domain,

@@ -1,5 +1,5 @@
 use clickhouse::Client;
-use crusty_core::{self, resolver::Resolver, types as rt, MultiCrawler};
+use crusty_core::{resolver::Resolver, types as ct};
 use ttl_cache::TtlCache;
 
 use crate::{
@@ -64,8 +64,6 @@ pub struct Crusty {
 
 	client: Client,
 }
-
-type CrustyMultiCrawler = MultiCrawler<JobState, TaskState, Document>;
 
 pub struct CrustyHandle {
 	pub crawler:       CrustyMultiCrawler,
@@ -262,7 +260,7 @@ impl Crusty {
 		tx_metrics_job: Sender<JobMeasurementDBE>,
 		tx_domain_insert: Sender<String>,
 		tx_domain_update: Vec<Sender<Domain>>,
-		rx_job_state_update: Receiver<rt::JobUpdate<JobState, TaskState>>,
+		rx_job_state_update: Receiver<ct::JobUpdate<JobState, TaskState>>,
 		tx_domain_links: Sender<DomainLinks>,
 	) {
 		let cfg = &config::config().queue;
@@ -275,7 +273,7 @@ impl Crusty {
 
 				let task_domain = r.task.link.host().unwrap();
 
-				let domain_filter_map = |lnk: &Arc<rt::Link>| {
+				let domain_filter_map = |lnk: &Arc<ct::Link>| {
 					let cfg = config::config();
 					let domain = lnk.host()?;
 
@@ -303,7 +301,7 @@ impl Crusty {
 				};
 
 				match r.status {
-					rt::JobStatus::Processing(Ok(ref jp)) => {
+					ct::JobStatus::Processing(Ok(ref jp)) => {
 						let discovered_domains = jp.links.iter().filter_map(domain_filter_map);
 
 						for domain in discovered_domains {
@@ -311,11 +309,11 @@ impl Crusty {
 						}
 						let _ = tx_metrics_task.send_async(r.into()).await;
 					}
-					rt::JobStatus::Processing(Err(ref err)) => {
+					ct::JobStatus::Processing(Err(ref err)) => {
 						warn!(task = %r.task, err = ?err, "Error during task processing");
 						let _ = tx_metrics_task.send_async(r.into()).await;
 					}
-					rt::JobStatus::Finished(ref _jd) => {
+					ct::JobStatus::Finished(ref _jd) => {
 						let (selected_domain, linked_domains) = {
 							let js = r.ctx.job_state.lock().unwrap();
 							(js.selected_domain.clone(), js.linked_domains())
