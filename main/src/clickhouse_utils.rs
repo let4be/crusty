@@ -20,8 +20,7 @@ struct LocalWriterState<A: Send> {
 
 impl<A: Send> From<Arc<Mutex<WriterState<A>>>> for LocalWriterState<A> {
 	fn from(state: Arc<Mutex<WriterState<A>>>) -> Self {
-		let mut items = vec![];
-		std::mem::swap(&mut state.lock().unwrap().buffer, &mut items);
+		let items = std::mem::take(&mut state.lock().unwrap().buffer);
 		Self { items, state }
 	}
 }
