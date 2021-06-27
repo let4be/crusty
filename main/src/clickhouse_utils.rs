@@ -5,7 +5,6 @@ use tokio::time::timeout;
 
 use crate::{_prelude::*, config::*, types::*};
 
-#[derive(Clone)]
 pub struct Writer {
 	cfg: ClickhouseWriterConfig,
 }
