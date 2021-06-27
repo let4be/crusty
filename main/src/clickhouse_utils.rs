@@ -32,16 +32,15 @@ impl<A: Send> Drop for LocalWriterState<A> {
 	}
 }
 
+pub trait Record: Row + Serialize + Debug + Send + Sync + 'static {}
+impl<T: Row + Serialize + Debug + Send + Sync + 'static> Record for T {}
+
 impl Writer {
 	pub fn new(cfg: ClickhouseWriterConfig) -> Self {
 		Self { cfg }
 	}
 
-	pub async fn go_with_retry<A: Row + Serialize + Debug + Send + Sync + 'static>(
-		&self,
-		client: Client,
-		rx: Receiver<A>,
-	) -> Result<()> {
+	pub async fn go_with_retry<A: Record>(&self, client: Client, rx: Receiver<A>) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { buffer: Vec::new() }));
 		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {
 			let cfg = self.cfg.clone();

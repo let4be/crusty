@@ -145,10 +145,7 @@ impl Crusty {
 		let _ = tokio::task::spawn(task.instrument());
 	}
 
-	fn clickhouse_writer<T: clickhouse::Row + serde::Serialize + Clone + Debug + Send + Sync + 'static>(
-		&mut self,
-		cfg: ClickhouseWriterConfig,
-	) -> Sender<T> {
+	fn clickhouse_writer<T: clickhouse_utils::Record>(&mut self, cfg: ClickhouseWriterConfig) -> Sender<T> {
 		let (tx, rx) = self.ch_trans::<T, _>(&cfg.table_name);
 
 		for _ in 0..cfg.concurrency {
