@@ -200,11 +200,11 @@ default_crawling_settings:
   # timeout for page loading and buffering(data)
   load_timeout: 10s
   # after soft timeout elapses we no longer queue new tasks for domain
-  job_soft_timeout: 240s
+  job_soft_timeout: 180s
   # after hard timeout elapses we forcibly stop the crawling job for this domain
-  job_hard_timeout: 360s
+  job_hard_timeout: 300s
   # killing a lot of jobs at the same time may negatively affect performance on high loaded setups, so we introduce a prng jitter
-  job_hard_timeout_jitter: 72s
+  job_hard_timeout_jitter: 60s
   user_agent: "crusty/0.12.0"
   compression: true
   # custom headers are supported

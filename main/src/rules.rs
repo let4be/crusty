@@ -20,17 +20,17 @@ impl JobState {
 	pub fn new(domain: &Domain) -> Self {
 		Self {
 			selected_domain:    domain.clone(),
-			linked_from_sld:    Self::domain_to_second_level(&domain.domain),
+			linked_from_sld:    Self::transform_domain(&domain.domain),
 			linked_domains_set: HashSet::new(),
 		}
 	}
 
-	fn domain_to_second_level(domain: &str) -> String {
-		domain.split('.').rev().take(2).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join(".")
+	fn transform_domain(domain: &str) -> String {
+		String::from(domain.strip_prefix("www.").unwrap_or(domain))
 	}
 
 	pub fn link_domain(&mut self, domain: &str) {
-		let sld = Self::domain_to_second_level(domain);
+		let sld = Self::transform_domain(domain);
 		if sld == self.linked_from_sld {
 			return
 		}
