@@ -239,8 +239,8 @@ networking_profile:
   values:
     bind_local_ipv4: []
     bind_local_ipv6: []
-    socket_read_buffer_size: 32kib
-    socket_write_buffer_size: 32kib
+    socket_read_buffer_size:
+    socket_write_buffer_size:
     connect_timeout: 5s
   resolver_config:
     config:
