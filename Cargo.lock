@@ -229,8 +229,7 @@ dependencies = [
 [[package]]
 name = "clickhouse"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95aef4c8e8f5bf092c1b4f297d7b3f27cdb7f845a5f57f4cdb80bb34328d4b67"
+source = "git+https://github.com/let4be/clickhouse.rs#18ed8e93a925fcd2881bbcb8d66a63adc44fa8aa"
 dependencies = [
  "bytes",
  "clickhouse-derive",
@@ -251,8 +250,7 @@ dependencies = [
 [[package]]
 name = "clickhouse-derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9a8f9b3bf99c63ac95b858616a12bc0337f7a8e8c1a571f591b45b7d45168db"
+source = "git+https://github.com/let4be/clickhouse.rs#18ed8e93a925fcd2881bbcb8d66a63adc44fa8aa"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",

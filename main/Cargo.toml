@@ -26,7 +26,7 @@ interop = {path = "../interop"}
 tokio = { version = "~1.7.0", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
 futures = "~0.3.14"
 
-clickhouse = "~0.7.0"
+clickhouse = {git = "https://github.com/let4be/clickhouse.rs"}
 redis = { version = "~0.20.1", features = ["tokio-comp", "aio"] }
 
 serde_yaml = "~0.8.17"
