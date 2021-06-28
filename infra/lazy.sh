@@ -62,11 +62,10 @@ done
 
 echo "Getting crusty..."
 git clone https://github.com/let4be/crusty
-[ -z "$BRANCH" ] || git checkout "$BRANCH"
-
 chown -R "$SUDO_USER":"$SUDO_USER" crusty
 chmod -R go-wx crusty
 cd crusty
+[ -z "$BRANCH" ] || git checkout "$BRANCH"
 
 echo "Configuring sysctl..."
 cp  ./infra/sysctl.conf /etc/sysctl.d/90-crusty.conf
