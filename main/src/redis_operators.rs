@@ -60,7 +60,7 @@ impl RedisOperator<(), Domain, Vec<interop::Domain>> for Dequeue {
 	}
 
 	fn filter(&mut self, _: Vec<()>, domains: Vec<interop::Domain>) -> RedisFilterResult<(), Domain> {
-		Ok(domains.into_iter().map(Domain::from).collect())
+		Ok(domains.into_iter().map(|d| Domain::from_interop(d, self.shard)).collect())
 	}
 }
 

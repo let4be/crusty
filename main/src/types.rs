@@ -14,23 +14,18 @@ pub struct Domain {
 	pub url:      Option<Url>,
 	pub domain:   String,
 	pub addr_key: String,
-}
-
-impl From<interop::Domain> for Domain {
-	fn from(s: interop::Domain) -> Self {
-		Self { domain: s.name, addr_key: s.addr_key, addrs: s.addrs, url: None }
-	}
+	pub shard:    usize,
 }
 
 impl Domain {
-	pub fn new(domain: String, mut addrs: Vec<SocketAddr>, addr_key_mask: u8, url: Option<Url>) -> Domain {
+	pub fn new(domain: String, mut addrs: Vec<SocketAddr>, url: Option<Url>) -> Domain {
 		addrs.sort_unstable();
 		let mut addr = addrs
 			.get(0)
 			.map(|ip| if let IpAddr::V4(ip) = ip.ip() { ip.octets() } else { panic!("not supposed to happen") })
 			.unwrap_or([255, 255, 255, 255]);
 
-		let mut left = addr_key_mask;
+		let mut left = config().queue.jobs.addr_key_mask;
 		for a in &mut addr {
 			if left >= 8 {
 				left -= 8;
@@ -44,7 +39,16 @@ impl Domain {
 			}
 		}
 
-		Domain { addr_key: base64::encode(addr), addrs, url, domain }
+		let addr_key = base64::encode(addr);
+		let mut hasher = crc32fast::Hasher::new();
+		hasher.update(addr_key.as_bytes());
+		let shard = hasher.finalize() as usize % config().queue.jobs.shard_total;
+
+		Domain { addr_key, addrs, url, domain, shard }
+	}
+
+	pub fn from_interop(s: interop::Domain, shard: usize) -> Self {
+		Self { domain: s.name, addr_key: s.addr_key, addrs: s.addrs, url: None, shard }
 	}
 
 	pub fn to_interop(&self) -> interop::Domain {
@@ -53,12 +57,6 @@ impl Domain {
 
 	pub fn to_interop_descriptor(&self) -> interop::DomainDescriptor {
 		interop::DomainDescriptor::new(&self.domain, &self.addr_key)
-	}
-
-	pub fn calc_shard(&self, shards_total: usize) -> usize {
-		let mut hasher = crc32fast::Hasher::new();
-		hasher.update(self.addr_key.as_bytes());
-		hasher.finalize() as usize % shards_total
 	}
 }
 

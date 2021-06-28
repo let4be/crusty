@@ -249,7 +249,6 @@ impl Crusty {
 		rx_job_state_update: Receiver<ct::JobUpdate<JobState, TaskState>>,
 		tx_domain_links: Sender<DomainLinks>,
 	) {
-		let cfg = &config::config().queue;
 		let ddc = Arc::clone(&self.ddc);
 		let tld = Arc::clone(&self.tld);
 
@@ -304,10 +303,9 @@ impl Crusty {
 							let js = r.ctx.job_state.lock().unwrap();
 							(js.selected_domain.clone(), js.linked_domains())
 						};
-						let shard = selected_domain.calc_shard(cfg.jobs.shard_total);
 
 						let _ = tx_domain_links.send_async(linked_domains).await;
-						let _ = tx_domain_update[shard].send_async(selected_domain).await;
+						let _ = tx_domain_update[selected_domain.shard].send_async(selected_domain).await;
 						let _ = tx_metrics_job.send_async(r.into()).await;
 					}
 				}
@@ -421,8 +419,6 @@ impl Crusty {
 		rx: Receiver<String>,
 		tx_domain_insert: Vec<Sender<Domain>>,
 	) -> TracingTask<'static> {
-		let cfg = &config::config().queue;
-
 		TracingTask::new(span!(), async move {
 			while let Ok(domain_str) = rx.recv_async().await {
 				let r = tokio::select! {
@@ -439,9 +435,8 @@ impl Crusty {
 							continue
 						}
 
-						let domain = Domain::new(domain_str, addrs, cfg.jobs.addr_key_mask, None);
-						let shard = domain.calc_shard(cfg.jobs.shard_total);
-						let _ = tx_domain_insert[shard].send_async(domain).await;
+						let domain = Domain::new(domain_str, addrs, None);
+						let _ = tx_domain_insert[domain.shard].send_async(domain).await;
 					}
 					Err(err) => {
 						info!(domain = %domain_str, err = ?err, "Could not resolve");
@@ -519,7 +514,7 @@ impl Crusty {
 			.filter_map(|seed| Url::parse(seed).ok())
 			.filter_map(|seed| {
 				if let Some(domain) = seed.domain() {
-					Some(Domain::new(domain.into(), vec![], cfg.jobs.addr_key_mask, Some(seed)))
+					Some(Domain::new(domain.into(), vec![], Some(seed)))
 				} else {
 					warn!("Seed url {} has no domain name - skipping!", seed.to_string());
 					None
