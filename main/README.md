@@ -61,11 +61,11 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 - True politeness
 
   - while we can crawl tens of thousands of domains in parallel - we should absolutely limit concurrency on per-domain level
-  to avoid any stress to crawled sites, see `job_reader.default_crawler_settings.concurrency`.
+  to avoid any stress to crawled sites, see `default_crawler_settings.concurrency`.
 
   - each domain is first resolved and then mapped to `addr_key`, Redis Queue makes sure we -never- process several domains with the same `addr_key` thus effectively limiting concurrency on per IP/Subnet basis
 
-  - it's a good practice to introduce delays between visiting pages, see `job_reader.default_crawler_settings.delay`.
+  - it's a good practice to introduce delays between visiting pages, see `default_crawler_settings.delay`.
 
   - `robots.txt` is fully supported(using Google's implementation ported to rust)
 
