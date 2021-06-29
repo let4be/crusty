@@ -90,7 +90,7 @@ fn main() -> Result<()> {
 	let rt = tokio::runtime::Builder::new_multi_thread()
 		.enable_all()
 		.worker_threads(cmp::max(num_cpus::get_physical() / 4, 4))
-		.max_blocking_threads(1)
+		.max_blocking_threads(cmp::max(num_cpus::get_physical() / 4, 16))
 		.build()
 		.unwrap();
 
