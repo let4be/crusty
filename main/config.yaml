@@ -239,6 +239,9 @@ networking_profile:
   values:
     bind_local_ipv4: []
     bind_local_ipv6: []
+    # task will select it's IP just once -
+    # no matter the concurrency, for a particular task requests will always be coming from the same IP
+    static_binding_within_the_task: true
     socket_read_buffer_size:
     socket_write_buffer_size:
     connect_timeout: 5s
