@@ -67,11 +67,31 @@ cd crusty
 chown -R "$SUDO_USER":"$SUDO_USER" ../crusty
 chmod -R go-wx ../crusty
 
-echo "Configuring sysctl..."
-cp  ./infra/sysctl.conf /etc/sysctl.d/90-crusty.conf
-sysctl --system
+profiles=$(ls ./infra/profiles)
 
-echo "Configure Crusty pls..."
+while true; do
+  echo "Need a profile(enter to skip)? available profiles: $profiles"
+
+  read -r PROFILE </dev/tty
+  [[ $PROFILE ]] || break
+
+  if [ -d "./infra/profiles/$PROFILE" ]
+  then
+    echo "Configuring sysctl..."
+    SYSCTL=/etc/sysctl.d/90-crusty.conf
+    cp "./infra/profiles/$PROFILE/sysctl.conf" $SYSCTL
+    chown root:root $SYSCTL
+    chmod 600 $SYSCTL
+    sysctl --system
+    echo "Using special crusty config..."
+    cp "./infra/profiles/$PROFILE/config.yaml" ./main/config.yaml
+    break
+  else
+    echo "No such profile found"
+  fi
+done
+
+echo "Check crusty config pls..."
 nano ./main/config.yaml </dev/tty
 
 docker build -f ./infra/crusty/Dockerfile -t crusty_crusty .
@@ -79,7 +99,8 @@ docker build -f ./infra/crusty/Dockerfile -t crusty_crusty .
 docker-compose build
 
 echo "Everything is almost ready to go..."
-echo "To make sure your user can use docker, execute sudo -s -u ${SUDO_USER}"
+echo "To make sure your user can use docker, execute "
+echo ">     sudo -su ${SUDO_USER}     "
 echo "Or just logout and log back in"
 echo "To play with crusty"
-echo "CRUSTY_SEEDS=https://cnn.com docker-compose up -d --build"
+echo ">     CRUSTY_SEEDS=https://google.com docker-compose up -d --build     "
