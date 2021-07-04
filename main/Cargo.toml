@@ -18,15 +18,15 @@ html5ever_parser = ["html5ever"]
 default = ["lol_html_parser"]
 
 [dependencies]
-crusty-core = {version="~0.72.2"}
+crusty-core = {version="~0.72.3"}
 tracing-tools = "~0.5.0"
 
 interop = {path = "../interop"}
 
-tokio = { version = "~1.7.0", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
+tokio = { version = "~1.8.0", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
 futures = "~0.3.14"
 
-clickhouse = {git = "https://github.com/let4be/clickhouse.rs"}
+clickhouse = "~0.7.1"
 redis = { version = "~0.20.1", features = ["tokio-comp", "aio"] }
 
 serde_yaml = "~0.8.17"
@@ -46,7 +46,7 @@ url = "~2.2.1"
 once_cell = "~1.8.0"
 fdlimit = "~0.2.1"
 humanize-rs = "~0.1"
-relabuf = "~0.10.0"
+relabuf = "~0.11.0"
 base64 = "~0.13.0"
 
 html5ever = {version = "~0.25.1", optional = true}

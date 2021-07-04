@@ -228,8 +228,9 @@ dependencies = [
 
 [[package]]
 name = "clickhouse"
-version = "0.7.0"
-source = "git+https://github.com/let4be/clickhouse.rs#18ed8e93a925fcd2881bbcb8d66a63adc44fa8aa"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b392f953f3a75bc581339f3dd250677de56dc3be54d2750f09be64dd202ada79"
 dependencies = [
  "bytes",
  "clickhouse-derive",
@@ -250,7 +251,8 @@ dependencies = [
 [[package]]
 name = "clickhouse-derive"
 version = "0.1.0"
-source = "git+https://github.com/let4be/clickhouse.rs#18ed8e93a925fcd2881bbcb8d66a63adc44fa8aa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9a8f9b3bf99c63ac95b858616a12bc0337f7a8e8c1a571f591b45b7d45168db"
 dependencies = [
  "proc-macro2",
  "quote 1.0.9",
@@ -373,9 +375,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.72.2"
+version = "0.72.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80544455b92ed7d99cf9cf3df809b19e2b2df6aeb59bbc1172eebe6c1f1da4f4"
+checksum = "cdc6d8eb343ee1747d4d5d8d661921991b6f0948416c174af3dd77d7af1b3307"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1987,9 +1989,9 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
 name = "relabuf"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbbee567487ceb930c9046f26bffbfbc73982492e3e52e148946cce1597b6d05"
+checksum = "d8e260fb61027b604415023db20ac8d673b28a4597a9a3c94b1d55c885cbb738"
 dependencies = [
  "anyhow",
  "backoff",
@@ -2502,9 +2504,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.7.1"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fb2ed024293bb19f7a5dc54fe83bf86532a44c12a2bb8ba40d64a4509395ca2"
+checksum = "570c2eb13b3ab38208130eccd41be92520388791207fde783bda7c1e8ace28d4"
 dependencies = [
  "autocfg 1.0.1",
  "bytes",
