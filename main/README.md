@@ -67,7 +67,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   - it's a good practice to introduce delays between visiting pages, see `default_crawler_settings.delay`.
 
-  - `robots.txt` is fully supported(using Google's implementation ported to rust)
+  - `robots.txt` filtering is fully supported(using Google's implementation ported to rust, no custom delays or sitemap yet)
 
   - global IP filtering - you can easily restrict which IP blocks or maybe even countries(if you bring a good IP->Country mapper) you wish to visit(just hack on top of existing DNS resolver when configuring `crusty-core`)
 
