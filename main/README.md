@@ -123,7 +123,7 @@ additionally
 - to run && attach and see live logs from all containers (can abort with ctrl+c)
   `CRUSTY_SEEDS=https://example.com docker-compose up`
 
-- to see running containers `docker ps`(should be 4 - `crusty-grafana`, `crusty-clickhouse`, `crusty-redis` and `crusty` and optionally `crusty-unbound`)
+- to see running containers `docker ps`(`crusty-grafana`, `crusty-clickhouse`, `crusty-redis`, `crusty` and optionally `crusty-unbound`)
 
 - to see logs: `docker logs crusty`
 
