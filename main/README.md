@@ -35,7 +35,9 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   - built on top of buffered [Flume](https://github.com/zesterer/flume) channels - which helps to build system with predictable performance && scalability. Peak loads are getting buffered, continuous over-band loads lead to producer backoff.
 
-- Scalability
+- Scalability - both vertically && horizontally
+
+  - per-node domain concurrency(N of parallel jobs) setting allows to saturate resources of given hardware
 
   - each `Crusty` node is essentially an independent unit which we can run hundreds of in parallel(on different machines of course),
   the tricky part is job delegation and domain discovery which is solved by a high performance sharded queue-like structure built on top of redis.
