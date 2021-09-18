@@ -35,7 +35,9 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   - built on top of buffered [Flume](https://github.com/zesterer/flume) channels - which helps to build system with predictable performance && scalability. Peak loads are getting buffered, continuous over-band loads lead to producer backoff.
 
-- Scalability
+- Scalability - both vertically && horizontally
+
+  - per-node domain concurrency(N of parallel jobs) setting allows to saturate resources of given hardware
 
   - each `Crusty` node is essentially an independent unit which we can run hundreds of in parallel(on different machines of course),
   the tricky part is job delegation and domain discovery which is solved by a high performance sharded queue-like structure built on top of redis.
@@ -67,7 +69,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   - it's a good practice to introduce delays between visiting pages, see `default_crawler_settings.delay`.
 
-  - `robots.txt` is fully supported(using Google's implementation ported to rust)
+  - `robots.txt` filtering is fully supported(using Google's implementation ported to rust, no custom delays or sitemap yet)
 
   - global IP filtering - you can easily restrict which IP blocks or maybe even countries(if you bring a good IP->Country mapper) you wish to visit(just hack on top of existing DNS resolver when configuring `crusty-core`)
 
@@ -123,7 +125,7 @@ additionally
 - to run && attach and see live logs from all containers (can abort with ctrl+c)
   `CRUSTY_SEEDS=https://example.com docker-compose up`
 
-- to see running containers `docker ps`(should be 4 - `crusty-grafana`, `crusty-clickhouse`, `crusty-redis` and `crusty` and optionally `crusty-unbound`)
+- to see running containers `docker ps`(`crusty-grafana`, `crusty-clickhouse`, `crusty-redis`, `crusty` and optionally `crusty-unbound`)
 
 - to see logs: `docker logs crusty`
 
