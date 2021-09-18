@@ -10,4 +10,4 @@ repository = "https://github.com/let4be/crusty"
 keywords = []
 
 [dependencies]
-redis-module = "~0.18.0"
+redis-module = "~0.23.0"

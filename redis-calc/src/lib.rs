@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate redis_module;
-use redis_module::{Context, RedisResult};
+use redis_module::{Context, RedisResult, RedisString};
 use redis_utils::Cmd;
 
 mod cmd;
@@ -30,7 +30,7 @@ fn k_topk(name: &str, tld: &str) -> String {
     format!("/top-k/{}-{}", tld, name)
 }
 
-fn topk_add(ctx: &Context, args: Vec<String>) -> RedisResult {
+fn topk_add(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::TopKAdd::parse(args)?;
     println!("topk_add called with {}", cmd.name);
 
@@ -75,7 +75,7 @@ fn topk_add(ctx: &Context, args: Vec<String>) -> RedisResult {
     Ok("OK".into())
 }
 
-fn topk_consume(ctx: &Context, args: Vec<String>) -> RedisResult {
+fn topk_consume(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::TopKConsume::parse(args)?;
     println!("topk_consume called with {}", cmd.name);
 

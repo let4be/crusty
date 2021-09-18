@@ -18,16 +18,17 @@ html5ever_parser = ["html5ever"]
 default = ["lol_html_parser"]
 
 [dependencies]
-crusty-core = {version="~0.72.3"}
+crusty-core = {version="~0.75.0"}
 tracing-tools = "~0.5.0"
 
 interop = {path = "../interop"}
 
-tokio = { version = "~1.8.0", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
+tokio = { version = "~1.11.0", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
 futures = "~0.3.14"
 
-clickhouse = "~0.7.1"
-redis = { version = "~0.20.1", features = ["tokio-comp", "aio"] }
+
+clickhouse = "~0.8.0"
+redis = { version = "~0.21.0", features = ["tokio-comp", "aio"] }
 
 serde_yaml = "~0.8.17"
 serde_json = "1.0"
@@ -39,14 +40,14 @@ tracing-futures = "~0.2.5"
 ttl_cache = "~0.5.1"
 crc32fast = "~1.2.1"
 anyhow = "~1.0.40"
-bytes = "~1.0.1"
+bytes = "~1.1.0"
 backoff = {version = "~0.3.0", features = ["tokio", "futures"] }
 num_cpus = "~1.13.0"
 url = "~2.2.1"
 once_cell = "~1.8.0"
 fdlimit = "~0.2.1"
 humanize-rs = "~0.1"
-relabuf = "~0.11.0"
+relabuf = "~0.13.0"
 base64 = "~0.13.0"
 
 html5ever = {version = "~0.25.1", optional = true}

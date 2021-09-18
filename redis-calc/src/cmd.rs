@@ -2,6 +2,7 @@ use crate::types::*;
 
 use anyhow::{anyhow, Context};
 use itertools::Itertools;
+use redis_module::RedisString;
 use validator::Validate;
 
 #[derive(Debug, Validate)]
@@ -22,7 +23,7 @@ pub(crate) struct TopKConsume {
 }
 
 impl TopKAdd {
-    pub(crate) fn parse(args: Vec<String>) -> Result<Self> {
+    pub(crate) fn parse(args: Vec<RedisString>) -> Result<Self> {
         enum State {
             Looking,
             DefTopK,
@@ -42,7 +43,7 @@ impl TopKAdd {
         let mut name = None;
         let mut items = vec![];
 
-        for arg in args.into_iter().skip(1) {
+        for arg in args.into_iter().skip(1).map(|s| s.to_string()) {
             match state {
                 State::Looking => match arg.to_lowercase().as_str() {
                     "def_topk" => {
@@ -123,7 +124,7 @@ impl TopKAdd {
 }
 
 impl TopKConsume {
-    pub(crate) fn parse(args: Vec<String>) -> Result<Self> {
+    pub(crate) fn parse(args: Vec<RedisString>) -> Result<Self> {
         enum State {
             Looking,
             Name,
@@ -135,7 +136,7 @@ impl TopKConsume {
         let mut name = None;
         let mut interval = None;
 
-        for arg in args.into_iter().skip(1) {
+        for arg in args.into_iter().skip(1).map(|s| s.to_string()) {
             match state {
                 State::Looking => match arg.to_lowercase().as_str() {
                     "name" => {

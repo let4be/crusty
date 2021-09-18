@@ -1,6 +1,7 @@
 use crate::types::*;
 
 use anyhow::{anyhow, Context as _};
+use redis_module::RedisString;
 use validator::Validate;
 
 #[derive(Debug, Validate)]
@@ -40,7 +41,7 @@ pub(crate) struct Finish {
 }
 
 impl Enqueue {
-    pub(crate) fn parse(args: Vec<String>) -> Result<Self> {
+    pub(crate) fn parse(args: Vec<RedisString>) -> Result<Self> {
         enum State {
             Looking,
             N,
@@ -55,7 +56,7 @@ impl Enqueue {
         let mut domains = vec![];
         let mut domains_str = vec![];
 
-        for arg in args.into_iter().skip(1) {
+        for arg in args.into_iter().skip(1).map(|s| s.to_string()) {
             match state {
                 State::Looking => match arg.to_lowercase().as_str() {
                     "n" => {
@@ -98,7 +99,7 @@ impl Enqueue {
 }
 
 impl Dequeue {
-    pub(crate) fn parse(args: Vec<String>) -> Result<Self> {
+    pub(crate) fn parse(args: Vec<RedisString>) -> Result<Self> {
         enum State {
             Looking,
             N,
@@ -112,7 +113,7 @@ impl Dequeue {
         let mut ttl: Option<usize> = None;
         let mut limit: Option<usize> = None;
 
-        for arg in args.into_iter().skip(1) {
+        for arg in args.into_iter().skip(1).map(|s| s.to_string()) {
             match state {
                 State::Looking => match arg.to_lowercase().as_str() {
                     "n" => {
@@ -157,7 +158,7 @@ impl Dequeue {
 }
 
 impl Finish {
-    pub(crate) fn parse(args: Vec<String>) -> Result<Self> {
+    pub(crate) fn parse(args: Vec<RedisString>) -> Result<Self> {
         enum State {
             Looking,
             N,
@@ -177,7 +178,7 @@ impl Finish {
         let mut bf_expansion: Option<usize> = None;
         let mut domains = vec![];
 
-        for arg in args.into_iter().skip(1) {
+        for arg in args.into_iter().skip(1).map(|s| s.to_string()) {
             match state {
                 State::Looking => match arg.to_lowercase().as_str() {
                     "n" => {

@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate redis_module;
-use redis_module::{Context, RedisResult};
+use redis_module::{Context, RedisResult, RedisString};
 use redis_utils::Cmd;
 
 pub mod types;
@@ -26,7 +26,7 @@ fn k_in_flight_addr_keys(n: usize) -> String {
     format!("in-flight-{}/addr_keys", n)
 }
 
-fn enqueue(ctx: &Context, args: Vec<String>) -> RedisResult {
+fn enqueue(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::Enqueue::parse(args)?;
     println!("enqueue called with {} domains", cmd.domains.len());
 
@@ -107,7 +107,7 @@ fn enqueue(ctx: &Context, args: Vec<String>) -> RedisResult {
     Ok("OK".into())
 }
 
-fn dequeue(ctx: &Context, args: Vec<String>) -> RedisResult {
+fn dequeue(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::Dequeue::parse(args)?;
     println!("dequeue called: {:?}", &cmd);
 
@@ -152,7 +152,7 @@ fn dequeue(ctx: &Context, args: Vec<String>) -> RedisResult {
     Ok(serde_json::to_string(&domains).unwrap().into())
 }
 
-fn finish(ctx: &Context, args: Vec<String>) -> RedisResult {
+fn finish(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::Finish::parse(args)?;
     println!("finish called: {:?}", cmd.domains.len());
 
