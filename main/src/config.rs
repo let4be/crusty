@@ -199,8 +199,8 @@ pub struct CrustyConfig {
 	pub queue: QueueConfig,
 	pub topk: TopKConfig,
 	pub resolver: ResolverConfig,
-	pub networking_profile: rc::NetworkingProfile,
-	pub concurrency_profile: rc::ConcurrencyProfile,
+	pub networking: rc::NetworkingProfile,
+	pub concurrency: rc::ConcurrencyProfile,
 	pub default_crawling_settings: rc::CrawlingSettings,
 
 	pub ddc_cap:                     usize,

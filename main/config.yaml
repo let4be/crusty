@@ -234,9 +234,10 @@ queue_monitor_interval: 1s
 # apparently even 32mib is not enough given max_response_size of 2mib...
 parser_processor_stack_size: 128mib
 
-# Fancy local address binding for monster setups with several NICs(local port limitation)
-networking_profile:
-  values:
+# various networking settings
+networking:
+  profile:
+    # Fancy local address binding for monster setups with several NICs(local port limitation)
     bind_local_ipv4: []
     bind_local_ipv6: []
     # task will select it's IP just once -
@@ -245,7 +246,8 @@ networking_profile:
     socket_read_buffer_size:
     socket_write_buffer_size:
     connect_timeout: 5s
-  resolver_config:
+  #dns resolver config && options, more available(check sources)
+  resolver:
     config:
       name_servers:
         - socket_addr: 172.16.0.254:53
@@ -256,7 +258,7 @@ networking_profile:
   net_v4_blacklist: []
 
 #leave commented for auto-conf
-concurrency_profile:
+concurrency:
   #= N of physical cores by default
   parser_concurrency: 8
   # pin N parser threads to core

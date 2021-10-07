@@ -127,7 +127,7 @@ impl Crusty {
 		name: S,
 		index: usize,
 	) -> (Sender<T>, Receiver<T>) {
-		self.ch(name, index, config::config().concurrency_profile.transit_buffer_size())
+		self.ch(name, index, config::config().concurrency.transit_buffer_size())
 	}
 
 	fn ch_trans<T: Send + 'static, S: ToString>(&mut self, name: S) -> (Sender<T>, Receiver<T>) {
@@ -472,7 +472,7 @@ impl Crusty {
 		let (tx_out, rx_out) = self.ch_trans("domain_resolver_out");
 
 		for _ in 0..cfg.resolver.concurrency {
-			let network_profile = cfg.networking_profile.clone().resolve().unwrap();
+			let network_profile = cfg.networking.clone().resolve().unwrap();
 
 			self.spawn(Crusty::domain_resolver_worker(
 				network_profile.resolver,
@@ -537,10 +537,10 @@ impl Crusty {
 	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurementDBE>)> {
 		let cfg = &config::config();
 
-		let network_profile = cfg.networking_profile.clone().resolve()?;
+		let network_profile = cfg.networking.clone().resolve()?;
 		info!("Resolved Network Profile: {:?}", &network_profile);
 
-		let concurrency_profile = cfg.concurrency_profile.clone();
+		let concurrency_profile = cfg.concurrency.clone();
 
 		let (rx_sig_term, rx_force_term) = self.signal_handler();
 
