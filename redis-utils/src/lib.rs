@@ -22,21 +22,17 @@ impl fmt::Display for ReError {
 }
 impl std::error::Error for ReError {}
 
-pub struct ReResult {
-    r: Result<ReValue, ReError>,
-}
+pub struct ReResult(Result<ReValue, ReError>);
 
 impl ReResult {
     pub fn new(r: RedisResult) -> Self {
-        Self {
-            r: r.map(ReValue).map_err(ReError),
-        }
+        Self(r.map(ReValue).map_err(ReError))
     }
     pub fn check(self) -> std::result::Result<(), ReError> {
-        self.r.map(|_| ())
+        self.0.map(|_| ())
     }
     pub fn inner(self) -> Result<ReValue, ReError> {
-        self.r
+        self.0
     }
 }
 
