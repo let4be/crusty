@@ -28,7 +28,6 @@ fn k_in_flight_addr_keys(n: usize) -> String {
 
 fn enqueue(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::Enqueue::parse(args)?;
-    println!("enqueue called with {} domains", cmd.domains.len());
 
     let mut already_checking = 0;
     let mut already_checked = 0;
@@ -109,7 +108,6 @@ fn enqueue(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
 
 fn dequeue(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::Dequeue::parse(args)?;
-    println!("dequeue called: {:?}", &cmd);
 
     let available_addr_keys = Cmd::new("SPOP", k_in_flight_addr_keys(cmd.n))
         .arg(cmd.limit)
@@ -154,7 +152,6 @@ fn dequeue(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
 
 fn finish(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
     let cmd = cmd::Finish::parse(args)?;
-    println!("finish called: {:?}", cmd.domains.len());
 
     let mut cmd_add_inflight_addr_keys = Cmd::new("SADD", k_in_flight_addr_keys(cmd.n));
     for domain in &cmd.domains {
