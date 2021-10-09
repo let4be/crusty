@@ -13,20 +13,14 @@ pub struct Cmd<'a> {
 }
 
 #[derive(Debug)]
-pub struct ReError {
-    e: RedisError,
-}
+pub struct ReError(RedisError);
 
 impl fmt::Display for ReError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.e)
+        write!(f, "{}", self.0)
     }
 }
-impl std::error::Error for ReError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+impl std::error::Error for ReError {}
 
 pub struct ReResult {
     r: Result<ReValue, ReError>,
@@ -35,7 +29,7 @@ pub struct ReResult {
 impl ReResult {
     pub fn new(r: RedisResult) -> Self {
         Self {
-            r: r.map(|r| ReValue { r }).map_err(|e| ReError { e }),
+            r: r.map(ReValue).map_err(ReError),
         }
     }
     pub fn check(self) -> std::result::Result<(), ReError> {
@@ -46,25 +40,23 @@ impl ReResult {
     }
 }
 
-pub struct ReValue {
-    r: RedisValue,
-}
+pub struct ReValue(RedisValue);
 
 impl ReValue {
     pub fn new(r: RedisValue) -> Self {
-        Self { r }
+        Self(r)
     }
 
     pub fn iter(self) -> Box<dyn Iterator<Item = ReValue>> {
-        if let RedisValue::Array(r) = self.r {
-            Box::new(r.into_iter().map(|r| ReValue { r }))
+        if let RedisValue::Array(r) = self.0 {
+            Box::new(r.into_iter().map(ReValue))
         } else {
             Box::new(std::iter::empty())
         }
     }
 
     pub fn str(self) -> Option<String> {
-        match self.r {
+        match self.0 {
             RedisValue::SimpleString(r) => Some(r),
             RedisValue::BulkString(r) => Some(r),
             RedisValue::SimpleStringStatic(r) => Some(String::from(r)),
@@ -73,14 +65,14 @@ impl ReValue {
     }
 
     pub fn f64(self) -> Option<f64> {
-        if let RedisValue::Float(r) = self.r {
+        if let RedisValue::Float(r) = self.0 {
             return Some(r);
         }
         None
     }
 
     pub fn i64(self) -> Option<i64> {
-        if let RedisValue::Integer(r) = self.r {
+        if let RedisValue::Integer(r) = self.0 {
             return Some(r);
         }
         None
