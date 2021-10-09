@@ -325,23 +325,23 @@ pub struct JobMeasurementDBE {
 
 impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>> for JobMeasurementDBE {
 	fn from(r: ct::JobUpdate<JS, TS>) -> Self {
-		let mut def = JobMeasurementDBE {
-			host:       config().host.as_str(),
-			url:        r.task.link.url.to_string(),
+		let term_by = if let ct::JobStatus::Finished(Err(ref err)) = r.status {
+			match err {
+				ct::JobError::JobFinishedBySoftTimeout => "SoftTimeout",
+				ct::JobError::JobFinishedByHardTimeout => "HardTimeout",
+			}
+		} else {
+			"Ok"
+		};
+
+		JobMeasurementDBE {
+			host: config().host.as_str(),
+			url: r.task.link.url.to_string(),
 			created_at: now().as_secs() as u32,
 
 			duration_sec: r.task.queued_at.elapsed().as_secs() as u32,
-			term_by:      "Ok",
-		};
-
-		if let ct::JobStatus::Finished(Err(ref err)) = r.status {
-			def.term_by = match err {
-				ct::JobError::JobFinishedBySoftTimeout => "SoftTimeout",
-				ct::JobError::JobFinishedByHardTimeout => "HardTimeout",
-			};
+			term_by,
 		}
-
-		def
 	}
 }
 
@@ -382,8 +382,8 @@ pub struct TopHitsDBE {
 	pub hits:       u64,
 }
 
-impl From<&interop::TopHit> for TopHitsDBE {
-	fn from(s: &interop::TopHit) -> Self {
+impl From<&interop::TopHits> for TopHitsDBE {
+	fn from(s: &interop::TopHits) -> Self {
 		Self {
 			created_at: now().as_secs() as u32,
 			domain:     s.domain.clone(),

@@ -6,7 +6,7 @@ use redis_utils::Cmd;
 mod cmd;
 pub mod types;
 
-use interop::TopHit;
+use interop::TopHits;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -118,7 +118,7 @@ fn topk_consume(ctx: &Context, args: Vec<RedisString>) -> RedisResult {
                     .iter()
                     .map(|r| r.i64().unwrap())
                     .zip(names.into_iter())
-                    .map(|(hits, name)| TopHit {
+                    .map(|(hits, name)| TopHits {
                         domain: name,
                         hits,
                         tld: tld.clone(),

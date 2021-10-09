@@ -9,7 +9,7 @@ pub struct Domain {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TopHit {
+pub struct TopHits {
     pub tld: String,
     pub domain: String,
     pub hits: i64,

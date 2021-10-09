@@ -123,7 +123,7 @@ impl RedisOperator<DomainLinks, DomainLinks, ()> for DomainTopKWriter {
 	}
 }
 
-impl RedisOperator<(), interop::TopHit, Vec<interop::TopHit>> for DomainTopKSyncer {
+impl RedisOperator<(), interop::TopHits, Vec<interop::TopHits>> for DomainTopKSyncer {
 	fn apply(&mut self, pipeline: &mut redis::Pipeline, _permit: &[()]) {
 		pipeline
 			.cmd("crusty.calc.topk.consume")
@@ -133,7 +133,7 @@ impl RedisOperator<(), interop::TopHit, Vec<interop::TopHit>> for DomainTopKSync
 			.arg(self.options.consume_interval.as_secs());
 	}
 
-	fn filter(&mut self, _: Vec<()>, hits: Vec<interop::TopHit>) -> RedisFilterResult<(), interop::TopHit> {
+	fn filter(&mut self, _: Vec<()>, hits: Vec<interop::TopHits>) -> RedisFilterResult<(), interop::TopHits> {
 		Ok(hits)
 	}
 }

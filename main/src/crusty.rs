@@ -163,7 +163,7 @@ impl Crusty {
 		tx
 	}
 
-	fn domain_topk_syncer(&mut self, rx_permit: Receiver<()>, tx_notify: Sender<DBNotification<interop::TopHit>>) {
+	fn domain_topk_syncer(&mut self, rx_permit: Receiver<()>, tx_notify: Sender<DBNotification<interop::TopHits>>) {
 		let cfg = &config::config().topk;
 
 		self.spawn(TracingTask::new(
@@ -479,7 +479,7 @@ impl Crusty {
 
 	fn domain_topk_plex(
 		&mut self,
-		rx_notify: Receiver<DBNotification<interop::TopHit>>,
+		rx_notify: Receiver<DBNotification<interop::TopHits>>,
 		tx_ch: Sender<TopHitsDBE>,
 		tx_metrics_db: Sender<DBNotificationDBE>,
 	) {
