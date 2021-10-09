@@ -107,7 +107,7 @@ impl Writer {
 		})
 	}
 
-	pub async fn go_with_retry<A: Record>(&self, client: Client, rx: Receiver<A>) -> Result<()> {
+	pub async fn go_with_retry<A: Record>(self, client: Client, rx: Receiver<A>) -> Result<()> {
 		let state = Arc::new(Mutex::new(WriterState { buffer: Vec::new() }));
 
 		retry(ExponentialBackoff { max_elapsed_time: None, ..ExponentialBackoff::default() }, || async {

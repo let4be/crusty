@@ -86,13 +86,7 @@ impl Crusty {
 	fn parse_tld() -> HashSet<&'static str> {
 		include_str!("../tld.txt")
 			.split('\n')
-			.filter_map(|s| {
-				let s = s.trim();
-				if s.is_empty() || s.starts_with('#') {
-					return None
-				}
-				Some(s)
-			})
+			.filter_map(|s| Some(s.trim()).filter(|s| !s.is_empty() && !s.starts_with('#')))
 			.collect()
 	}
 
@@ -150,10 +144,7 @@ impl Crusty {
 			let client = self.client.clone();
 			let rx = rx.clone();
 			let cfg = cfg.clone();
-			self.spawn(TracingTask::new(span!(), async move {
-				let writer = clickhouse_utils::Writer::new(cfg);
-				writer.go_with_retry(client, rx).await
-			}));
+			self.spawn(TracingTask::new(span!(), clickhouse_utils::Writer::new(cfg).go_with_retry(client, rx)));
 		}
 
 		tx
@@ -163,11 +154,11 @@ impl Crusty {
 		let cfg = &config::config().topk;
 		let (tx, rx) = self.ch_trans_with_index("domain_topk_insert", 0);
 
-		self.spawn(TracingTask::new(span!(), async move {
+		self.spawn(TracingTask::new(
+			span!(),
 			RedisDriver::new(&cfg.redis.hosts[0], rx, "domain_topk", "insert", cfg.driver.to_thresholds())
-				.go(Box::new(redis_operators::DomainTopKWriter { options: cfg.options.clone() }), tx_notify)
-				.await
-		}));
+				.go(Box::new(redis_operators::DomainTopKWriter { options: cfg.options.clone() }), tx_notify),
+		));
 
 		tx
 	}
@@ -175,22 +166,22 @@ impl Crusty {
 	fn domain_topk_syncer(&mut self, rx_permit: Receiver<()>, tx_notify: Sender<DBNotification<interop::TopHit>>) {
 		let cfg = &config::config().topk;
 
-		self.spawn(TracingTask::new(span!(), async move {
+		self.spawn(TracingTask::new(
+			span!(),
 			RedisDriver::new(&cfg.redis.hosts[0], rx_permit, "domain_topk", "sync", cfg.driver.to_thresholds())
-				.go(Box::new(redis_operators::DomainTopKSyncer { options: cfg.options.clone() }), tx_notify)
-				.await
-		}));
+				.go(Box::new(redis_operators::DomainTopKSyncer { options: cfg.options.clone() }), tx_notify),
+		));
 	}
 
 	fn domain_inserter(&mut self, shard: usize, tx_notify: Sender<DBNotificationDBE>) -> Sender<Domain> {
 		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_enqueue", shard);
 
-		self.spawn(TracingTask::new(span!(), async move {
+		self.spawn(TracingTask::new(
+			span!(),
 			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "insert", cfg.jobs.enqueue.driver.to_thresholds())
-				.go(Box::new(redis_operators::Enqueue { shard, cfg: cfg.jobs.enqueue.options.clone() }), tx_notify)
-				.await
-		}));
+				.go(Box::new(redis_operators::Enqueue { shard, cfg: cfg.jobs.enqueue.options.clone() }), tx_notify),
+		));
 
 		tx
 	}
@@ -199,11 +190,11 @@ impl Crusty {
 		let cfg = &config::config().queue;
 		let (tx, rx) = self.ch_trans_with_index("domain_finish", shard);
 
-		self.spawn(TracingTask::new(span!(), async move {
+		self.spawn(TracingTask::new(
+			span!(),
 			RedisDriver::new(&cfg.redis.hosts[shard], rx, "domains", "update", cfg.jobs.finish.driver.to_thresholds())
-				.go(Box::new(redis_operators::Finish { shard, cfg: cfg.jobs.finish.options.clone() }), tx_notify)
-				.await
-		}));
+				.go(Box::new(redis_operators::Finish { shard, cfg: cfg.jobs.finish.options.clone() }), tx_notify),
+		));
 
 		tx
 	}
@@ -211,7 +202,8 @@ impl Crusty {
 	fn domain_reader(&mut self, shard: usize, rx_permit: Receiver<()>, tx_notify: Sender<DBNotification<Domain>>) {
 		let cfg = &config::config().queue;
 
-		self.spawn(TracingTask::new(span!(), async move {
+		self.spawn(TracingTask::new(
+			span!(),
 			RedisDriver::new(
 				&cfg.redis.hosts[shard],
 				rx_permit,
@@ -219,9 +211,8 @@ impl Crusty {
 				"read",
 				cfg.jobs.dequeue.driver.to_thresholds(),
 			)
-			.go(Box::new(redis_operators::Dequeue { shard, cfg: cfg.jobs.dequeue.options.clone() }), tx_notify)
-			.await
-		}));
+			.go(Box::new(redis_operators::Dequeue { shard, cfg: cfg.jobs.dequeue.options.clone() }), tx_notify),
+		));
 	}
 
 	fn permit_emitter(&mut self, name: &'static str, delay: Duration, rx_sig_term: Receiver<()>) -> Receiver<()> {
