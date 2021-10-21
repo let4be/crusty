@@ -12,7 +12,7 @@ It presents unique set of challenges one must overcome to get a stable, scalable
 This particular implementation could be used to quickly fetch a subset of all observable internet && discover most popular domains
 
 The whole system is designed to be minimalistic in nature and does not bring any heavy artillery(like graph database or distributed file system). If needed, this can be connected externally.
-Also, internally some trade-off have been made(see Tradeoffs/limitations section).
+Also, internally some trade-offs have been made(see tradeoffs/limitations section).
 
 Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handles all low-level aspects of web crawling
 
