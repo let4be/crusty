@@ -48,10 +48,12 @@ impl<T: Record> RedisDriver<T> {
 		let client = Client::open(self.host.as_str())?;
 
 		let rx = self.rx.clone();
-		let buffer = relabuf::RelaBuf::<T>::new(self.thresholds, move || {
+		let (buffer, proxy) = relabuf::RelaBuf::new(self.thresholds, move || {
 			let rx = rx.clone();
 			Box::pin(async move { rx.recv_async().await.context("cannot read") })
 		});
+
+		tokio::spawn(proxy.go());
 
 		let mut last_query = Instant::now();
 
@@ -94,8 +96,8 @@ impl<T: Record> RedisDriver<T> {
 							}
 							serde_json::from_str(v).ok()
 						})
-						.unwrap_or_else(|| Some(X::default()))
-						.unwrap_or_else(X::default);
+						.unwrap_or_default()
+						.unwrap_or_default();
 
 					let mut items = vec![];
 					std::mem::swap(&mut items, &mut released.items);

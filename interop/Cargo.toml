@@ -2,7 +2,7 @@
 name = "interop"
 version = "0.1.0"
 authors = ["Sergey F. <let4be@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Interop types for crusty"
 readme = "README.md"
 license = "GPL-3.0"

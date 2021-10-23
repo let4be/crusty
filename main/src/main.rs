@@ -9,7 +9,7 @@ mod redis_utils;
 mod rules;
 mod types;
 
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::filter::EnvFilter;
 
 use crate::{_prelude::*, crusty::Crusty, types::*};
 

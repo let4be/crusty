@@ -2,7 +2,7 @@
 name = "redis-calc"
 version = "0.1.0"
 authors = ["Sergey F. <let4be@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Crusty topk calc and other stuff"
 readme = "README.md"
 license = "GPL-3.0"

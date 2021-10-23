@@ -6,7 +6,7 @@ case $1 in
     rustup component add rustfmt --toolchain nightly
     rustup component add clippy --toolchain nightly
     cargo install cargo-release --version ~0.13.0
-    cargo install cargo-udeps --version ~0.1.21
+    cargo install cargo-udeps --version ~0.1.24
     pre-commit install
     echo "Ready to go..."
     ;;

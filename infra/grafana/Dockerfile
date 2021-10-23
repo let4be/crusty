@@ -1,4 +1,4 @@
-FROM grafana/grafana:8.0.3
+FROM grafana/grafana:8.2.2
 ADD ./provisioning /etc/grafana/provisioning
 ADD ./config.ini /etc/grafana/config.ini
 ADD ./grafana.ini /etc/grafana/grafana.ini
