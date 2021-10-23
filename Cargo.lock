@@ -195,6 +195,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
+name = "cache_2q"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3421ff4fcec8bd015d28aa32c56dcda49dca55d119cb9b0455951e33d4f5f9d"
+dependencies = [
+ "linked-hash-map",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -392,6 +401,7 @@ dependencies = [
  "backoff",
  "base64",
  "bytes",
+ "cache_2q",
  "clickhouse",
  "crc32fast",
  "crusty-core",
@@ -415,7 +425,6 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "tracing-tools",
- "ttl_cache",
  "url",
  "vergen",
 ]
@@ -2813,15 +2822,6 @@ name = "try-lock"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
-
-[[package]]
-name = "ttl_cache"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4189890526f0168710b6ee65ceaedf1460c48a14318ceec933cb26baa492096a"
-dependencies = [
- "linked-hash-map",
-]
 
 [[package]]
 name = "typenum"

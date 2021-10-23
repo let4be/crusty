@@ -221,12 +221,10 @@ resolver:
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
   concurrency: 150
 
-# domain discovery cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
+# domain discovery LRU cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new Crusty nodes
-# but worry not, redis queue is so fast(and pre-sharded) we could run couple hundred crusty nodes with minimal additional setup
+# but worry not, redis queue is so fast(and pre-sharded) we could run couple hundred crusty nodes with almost no additional setup
 ddc_cap: 25000000
-# recently discovered domains live in cache up to this duration
-ddc_lifetime: 1h
 
 # We monitor various internal queues and persist their status to db
 queue_monitor_interval: 1s

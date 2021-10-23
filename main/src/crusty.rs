@@ -1,6 +1,6 @@
+use cache_2q::Cache;
 use clickhouse::Client;
 use crusty_core::{resolver::Resolver, types as ct};
-use ttl_cache::TtlCache;
 
 use crate::{
 	_prelude::*, clickhouse_utils, config, config::ClickhouseWriterConfig, redis_operators, redis_utils::RedisDriver,
@@ -55,7 +55,7 @@ impl ChMeasurements {
 }
 
 pub struct Crusty {
-	ddc:             Arc<Mutex<TtlCache<String, ()>>>,
+	ddc:             Arc<Mutex<Cache<String, ()>>>,
 	tld:             Arc<HashSet<&'static str>>,
 	handles:         Vec<tokio::task::JoinHandle<Result<()>>>,
 	ch_measurements: ChMeasurements,
@@ -99,7 +99,7 @@ impl Crusty {
 			.with_database(&cfg.clickhouse.database);
 
 		Self {
-			ddc: Arc::new(Mutex::new(TtlCache::new(cfg.ddc_cap))),
+			ddc: Arc::new(Mutex::new(Cache::new(cfg.ddc_cap))),
 			tld: Arc::new(Self::parse_tld()),
 
 			handles: vec![],
@@ -250,7 +250,6 @@ impl Crusty {
 				let task_domain = r.task.link.host().unwrap();
 
 				let domain_filter_map = |lnk: &Arc<ct::Link>| {
-					let cfg = config::config();
 					let domain = lnk.host()?;
 
 					if domain.len() < 4 || !domain.contains('.') || domain == *task_domain {
@@ -269,7 +268,7 @@ impl Crusty {
 						if ddc.contains_key(&domain) {
 							return None
 						}
-						ddc.insert(domain.clone(), (), *cfg.ddc_lifetime);
+						ddc.insert(domain.clone(), ());
 					}
 
 					info!("new domain discovered: {}", &domain);

@@ -204,7 +204,6 @@ pub struct CrustyConfig {
 	pub default_crawling_settings: rc::CrawlingSettings,
 
 	pub ddc_cap:                     usize,
-	pub ddc_lifetime:                rc::CDuration,
 	pub queue_monitor_interval:      rc::CDuration,
 	pub parser_processor_stack_size: rc::CBytes,
 }
