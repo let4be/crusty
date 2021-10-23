@@ -99,8 +99,7 @@ impl<T: Record> RedisDriver<T> {
 						.unwrap_or_default()
 						.unwrap_or_default();
 
-					let mut items = vec![];
-					std::mem::swap(&mut items, &mut released.items);
+					let items = std::mem::take(&mut released.items);
 
 					let out_items = match operator.filter(items, v) {
 						Ok(r) => r,
