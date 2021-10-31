@@ -420,6 +420,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "strum",
  "tokio",
  "tracing",
  "tracing-futures",
@@ -431,9 +432,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.77.0"
+version = "0.79.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1293f398595b42c72424bbea9e3b2aeb38a5cbe24bc6f5bc5a80d074d5aca5fd"
+checksum = "7034b1603956d5967a17dc955c8fd59c422f4b48ca699a0b2330c0ab22be45ed"
 dependencies = [
  "anyhow",
  "bytes",
@@ -2441,6 +2442,15 @@ name = "strsim"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
+
+[[package]]
+name = "strum"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7ac893c7d471c8a21f31cfe213ec4f6d9afeed25537c772e08ef3f005f8729e"
+dependencies = [
+ "strum_macros 0.22.0",
+]
 
 [[package]]
 name = "strum_macros"

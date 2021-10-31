@@ -2,7 +2,7 @@ use std::{env, fs};
 
 use crusty_core::config as rc;
 use once_cell::sync::OnceCell;
-use serde::Deserialize;
+use serde::{de, Deserialize, Deserializer};
 
 use crate::{_prelude::*, types::*};
 
@@ -143,14 +143,15 @@ pub struct JobsDequeueOptions {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct JobsConfig {
-	pub shard_min:     usize,
-	pub shard_max:     usize,
-	pub shard_total:   usize,
-	pub addr_key_mask: u8,
-	pub enqueue:       JobsEnqueueConfig,
-	pub finish:        JobsFinishConfig,
-	pub dequeue:       JobsDequeueConfig,
-	pub reader:        JobReaderConfig,
+	pub shard_min:        usize,
+	pub shard_max:        usize,
+	pub shard_total:      usize,
+	pub addr_key_v4_mask: u8,
+	pub addr_key_v6_mask: u8,
+	pub enqueue:          JobsEnqueueConfig,
+	pub finish:           JobsFinishConfig,
+	pub dequeue:          JobsDequeueConfig,
+	pub reader:           JobReaderConfig,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -208,10 +209,25 @@ pub struct CrustyConfig {
 	pub parser_processor_stack_size: rc::CBytes,
 }
 
+#[derive(Clone, Debug, EnumString)]
+pub enum ResolverAddrIpv6Policy {
+	Disabled,
+	Preferred,
+	Fallback,
+}
+
+impl<'de> Deserialize<'de> for ResolverAddrIpv6Policy {
+	fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<ResolverAddrIpv6Policy, D::Error> {
+		let s: String = Deserialize::deserialize(deserializer)?;
+		s.parse::<ResolverAddrIpv6Policy>().map_err(de::Error::custom)
+	}
+}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ResolverConfig {
-	pub concurrency: usize,
+	pub concurrency:      usize,
+	pub addr_ipv6_policy: ResolverAddrIpv6Policy,
 }
 
 pub fn load() -> Result<()> {

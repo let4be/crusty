@@ -334,7 +334,8 @@ impl Crusty {
 					match job_obj {
 						Ok(mut job_obj) => {
 							if !domain.addrs.is_empty() {
-								job_obj = job_obj.with_addrs(domain.addrs.clone());
+								job_obj =
+									job_obj.with_addrs(domain.addrs.first().map(|a| vec![*a]).unwrap_or_else(Vec::new));
 							}
 
 							if tx_job.send_async(job_obj).await.is_err() {
@@ -418,9 +419,7 @@ impl Crusty {
 
 				match r {
 					Ok(addrs) => {
-						let addrs = addrs.filter(|a| a.ip().is_ipv4()).collect::<Vec<_>>();
-
-						// for now we process only domains with available ipv4 addresses, see https://github.com/let4be/crusty/issues/10
+						let addrs = addrs.collect::<Vec<_>>();
 						if addrs.is_empty() {
 							continue
 						}

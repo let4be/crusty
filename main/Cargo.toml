@@ -18,14 +18,18 @@ html5ever_parser = ["html5ever"]
 default = ["lol_html_parser"]
 
 [dependencies]
-crusty-core = {version="~0.77.0"}
-tracing-tools = "~0.5.0"
-
-interop = {path = "../interop"}
-
+itertools = "~0.10.1"
+strum = { version = "0.22", features = ["derive"] }
+anyhow = "~1.0.40"
 tokio = { version = "~1.12.0", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
 futures = "~0.3.14"
+tracing = "~0.1.25"
+tracing-subscriber = {version = "~0.3.0", features = ["env-filter"]}
+tracing-futures = "~0.2.5"
 
+interop = {path = "../interop"}
+crusty-core = {version="~0.79.0"}
+tracing-tools = "~0.5.0"
 
 clickhouse = "~0.8.0"
 redis = { version = "~0.21.0", features = ["tokio-comp", "aio"] }
@@ -34,12 +38,8 @@ serde_yaml = "~0.8.17"
 serde_json = "1.0"
 serde = {version = "~1.0.125", features = ["derive"] }
 http = "~0.2.3"
-tracing = "~0.1.25"
-tracing-subscriber = {version = "~0.3.0", features = ["env-filter"]}
-tracing-futures = "~0.2.5"
 cache_2q = "~0.10.1"
 crc32fast = "~1.2.1"
-anyhow = "~1.0.40"
 bytes = "~1.1.0"
 backoff = {version = "~0.3.0", features = ["tokio", "futures"] }
 num_cpus = "~1.13.0"
@@ -49,10 +49,8 @@ fdlimit = "~0.2.1"
 humanize-rs = "~0.1"
 relabuf = "~0.16.0"
 base64 = "~0.13.0"
-
 html5ever = {version = "~0.25.1", optional = true}
 lol_html = {version = "~0.3.0", optional = true}
-itertools = "~0.10.1"
 
 [build-dependencies]
 vergen = {version = "~5", features = ["build", "cargo", "git", "rustc"] }

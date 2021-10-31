@@ -44,13 +44,16 @@ queue:
     # total shards - shards we insert into, this is always 0..shard_total
 
     #we resolve IP of all discovered domains and calculate addr_key
-    #1. Take only ipv4
-    #2. Sort
-    #3. Take first IP and apply addr_key_mask masking
-    #4. addr_key = addr_key | addr_key_4_mask;
+    #1. Take both IPv4 and IPv6
+    #2. Sort them lexicographically(separately)
+    #3. Concatenate the resulting address list with IPv4 always going first
+    #4. Take first IP and apply appropriate masking
+    #5. addr_key = addr_key | addr_key_4_mask;
     #we now use addr_key in shard calculation, we never select more than domain_top_n domains from a given addr_key
-    #this ensures we are being polite to websites with different domains hosted on the same IP(or subnet, depending on addr_key_4_mask)
-    addr_key_mask: 24 #read as /24 meaning first 24 bits are significant while last 8 are not(will be masked)
+    #this ensures we are being polite to websites with different domains hosted on the same IP(or subnet, depending on masking)
+    # For now we use either ipv4 or ipv6 and assume given addresses are always valid and available
+    addr_key_v4_mask: 24 #read as /24 meaning first 24 bits are significant while last 8 are not(will be masked)
+    addr_key_v6_mask: 24 #separate mask for ipv6
     enqueue:
       options:
         # each added jobs has a TTL, we don't want jobs handing in redis memory forever...
@@ -220,6 +223,14 @@ resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
   concurrency: 150
+  # how we select address to connect to(in case several are specified)
+  # one address always has to be selected before task can be queued(we need to know address to calculate addr_key && shard),
+  # we currently do not handle per-task errors(such as connection rejected or 5xx codes)
+  # for now we simply assume those will be purged from Q externally && rediscovered eventually(not implemented yet)
+  # disabled - ignore ipv6 addresses
+  # preferred - prefer ipv6 over ipv4
+  # fallback - use ipv6 only when ipv4 is not available
+  addr_ipv6_policy: Fallback
 
 # domain discovery LRU cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
 # but because cache is local it's effectiveness will drop when adding new Crusty nodes
