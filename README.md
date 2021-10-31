@@ -1,1 +1,1 @@
-main/README.md
+workspace/main/README.md

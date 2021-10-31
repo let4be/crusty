@@ -27,7 +27,7 @@ tracing = "~0.1.25"
 tracing-subscriber = {version = "~0.3.0", features = ["env-filter"]}
 tracing-futures = "~0.2.5"
 
-interop = {path = "../interop"}
+interop = {path = "../interop" }
 crusty-core = {version="^0.80"}
 tracing-tools = "~0.5.0"
 

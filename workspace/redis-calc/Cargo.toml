@@ -13,8 +13,8 @@ keywords = []
 crate-type = ["cdylib"]
 
 [dependencies]
-redis-utils = {path = "../redis-utils"}
-interop = {path = "../interop"}
+redis-utils = {path = "../redis-utils" }
+interop = {path = "../interop" }
 
 anyhow = "~1.0.40"
 thiserror = "~1.0.24"
