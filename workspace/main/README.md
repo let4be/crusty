@@ -21,7 +21,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 ## Key features
 - Configurability && extensibility
 
-  see a typical [config file](./main/config.yaml) with some explanations regarding available options
+  see a typical [config file](./workspace/main/config.yaml) with some explanations regarding available options
 
 - Blazing fast single node performance (~10 gbit/s on 48 core(96HT) `c5.metal`)
 
@@ -112,7 +112,7 @@ CRUSTY_SEEDS=https://example.com docker-compose up -d --build
 
 additionally
 
-- study [config file](./main/config.yaml) and adapt to your needs,
+- study [config file](./workspace/main/config.yaml) and adapt to your needs,
   there are sensible defaults for a 100mbit channel, if you have more/less bandwidth/cpu you might need to adjust `concurrency_profile`
 
 - to stop background run and _retain_ crawling data
