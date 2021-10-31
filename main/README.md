@@ -3,6 +3,8 @@
 
 # Crusty - fast, scalable && polite broad web crawler
 
+![example](./resources/grafana.png "this is a screenshot of an actual broad web crawling run done on i9 10900k and 100mbit fiber optic channel, crusty takes less than 1 core while saturating 100mbit channel")
+
 ## Introduction
 Broad web crawling is an activity of going through practically boundless web by starting from a set of locations(urls) and following outgoing links.
 Usually it doesn't matter where you start from as long as it has outgoing links to external domains.
@@ -78,12 +80,6 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
   Crusty uses [tracing](https://github.com/tokio-rs/tracing) and stores multiple metrics in
 [clickhouse](https://github.com/ClickHouse/ClickHouse)
 that we can observe with [grafana](https://github.com/grafana/grafana) - giving a real-time insight in crawling performance
-
-scales from
-![example](./resources/grafana.png "this is a screenshot of an actual broad web crawling run done on i9 10900k and 100mbit fiber optic channel, crusty takes less than 1 core while saturating 100mbit channel")
-
-up to
-![example](./resources/grafana-96.png "this is a screenshot of an actual broad web crawling run done on AWS c5.metal / c5.24xlarge and 25gbit fiber optic channel, crusty takes all cores available!")
 
 ## Getting started
 
