@@ -144,11 +144,9 @@ In the real world usage scenario on high bandwidth channel docker might become a
 
 just use `docker-compose`, it's the recommended way to play with `Crusty`
 
-however...
+DB model is available in [this sql](./infra/clickhouse/init.sql)
 
-to create / clean db use [this sql](./infra/clickhouse/init.sql)(must be fed to `clickhouse client` -in context- of clickhouse docker container)
-
-grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.json)
+Grafana dashboard is exported as [json model](./infra/grafana/dashboards/crusty.json)
 
 ## Tradeoffs / limitations
 

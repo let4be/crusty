@@ -419,13 +419,10 @@ impl Crusty {
 
 				match r {
 					Ok(addrs) => {
-						let addrs = addrs.collect::<Vec<_>>();
-						if addrs.is_empty() {
-							continue
+						let domain = Domain::new(domain_str, addrs.collect::<Vec<_>>(), None);
+						if let Some(domain) = domain {
+							let _ = tx_domain_insert[domain.shard].send_async(domain).await;
 						}
-
-						let domain = Domain::new(domain_str, addrs, None);
-						let _ = tx_domain_insert[domain.shard].send_async(domain).await;
 					}
 					Err(err) => {
 						info!(domain = %domain_str, err = ?err, "Could not resolve");
@@ -493,7 +490,7 @@ impl Crusty {
 		}));
 	}
 
-	async fn send_seed_jobs(&self, tx_domain_read_notify: Sender<DBNotification<Domain>>) {
+	async fn send_seed_jobs(&self, tx_domain_resolve: Sender<String>) {
 		let cfg = &config::config().queue;
 		let seed_domains: Vec<_> = cfg
 			.jobs
@@ -503,7 +500,7 @@ impl Crusty {
 			.filter_map(|seed| Url::parse(seed).ok())
 			.filter_map(|seed| {
 				if let Some(domain) = seed.domain() {
-					Some(Domain::new(domain.into(), vec![], Some(seed)))
+					Some(domain.into())
 				} else {
 					warn!("Seed url {} has no domain name - skipping!", seed.to_string());
 					None
@@ -511,16 +508,9 @@ impl Crusty {
 			})
 			.collect();
 
-		tx_domain_read_notify
-			.send_async(DBNotification {
-				table_name: "domains",
-				label:      "seeded",
-				since_last: Duration::from_secs(0),
-				duration:   Duration::from_secs(0),
-				items:      seed_domains,
-			})
-			.await
-			.unwrap();
+		for seed_domain in seed_domains {
+			tx_domain_resolve.send_async(seed_domain).await.unwrap();
+		}
 	}
 
 	async fn crawler(&mut self) -> Result<(CrustyMultiCrawler, Receiver<()>, Sender<QueueMeasurementDBE>)> {
@@ -574,7 +564,6 @@ impl Crusty {
 		let tx_domain_links = self.domain_topk_writer(tx_ch_metrics_db.clone());
 
 		let (tx_domain_read_notify, rx_domain_read_notify) = self.ch("domain_read_notify", 0, 1);
-		self.send_seed_jobs(tx_domain_read_notify.clone()).await;
 
 		let rx_domain_read_permit = self.permit_emitter(
 			"domain_read_permit",
@@ -598,6 +587,8 @@ impl Crusty {
 				tx_domain_links.clone(),
 			);
 		}
+
+		self.send_seed_jobs(tx_domain_resolve).await;
 
 		Ok((crawler, rx_force_term, tx_ch_metrics_queue))
 	}

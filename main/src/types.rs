@@ -18,7 +18,7 @@ pub struct Domain {
 }
 
 impl Domain {
-	fn select_addr<'a>(addrs: impl Iterator<Item = &'a SocketAddr>) -> Vec<u8> {
+	fn select_addr<'a>(addrs: impl Iterator<Item = &'a SocketAddr>) -> Option<SocketAddr> {
 		let (mut v4, mut v6) = (vec![], vec![]);
 
 		for ip in addrs {
@@ -30,20 +30,20 @@ impl Domain {
 		v4.sort_unstable();
 		v6.sort_unstable();
 
-		let addr = match config().resolver.addr_ipv6_policy {
+		match config().resolver.addr_ipv6_policy {
 			config::ResolverAddrIpv6Policy::Disabled => v4.first(),
 			config::ResolverAddrIpv6Policy::Preferred => v6.first().or_else(|| v4.first()),
 			config::ResolverAddrIpv6Policy::Fallback => v4.first().or_else(|| v6.first()),
-		};
-
-		addr.map(|a| match a.ip() {
-			IpAddr::V4(ip) => ip.octets().to_vec(),
-			IpAddr::V6(ip) => ip.octets().to_vec(),
-		})
-		.unwrap_or_else(|| vec![255, 255, 255, 255])
+		}
+		.copied()
 	}
 
-	fn calc_shard(mut addr: Vec<u8>) -> (String, usize) {
+	fn calc_shard(addr: &SocketAddr) -> (String, usize) {
+		let mut addr = match addr.ip() {
+			IpAddr::V4(ip) => ip.octets().to_vec(),
+			IpAddr::V6(ip) => ip.octets().to_vec(),
+		};
+
 		let mut left =
 			if addr.len() > 4 { config().queue.jobs.addr_key_v6_mask } else { config().queue.jobs.addr_key_v4_mask };
 		for a in &mut addr {
@@ -66,11 +66,11 @@ impl Domain {
 		(addr_key, shard)
 	}
 
-	pub fn new(domain: String, addrs: Vec<SocketAddr>, url: Option<Url>) -> Domain {
-		let addr = Self::select_addr(addrs.iter());
-		let (addr_key, shard) = Self::calc_shard(addr);
+	pub fn new(domain: String, addrs: Vec<SocketAddr>, url: Option<Url>) -> Option<Domain> {
+		let addr = Self::select_addr(addrs.iter())?;
+		let (addr_key, shard) = Self::calc_shard(&addr);
 
-		Domain { addr_key, addrs, url, domain, shard }
+		Some(Domain { addr_key, addrs: vec![addr], url, domain, shard })
 	}
 
 	pub fn from_interop(s: interop::Domain, shard: usize) -> Self {
