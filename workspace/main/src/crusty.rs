@@ -49,7 +49,7 @@ impl ChMeasurements {
 				let _ = tx_metrics_queue.send_async(m.into()).await;
 			}
 
-			tokio::time::sleep(*cfg.queue_monitor_interval).await;
+			tokio::time::sleep(*cfg.clickhouse.queue_monitor_interval).await;
 		}
 	}
 }
@@ -99,7 +99,7 @@ impl Crusty {
 			.with_database(&cfg.clickhouse.database);
 
 		Self {
-			ddc: Arc::new(Mutex::new(Cache::new(cfg.ddc_cap))),
+			ddc: Arc::new(Mutex::new(Cache::new(cfg.domain_discovery.cap))),
 			tld: Arc::new(Self::parse_tld()),
 
 			handles: vec![],
@@ -524,7 +524,7 @@ impl Crusty {
 		let (rx_sig_term, rx_force_term) = self.signal_handler();
 
 		info!("Creating parser processor...");
-		let tx_pp = crusty_core::ParserProcessor::spawn(concurrency_profile.clone(), *cfg.parser_processor_stack_size);
+		let tx_pp = crusty_core::ParserProcessor::spawn(concurrency_profile.clone(), *cfg.parser_processor.stack_size);
 		self.ch_measurements.register("parser", 0, SenderWeak(Arc::downgrade(&tx_pp)));
 
 		info!("Creating crawler instance...");

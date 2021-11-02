@@ -168,10 +168,11 @@ pub struct ClickhouseWriterConfig {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ClickhouseConfig {
-	pub url:      String,
-	pub username: String,
-	pub password: String,
-	pub database: String,
+	pub url:                    String,
+	pub username:               String,
+	pub password:               String,
+	pub database:               String,
+	pub queue_monitor_interval: rc::CDuration,
 
 	pub metrics_queue: ClickhouseWriterConfig,
 	pub metrics_db:    ClickhouseWriterConfig,
@@ -190,6 +191,18 @@ pub struct LogConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct DomainDiscoveryConfig {
+	pub cap: usize,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ParserProcessorConfig {
+	pub stack_size: rc::CBytes,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CrustyConfig {
 	pub host: String,
 
@@ -204,9 +217,8 @@ pub struct CrustyConfig {
 	pub concurrency: rc::ConcurrencyProfile,
 	pub default_crawling_settings: rc::CrawlingSettings,
 
-	pub ddc_cap:                     usize,
-	pub queue_monitor_interval:      rc::CDuration,
-	pub parser_processor_stack_size: rc::CBytes,
+	pub domain_discovery: DomainDiscoveryConfig,
+	pub parser_processor: ParserProcessorConfig,
 }
 
 #[derive(Clone, Debug, EnumString)]

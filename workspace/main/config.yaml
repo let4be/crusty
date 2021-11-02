@@ -1,9 +1,9 @@
-#First of all let's settle on some widely used terminology - remember this, it's widely used everywhere ;)
+# First let's settle on some widely used terminology - remember this, it's widely used everywhere ;)
 #	JOB(=domain, =set of TASKs)
 #	TASK(=page, =part of JOB)
 #
-#
-#
+
+host: crawler-1 # for metrics
 
 log:
   # fancy some colors? - disable if redirect to file is intended
@@ -14,14 +14,13 @@ log:
   # see https://tracing.rs/tracing_subscriber/filter/struct.envfilter
   #"[task{name=Crusty::go}]=info", "[task{name=Crusty::job_reader}]=info"
   #filter: ["[task{name=TaskProcessor::go}]=warn", "[task{name=TaskScheduler::go}]=warn", "[task{name=Crawler::go}]=warn"]
-host: crawler-1 # for metrics
 
 # as soon as we see SIGTERM we stop consuming new jobs from redis queue and switch to one of shutdown states
 # graceful - we have time to spare
 #     1) start counting graceful_timeout
 #     2) WAIT for second SIGTERM or graceful_timeout elapsed - switch to immediate shutdown mode
 #     3) WAIT if we processed all jobs and persisted everything to db THEN exit normally
-# immediate - we need to be exit asap
+# immediate - we need to exit asap
 #     1) stop all crawling activity no matter the state of it
 #     2) WAIT if we persisted everything to db THEN exit normally
 shutdown:
@@ -128,6 +127,9 @@ clickhouse:
   password: ""
   database: crusty
 
+  # We monitor various internal queues and persist their status to db
+  queue_monitor_interval: 1s
+
   # We persist various queue metrics
   metrics_queue:
     table_name: metrics_queue
@@ -136,7 +138,7 @@ clickhouse:
     buffer_capacity: 1000
     # while we're waiting for buffer to fill wake once in a while to check for force_write_duration
     check_for_force_write_duration: 100ms
-    # if force_write_duration elapsed since last write but we yet not filled buffer_capacity force the write anyway
+    # if force_write_duration elapsed since last write, but we yet not filled buffer_capacity force the writing anyway
     force_write_duration: 500ms
     concurrency: 3
 
@@ -232,16 +234,17 @@ resolver:
   # fallback - use ipv6 only when ipv4 is not available
   addr_ipv6_policy: Fallback
 
-# domain discovery LRU cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
-# but because cache is local it's effectiveness will drop when adding new Crusty nodes
-# but worry not, redis queue is so fast(and pre-sharded) we could run couple hundred crusty nodes with almost no additional setup
-ddc_cap: 25000000
+# domain discovery settings
+domain_discovery:
+  # LRU cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
+  # but because cache is local it's effectiveness will drop when adding new Crusty nodes
+  # but worry not, redis queue is so fast(and pre-sharded) we could run couple hundred crusty nodes with almost no additional setup
+  cap:  25000000
 
-# We monitor various internal queues and persist their status to db
-queue_monitor_interval: 1s
-# We parse HTML in a separate thread pool, stack size is configurable
-# apparently even 32mib is not enough given max_response_size of 2mib...
-parser_processor_stack_size: 128mib
+parser_processor:
+  # We parse HTML in a separate thread pool, stack size is configurable
+  # apparently even 32mib is not enough given max_response_size of 2mib...
+  stack_size: 128mib
 
 # various networking settings
 networking:
