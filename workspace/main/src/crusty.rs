@@ -49,7 +49,7 @@ impl ChMeasurements {
 				let _ = tx_metrics_queue.send_async(m.into()).await;
 			}
 
-			tokio::time::sleep(*cfg.clickhouse.queue_monitor_interval).await;
+			tokio::time::sleep(*cfg.metrics.queue_monitor_interval).await;
 		}
 	}
 }
@@ -70,11 +70,8 @@ pub struct CrustyHandle {
 
 impl Crusty {
 	async fn try_connect(&mut self) -> Result<()> {
-		let cfg = config::config();
-		info!(
-			"trying to connect to {} as {}, db: {}",
-			&cfg.clickhouse.url, &cfg.clickhouse.username, &cfg.clickhouse.database
-		);
+		let cfg = &config::config().metrics.clickhouse;
+		info!("trying to connect to {} as {}, db: {}", &cfg.url, &cfg.username, &cfg.database);
 
 		let r = self.client.query("SELECT 'ok'").fetch_one::<String>().await?;
 		if r == "ok" {
@@ -91,12 +88,13 @@ impl Crusty {
 	}
 
 	pub fn new() -> Self {
-		let cfg = config::config();
+		let cfg = &config::config();
+
 		let client = Client::default()
-			.with_url(&cfg.clickhouse.url)
-			.with_user(&cfg.clickhouse.username)
-			.with_password(&cfg.clickhouse.password)
-			.with_database(&cfg.clickhouse.database);
+			.with_url(&cfg.metrics.clickhouse.url)
+			.with_user(&cfg.metrics.clickhouse.username)
+			.with_password(&cfg.metrics.clickhouse.password)
+			.with_database(&cfg.metrics.clickhouse.database);
 
 		Self {
 			ddc: Arc::new(Mutex::new(Cache::new(cfg.domain_discovery.cap))),
@@ -524,7 +522,7 @@ impl Crusty {
 		let (rx_sig_term, rx_force_term) = self.signal_handler();
 
 		info!("Creating parser processor...");
-		let tx_pp = crusty_core::ParserProcessor::spawn(concurrency_profile.clone(), *cfg.parser_processor.stack_size);
+		let tx_pp = crusty_core::ParserProcessor::spawn(concurrency_profile.clone(), cfg.parser.clone());
 		self.ch_measurements.register("parser", 0, SenderWeak(Arc::downgrade(&tx_pp)));
 
 		info!("Creating crawler instance...");
@@ -535,11 +533,11 @@ impl Crusty {
 		self.ch_measurements.register("job", 0, SenderWeak(Arc::downgrade(&tx_job)));
 		self.ch_measurements.register("job_state_update", 0, ReceiverWeak(rx_job_state_update.clone()));
 
-		let tx_ch_metrics_task = self.clickhouse_writer(cfg.clickhouse.metrics_task.clone());
-		let tx_ch_metrics_job = self.clickhouse_writer(cfg.clickhouse.metrics_job.clone());
-		let tx_ch_metrics_queue = self.clickhouse_writer(cfg.clickhouse.metrics_queue.clone());
-		let tx_ch_metrics_db = self.clickhouse_writer(cfg.clickhouse.metrics_db.clone());
-		let tx_ch_topk = self.clickhouse_writer(cfg.clickhouse.topk.clone());
+		let tx_ch_metrics_task = self.clickhouse_writer(cfg.metrics.metrics_task.clone());
+		let tx_ch_metrics_job = self.clickhouse_writer(cfg.metrics.metrics_job.clone());
+		let tx_ch_metrics_queue = self.clickhouse_writer(cfg.metrics.metrics_queue.clone());
+		let tx_ch_metrics_db = self.clickhouse_writer(cfg.metrics.metrics_db.clone());
+		let tx_ch_topk = self.clickhouse_writer(cfg.metrics.topk.clone());
 
 		//
 		let (tx_domain_topk_notify, rx_domain_topk_notify) = self.ch_trans("domain_topk_notify");

@@ -28,7 +28,7 @@ tracing-subscriber = {version = "~0.3.0", features = ["env-filter"]}
 tracing-futures = "~0.2.5"
 
 interop = {path = "../interop" }
-crusty-core = {version="^0.80"}
+crusty-core = {version="^0.81"}
 tracing-tools = "~0.5.0"
 
 clickhouse = "~0.9.1"

@@ -103,29 +103,13 @@ queue:
       # initial list of seed URLs to start the broad crawling from, additionally we also read seeds from CRUSTY_SEEDS env. variable
       seeds: [ ]
 
-topk:
-  redis:
-    hosts: ["redis://172.16.3.1:6379/"]
-  collect:
-    second_level_only: false
-  options:
-    name: "top-domains"
-    k: 100
-    width: 25000
-    depth: 8
-    decay: 0.92
-    consume_interval: 15s
-  driver:
-    soft_cap: 250
-    hard_cap: 1000
-    release_after: 10s
-
 # Clickhouse database settings (metrics)
-clickhouse:
-  url: http://172.16.1.1:8123
-  username: default
-  password: ""
-  database: crusty
+metrics:
+  clickhouse:
+    url: http://172.16.1.1:8123
+    username: default
+    password: ""
+    database: crusty
 
   # We monitor various internal queues and persist their status to db
   queue_monitor_interval: 1s
@@ -178,6 +162,23 @@ clickhouse:
     force_write_duration: 15000ms
     concurrency: 3
 
+topk:
+  redis:
+    hosts: ["redis://172.16.3.1:6379/"]
+  collect:
+    second_level_only: false
+  options:
+    name: "top-domains"
+    k: 100
+    width: 25000
+    depth: 8
+    decay: 0.92
+    consume_interval: 15s
+  driver:
+    soft_cap: 250
+    hard_cap: 1000
+    release_after: 10s
+
 # crawling rules
 rules:
   skip_no_follow_links: true
@@ -219,40 +220,13 @@ default_crawling_settings:
     accept:
       - "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
 
-# resolver settings
-# leave empty for auto-conf
-resolver:
-  # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
-  # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  concurrency: 150
-  # how we select address to connect to(in case several are specified)
-  # one address always has to be selected before task can be queued(we need to know address to calculate addr_key && shard),
-  # we currently do not handle per-task errors(such as connection rejected or 5xx codes)
-  # for now we simply assume those will be purged from Q externally && rediscovered eventually(not implemented yet)
-  # disabled - ignore ipv6 addresses
-  # preferred - prefer ipv6 over ipv4
-  # fallback - use ipv6 only when ipv4 is not available
-  addr_ipv6_policy: Fallback
-
-# domain discovery settings
-domain_discovery:
-  # LRU cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
-  # but because cache is local it's effectiveness will drop when adding new Crusty nodes
-  # but worry not, redis queue is so fast(and pre-sharded) we could run couple hundred crusty nodes with almost no additional setup
-  cap:  25000000
-
-parser_processor:
-  # We parse HTML in a separate thread pool, stack size is configurable
-  # apparently even 32mib is not enough given max_response_size of 2mib...
-  stack_size: 128mib
-
 # various networking settings
 networking:
   profile:
     # Fancy local address binding for monster setups with several NICs(local port limitation)
     bind_local_ipv4: []
     bind_local_ipv6: []
-    # task will select it's IP just once -
+    # task will select source IP just once -
     # no matter the concurrency, for a particular task requests will always be coming from the same IP
     static_binding_within_the_task: true
     socket_read_buffer_size:
@@ -269,11 +243,39 @@ networking:
   #optionally blacklist some nets, reserved ipv4 are already blacklisted
   net_v4_blacklist: []
 
-#leave commented for auto-conf
-concurrency:
+# domain discovery settings
+domain_discovery:
+  # LRU cache capacity, this cache helps to ease load on redis queue(so we do not try to insert billions of duplicated records)
+  # but because cache is local it's effectiveness will drop when adding new Crusty nodes
+  # but worry not, redis queue is so fast(and pre-sharded) we could run couple hundred crusty nodes with almost no additional setup
+  cap: 25000000
+
+# resolver settings
+# leave empty for auto-conf
+resolver:
+  # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
+  # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
+  concurrency: 150
+  # how we select address to connect to(in case several are specified)
+  # one address always has to be selected before task can be queued(we need to know address to calculate addr_key && shard),
+  # we currently do not handle per-task errors(such as connection rejected or 5xx codes)
+  # for now we simply assume those will be purged from Q externally && rediscovered eventually(not implemented yet)
+  # disabled - ignore ipv6 addresses
+  # preferred - prefer ipv6 over ipv4
+  # fallback - use ipv6 only when ipv4 is not available
+  addr_ipv6_policy: Fallback
+
+#parser:
+  # We parse HTML in a separate thread pool, stack size is configurable
+  # When doing full DOM parsing keep this huge, when using LoL parser stack can be left at default, we use LoL
+  # stack_size: 128mib
   #= N of physical cores by default
-  parser_concurrency: 8
-  # pin N parser threads to core
-  parser_pin: 0
-  # We check multiple domains concurrency, set accordingly to saturate your hardware(cpu/network bound)
+  # concurrency: 8
+  # pin N parser threads to a core
+  # pin: 0
+
+# vertical scaling point(make sure to bump resolver.concurrency accordingly)
+concurrency:
+  # We check multiple domains concurrently, set accordingly to saturate your hardware(cpu/network bound)
+  # in future we should add adaptive auto-tuning
   domain_concurrency: 300

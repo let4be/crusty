@@ -168,17 +168,23 @@ pub struct ClickhouseWriterConfig {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ClickhouseConfig {
-	pub url:                    String,
-	pub username:               String,
-	pub password:               String,
-	pub database:               String,
-	pub queue_monitor_interval: rc::CDuration,
+	pub url:      String,
+	pub username: String,
+	pub password: String,
+	pub database: String,
+}
 
-	pub metrics_queue: ClickhouseWriterConfig,
-	pub metrics_db:    ClickhouseWriterConfig,
-	pub metrics_task:  ClickhouseWriterConfig,
-	pub metrics_job:   ClickhouseWriterConfig,
-	pub topk:          ClickhouseWriterConfig,
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MetricsConfig {
+	pub clickhouse: ClickhouseConfig,
+
+	pub queue_monitor_interval: rc::CDuration,
+	pub metrics_queue:          ClickhouseWriterConfig,
+	pub metrics_db:             ClickhouseWriterConfig,
+	pub metrics_task:           ClickhouseWriterConfig,
+	pub metrics_job:            ClickhouseWriterConfig,
+	pub topk:                   ClickhouseWriterConfig,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -197,28 +203,25 @@ pub struct DomainDiscoveryConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct ParserProcessorConfig {
-	pub stack_size: rc::CBytes,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct CrustyConfig {
-	pub host: String,
-
-	pub rules: RulesConfig,
+	pub host:     String,
+	pub log:      LogConfig,
 	pub shutdown: ShutdownConfig,
-	pub log: LogConfig,
-	pub clickhouse: ClickhouseConfig,
-	pub queue: QueueConfig,
-	pub topk: TopKConfig,
-	pub resolver: ResolverConfig,
-	pub networking: rc::NetworkingProfile,
-	pub concurrency: rc::ConcurrencyProfile,
-	pub default_crawling_settings: rc::CrawlingSettings,
 
-	pub domain_discovery: DomainDiscoveryConfig,
-	pub parser_processor: ParserProcessorConfig,
+	pub queue:   QueueConfig,
+	pub metrics: MetricsConfig,
+	pub topk:    TopKConfig,
+
+	pub rules:                     RulesConfig,
+	pub default_crawling_settings: rc::CrawlingSettings,
+	pub networking:                rc::NetworkingProfile,
+	pub domain_discovery:          DomainDiscoveryConfig,
+	pub resolver:                  ResolverConfig,
+
+	#[serde(default)]
+	pub parser:      rc::ParserProfile,
+	#[serde(default)]
+	pub concurrency: rc::ConcurrencyProfile,
 }
 
 #[derive(Clone, Debug, EnumString)]

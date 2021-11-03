@@ -355,6 +355,7 @@ impl<JS: ct::JobStateValues, TS: ct::TaskStateValues> From<ct::JobUpdate<JS, TS>
 			match err {
 				ct::JobError::JobFinishedBySoftTimeout => "SoftTimeout",
 				ct::JobError::JobFinishedByHardTimeout => "HardTimeout",
+				_ => "UnknownError", // todo: handle other errors(not ready in crusty-core just yet)
 			}
 		} else {
 			"Ok"
