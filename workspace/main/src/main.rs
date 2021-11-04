@@ -34,6 +34,10 @@ fn main() -> Result<()> {
 		}
 	}
 	let cfg = config::config();
+	println!(
+		"Crusty is configured with user-agent {}",
+		cfg.default_crawling_settings.user_agent.as_deref().unwrap_or("-")
+	);
 
 	let mut filter = EnvFilter::from_default_env().add_directive((*cfg.log.level).into());
 	if let Some(filters) = &cfg.log.filter {

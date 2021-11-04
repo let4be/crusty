@@ -245,13 +245,24 @@ pub struct ResolverConfig {
 	pub addr_ipv6_policy: ResolverAddrIpv6Policy,
 }
 
+fn expand_vars<S: ToString>(s: S) -> String {
+	let replacements = HashMap::from([("GIT_SHA", env!("VERGEN_GIT_SHA"))]);
+
+	let mut r = s.to_string();
+	for (var, val) in replacements {
+		r = r.replace(format!("{{{}}}", var).as_str(), val);
+	}
+
+	r
+}
+
 pub fn load() -> Result<()> {
 	let default_config: CrustyConfig =
-		serde_yaml::from_str(DEFAULT_CONFIG_STR).context("uh-oh, cannot parse default config...")?;
+		serde_yaml::from_str(&expand_vars(DEFAULT_CONFIG_STR)).context("uh-oh, cannot parse default config...")?;
 	DEFAULT_CONFIG.set(default_config).unwrap();
 
 	let mut read_err = None;
-	let cfg_str = fs::read_to_string("./config.yaml")?;
+	let cfg_str = expand_vars(fs::read_to_string("./config.yaml")?);
 	let mut config: CrustyConfig = serde_yaml::from_str(&cfg_str).unwrap_or_else(|err| {
 		read_err = Some(err);
 		DEFAULT_CONFIG.get().unwrap().clone()
