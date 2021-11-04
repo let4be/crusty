@@ -1,4 +1,3 @@
 pre-release-replacements = [
-    {file="src/job_reader.rs", search="crusty/[^\"]*", replace="{{crate_name}}/{{version}}"},
     {file="config.yaml", search="crusty/[^\"]*", replace="{{crate_name}}/{{version}}"},
 ]
