@@ -15,10 +15,6 @@ case $1 in
     pre-commit run --all-files
     ;;
 
-  release)
-    cargo release --manifest-path Cargo.toml "${@:2}"
-    ;;
-
   *)
     echo "invalid argument, setup/check/release expected"
     exit 1

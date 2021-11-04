@@ -213,7 +213,7 @@ default_crawling_settings:
   job_hard_timeout: 300s
   # killing a lot of jobs at the same time may negatively affect performance on high loaded setups, so we introduce a prng jitter
   job_hard_timeout_jitter: 60s
-  user_agent: "crusty/0.15.0"
+  user_agent: "crusty"
   compression: true
   # custom headers are supported
   custom_headers:

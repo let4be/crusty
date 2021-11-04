@@ -2,7 +2,6 @@
 
 > fast, scalable && polite broad web crawler written in Rust
 >
-![crates.io](https://img.shields.io/crates/v/crusty.svg)
 [![Dependency status](https://deps.rs/repo/github/let4be/crusty/status.svg)](https://deps.rs/repo/github/let4be/crusty)
 
 ![example](infra/resources/grafana.png "this is a screenshot of an actual broad web crawling run done on i9 10900k and 100mbit fiber optic channel, crusty takes less than 1 core while saturating 100mbit channel")

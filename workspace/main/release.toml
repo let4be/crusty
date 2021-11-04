@@ -1,3 +1,0 @@
-pre-release-replacements = [
-    {file="config.yaml", search="crusty/[^\"]*", replace="{{crate_name}}/{{version}}"},
-]
