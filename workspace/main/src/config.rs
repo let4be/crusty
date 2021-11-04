@@ -246,7 +246,8 @@ pub struct ResolverConfig {
 }
 
 fn expand_vars<S: ToString>(s: S) -> String {
-	let replacements = HashMap::from([("GIT_SHA", env!("VERGEN_GIT_SHA"))]);
+	let replacements =
+		HashMap::from([("GIT_SHA", env!("VERGEN_GIT_SHA")), ("BUILD_TIMESTAMP", env!("VERGEN_BUILD_TIMESTAMP"))]);
 
 	let mut r = s.to_string();
 	for (var, val) in replacements {
