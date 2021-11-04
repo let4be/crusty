@@ -16,7 +16,7 @@ case $1 in
     ;;
 
   release)
-    cargo release --manifest-path main/Cargo.toml "${@:2}"
+    cargo release --manifest-path workspace/main/Cargo.toml "${@:2}"
     ;;
 
   *)
