@@ -21,6 +21,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
     environment:
       - CRUSTY_SEEDS=${CRUSTY_SEEDS:-}
+      - CRUSTY_PROFILE=${CRUSTY_PROFILE:-}
 
   redis-queue:
     container_name: crusty-redis-queue
