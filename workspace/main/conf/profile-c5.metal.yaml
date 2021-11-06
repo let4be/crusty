@@ -1,0 +1,15 @@
+# specialized settings for high performance setup on aws c5.metal
+# use env. variable CRUSTY_PROFILE, for example
+# CRUSTY_PROFILE=c5.metal
+
+log:
+  # log space is a serious concern when measuring traffic in gbits/s
+  level: warn
+
+resolver:
+  # we need our resolver setup to keep up
+  concurrency: 500
+
+concurrency:
+  # lots of concurrent domains to saturate beefy hardware
+  domain_concurrency: 30000

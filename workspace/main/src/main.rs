@@ -54,7 +54,9 @@ fn main() -> Result<()> {
 	println!("{:#?}", &cfg);
 
 	if cfg.queue.jobs.reader.seeds.is_empty() {
-		return Err(anyhow!("Consider specifying one or more seed URLs in config.toml, see job_reader.seeds property"))
+		return Err(anyhow!(
+			"Set CRUSTY_SEEDS environment variable or configure a list of seed URLs directly in config file."
+		))
 	}
 
 	let new_fd_lim = fdlimit::raise_fd_limit();

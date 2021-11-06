@@ -22,7 +22,7 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 ## Key features
 - Configurability && extensibility
 
-  see a typical [config file](./workspace/main/config.yaml) with some explanations regarding available options
+  see a typical [config file](./workspace/main/conf/default.yaml) with some explanations regarding available options. Crusty also supports a flexible profile system allowing to override any setting default config file. Just set environment variable `CRUSTY_PROFILE` to the name of `./conf/profile-[*].yaml` config with specialized settings
 
 - Blazing fast single node performance (~10 gbit/s on 48 core(96HT) `c5.metal`)
 
@@ -56,12 +56,12 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 
   - with careful planning and minimal changes this system should scale from a single core instance to a 100+ instances(with total of tens of thousands of cores) which can easily consume your whole DC, or several if you are persistent... ;)
 
- - Smart Queue implemented on top of `Redis Modules` system allows to:
-    - ensure we check only one domain with same `addr_key`(no DDOS!)
-    - ensure high queue throughput
-    - ensure high availability(pre-sharded, if some segments become temporary unavailable system will work with others)
-    - ensure high scalability(pre-sharded, move shards to other machines if there's not enough CPU or more reliability desired).
-      Though the fact is a single Smart Queue can easily handle 5+ `Crusty` running on top hardware(96 cores monsters with 25gbit channels), so I would be quite curious to see a use case where you need to move out redis queue shards to dedicated machines(except for reliability)
+- Smart Queue implemented on top of `Redis Modules` system allows to:
+   - ensure we check only one domain with same `addr_key`(no DDOS!)
+   - ensure high queue throughput
+   - ensure high availability(pre-sharded, if some segments become temporary unavailable system will work with others)
+   - ensure high scalability(pre-sharded, move shards to other machines if there's not enough CPU or more reliability desired).
+     Though the fact is a single Smart Queue can easily handle 5+ `Crusty` running on top hardware(96 cores monsters with 25gbit channels), so I would be quite curious to see a use case where you need to move out redis queue shards to dedicated machines(except for reliability)
 
 - True politeness
 
@@ -98,12 +98,18 @@ https://docs.docker.com/get-docker/
 
 https://docs.docker.com/compose/install/
 
-then clone this repository && configure your machine manually(study the [script](./infra/lazy.sh)!) and don't forget [/etc/sysctl.conf](infra/profile/c5.metal/sysctl.conf) && [configure](./main/config.yaml) crusty
+then clone this repository && configure your machine manually(study the [script](./infra/lazy.sh)!) and don't forget [/etc/sysctl.conf](infra/profile/c5.metal/sysctl.conf) && [configure](./workspace/main/conf/default.yaml) crusty
 
 - play with it ( don't forget to change example.com to some valid domain with outgoing links not protected by robots.txt! )
 
 ```
 CRUSTY_SEEDS=https://example.com docker-compose up -d --build
+```
+
+- optionally set `CRUSTY_PROFILE` env variable to override some of default settings, for example
+
+```
+CRUSTY_PROFILE=c5.metal CRUSTY_SEEDS=https://example.com docker-compose up -d --build
 ```
 
 - see `Crusty` live at http://localhost:3000/d/crusty-dashboard/crusty?orgId=1&refresh=5s
@@ -113,7 +119,7 @@ CRUSTY_SEEDS=https://example.com docker-compose up -d --build
 
 additionally
 
-- study [config file](./workspace/main/config.yaml) and adapt to your needs,
+- study [config file](./workspace/main/conf/default.yaml) and adapt to your needs,
   there are sensible defaults for a 100mbit channel, if you have more/less bandwidth/cpu you might need to adjust `concurrency_profile`
 
 - to stop background run and _retain_ crawling data

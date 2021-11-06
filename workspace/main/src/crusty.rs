@@ -452,10 +452,10 @@ impl Crusty {
 
 	fn domain_resolver(&mut self, rx_sig_term: Receiver<()>, tx_domain_insert: Vec<Sender<Domain>>) -> Sender<String> {
 		let cfg = config::config();
-		let (tx, rx) = self.ch("domain_resolver_in", 0, cfg.resolver.concurrency);
+		let (tx, rx) = self.ch("domain_resolver_in", 0, 1);
 		let (tx_out, rx_out) = self.ch_trans("domain_resolver_out");
 
-		for _ in 0..cfg.resolver.concurrency {
+		for _ in 0..1 {
 			let network_profile = cfg.networking.clone().resolve().unwrap();
 
 			self.spawn(Crusty::domain_resolver_worker(

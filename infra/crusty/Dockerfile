@@ -25,7 +25,8 @@ RUN cargo build --release
 
 FROM rust:${RUST_VERSION} as runtime
 WORKDIR app
-COPY --from=builder /app/workspace/main/config.yaml .
+RUN mkdir conf
+COPY --from=builder /app/workspace/main/conf/* ./conf/
 COPY --from=builder /app/target/release/libredis_queue.so /usr/local/lib
 COPY --from=builder /app/target/release/libredis_calc.so /usr/local/lib
 COPY --from=builder /app/target/release/crusty /usr/local/bin

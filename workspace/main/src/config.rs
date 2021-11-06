@@ -1,5 +1,6 @@
 use std::{env, fs};
 
+use config::{Config, ConfigError, Environment, File, FileFormat};
 use crusty_core::config as rc;
 use once_cell::sync::OnceCell;
 use serde::{de, Deserialize, Deserializer};
@@ -7,8 +8,7 @@ use serde::{de, Deserialize, Deserializer};
 use crate::{_prelude::*, types::*};
 
 pub static CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
-static DEFAULT_CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
-static DEFAULT_CONFIG_STR: &str = include_str!("../config.yaml");
+static DEFAULT_CONFIG_STR: &str = include_str!("../conf/default.yaml");
 
 pub fn config() -> &'static CrustyConfig {
 	CONFIG.get().unwrap()
@@ -245,28 +245,51 @@ pub struct ResolverConfig {
 	pub addr_ipv6_policy: ResolverAddrIpv6Policy,
 }
 
-fn expand_vars<S: ToString>(s: S) -> String {
-	let replacements =
-		HashMap::from([("GIT_SHA", env!("VERGEN_GIT_SHA")), ("BUILD_TIMESTAMP", env!("VERGEN_BUILD_TIMESTAMP"))]);
+impl CrustyConfig {
+	fn expand_vars<S: ToString>(s: S) -> String {
+		let replacements =
+			HashMap::from([("GIT_SHA", env!("VERGEN_GIT_SHA")), ("BUILD_TIMESTAMP", env!("VERGEN_BUILD_TIMESTAMP"))]);
 
-	let mut r = s.to_string();
-	for (var, val) in replacements {
-		r = r.replace(format!("{{{}}}", var).as_str(), val);
+		let mut r = s.to_string();
+		for (var, val) in replacements {
+			r = r.replace(format!("{{{}}}", var).as_str(), val);
+		}
+
+		r
 	}
 
-	r
+	pub fn new_from_content(content: &str) -> std::result::Result<Self, ConfigError> {
+		let mut s = Config::default();
+
+		s.merge(File::from_str(&Self::expand_vars(content), FileFormat::Yaml))?;
+
+		if let Ok(env_profile) = env::var("CRUSTY_PROFILE") {
+			s.merge(File::with_name(&format!("./conf/profile-{}.yaml", env_profile)).required(true))?;
+		}
+
+		s.merge(File::with_name("./conf/local.yaml").required(false))?;
+
+		s.merge(Environment::with_prefix("APP").separator("_"))?;
+
+		s.try_into()
+	}
+
+	pub fn new() -> std::result::Result<Self, ConfigError> {
+		let default_config_str =
+			fs::read_to_string("./conf/default.yaml").map_err(|err| ConfigError::Message(err.to_string()))?;
+		Self::new_from_content(&default_config_str)
+	}
 }
 
 pub fn load() -> Result<()> {
-	let default_config: CrustyConfig =
-		serde_yaml::from_str(&expand_vars(DEFAULT_CONFIG_STR)).context("uh-oh, cannot parse default config...")?;
-	DEFAULT_CONFIG.set(default_config).unwrap();
+	let default_config =
+		CrustyConfig::new_from_content(DEFAULT_CONFIG_STR).context("uh-oh, cannot parse default config...")?;
 
 	let mut read_err = None;
-	let cfg_str = expand_vars(fs::read_to_string("./config.yaml")?);
-	let mut config: CrustyConfig = serde_yaml::from_str(&cfg_str).unwrap_or_else(|err| {
+	let mut config = CrustyConfig::new().unwrap_or_else(|err| {
 		read_err = Some(err);
-		DEFAULT_CONFIG.get().unwrap().clone()
+
+		default_config
 	});
 
 	if let Ok(seeds) = env::var("CRUSTY_SEEDS") {

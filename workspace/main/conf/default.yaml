@@ -162,10 +162,12 @@ metrics:
     force_write_duration: 15000ms
     concurrency: 3
 
+# topk settings
 topk:
   redis:
     hosts: ["redis://172.16.3.1:6379/"]
   collect:
+    # when set to true collects info only about second level domains(like example.com but not bla-bla.example.com)
     second_level_only: false
   options:
     name: "top-domains"
@@ -213,8 +215,8 @@ default_crawling_settings:
   job_hard_timeout: 300s
   # killing a lot of jobs at the same time may negatively affect performance on high loaded setups, so we introduce a prng jitter
   job_hard_timeout_jitter: 60s
-  # support dynamic replacement of some variables
-  user_agent: "crusty/{GIT_SHA}"
+  # Optional user-agent string. Supports dynamic replacement of some variables
+  user_agent: "crusty/{{GIT_SHA}}"
   compression: true
   # custom headers are supported
   custom_headers:
@@ -256,14 +258,15 @@ domain_discovery:
 resolver:
   # number of concurrent green threads for name resolution(be mindful of your dns server capacity)
   # this should be configured carefully, low setting will lead to job starvation(inability to satisfy requested concurrency_profile.domain_concurrency)
-  concurrency: 500
+  concurrency: 150
+
   # how we select address to connect to(in case several are specified)
   # one address always has to be selected before task can be queued(we need to know address to calculate addr_key && shard),
   # we currently do not handle per-task errors(such as connection rejected or 5xx codes)
   # for now we simply assume those will be purged from Q externally && rediscovered eventually(not implemented yet)
-  # disabled - ignore ipv6 addresses
-  # preferred - prefer ipv6 over ipv4
-  # fallback - use ipv6 only when ipv4 is not available
+  # Disabled - ignore ipv6 addresses
+  # Preferred - prefer ipv6 over ipv4
+  # Fallback - use ipv6 only when ipv4 is not available
   addr_ipv6_policy: Fallback
 
 #parser:
@@ -279,4 +282,4 @@ resolver:
 concurrency:
   # We check multiple domains concurrently, set accordingly to saturate your hardware(cpu/network bound)
   # in future we should add adaptive auto-tuning
-  domain_concurrency: 30000
+  domain_concurrency: 300

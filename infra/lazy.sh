@@ -83,8 +83,6 @@ while true; do
     chown root:root $SYSCTL
     chmod 600 $SYSCTL
     sysctl --system
-    echo "Using special crusty config..."
-    cp "./infra/profiles/$PROFILE/config.yaml" ./main/config.yaml
     break
   else
     echo "No such profile found"
@@ -92,7 +90,7 @@ while true; do
 done
 
 echo "Check crusty config pls..."
-nano ./main/config.yaml </dev/tty
+nano ./workspace/main/conf/*.yaml </dev/tty
 
 docker build -f ./infra/crusty/Dockerfile -t crusty_crusty .
 
