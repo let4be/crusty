@@ -35,7 +35,7 @@ fn main() -> Result<()> {
 	}
 	let cfg = config::config();
 	println!(
-		"Crusty is configured with user-agent {}",
+		"Crusty is configured with user-agent '{}'",
 		cfg.default_crawling_settings.user_agent.as_deref().unwrap_or("-")
 	);
 

@@ -216,7 +216,7 @@ default_crawling_settings:
   # killing a lot of jobs at the same time may negatively affect performance on high loaded setups, so we introduce a prng jitter
   job_hard_timeout_jitter: 60s
   # Optional user-agent string. Supports dynamic replacement of some variables
-  user_agent: "crusty/{{GIT_SHA}}"
+  user_agent: "crusty/{GIT_SHA}"
   compression: true
   # custom headers are supported
   custom_headers:
