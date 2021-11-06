@@ -22,7 +22,8 @@ Built on top of [crusty-core](https://github.com/let4be/crusty-core) which handl
 ## Key features
 - Configurability && extensibility
 
-  see a typical [config file](./workspace/main/conf/default.yaml) with some explanations regarding available options. Crusty also supports a flexible profile system allowing to override any setting default config file. Just set environment variable `CRUSTY_PROFILE` to the name of `./conf/profile-[*].yaml` config with specialized settings
+  see a typical [config file](./workspace/main/conf/default.yaml) with some explanations regarding available options. Crusty also supports a flexible profile system allowing to override any setting in default config file.
+Just set environment variable `CRUSTY_PROFILE` to the name of `./conf/profile-[*].yaml` config with specialized settings
 
 - Blazing fast single node performance (~10 gbit/s on 48 core(96HT) `c5.metal`)
 
