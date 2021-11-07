@@ -8,7 +8,6 @@ use serde::{de, Deserialize, Deserializer};
 use crate::{_prelude::*, types::*};
 
 pub static CONFIG: OnceCell<CrustyConfig> = OnceCell::new();
-static DEFAULT_CONFIG_STR: &str = include_str!("../conf/default.yaml");
 
 pub fn config() -> &'static CrustyConfig {
 	CONFIG.get().unwrap()
@@ -263,7 +262,7 @@ impl CrustyConfig {
 
 		s.merge(File::from_str(&Self::expand_vars(content), FileFormat::Yaml))?;
 
-		if let Ok(env_profile) = env::var("CRUSTY_PROFILE") {
+		if let Some(env_profile) = env::var("CRUSTY_PROFILE").ok().filter(|p| !p.is_empty()) {
 			s.merge(File::with_name(&format!("./conf/profile-{}.yaml", env_profile)).required(true))?;
 		}
 
@@ -282,24 +281,12 @@ impl CrustyConfig {
 }
 
 pub fn load() -> Result<()> {
-	let default_config =
-		CrustyConfig::new_from_content(DEFAULT_CONFIG_STR).context("uh-oh, cannot parse default config...")?;
-
-	let mut read_err = None;
-	let mut config = CrustyConfig::new().unwrap_or_else(|err| {
-		read_err = Some(err);
-
-		default_config
-	});
+	let mut config = CrustyConfig::new()?;
 
 	if let Ok(seeds) = env::var("CRUSTY_SEEDS") {
 		config.queue.jobs.reader.seeds.extend(seeds.split(',').filter(|v| !v.is_empty()).map(String::from));
 	}
 
 	CONFIG.set(config).unwrap();
-
-	if let Some(err) = read_err {
-		return Err(err.into())
-	}
 	Ok(())
 }
