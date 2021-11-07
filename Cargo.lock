@@ -438,6 +438,7 @@ dependencies = [
  "http",
  "humanize-rs",
  "interop",
+ "ipnetwork",
  "itertools",
  "lol_html",
  "num_cpus",
@@ -1132,6 +1133,15 @@ name = "ipnet"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68f2d64f2edebec4ce84ad108148e67e1064789bee435edc5b60ad398714a3a9"
+
+[[package]]
+name = "ipnetwork"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4088d739b183546b239688ddbc79891831df421773df95e236daf7867866d355"
+dependencies = [
+ "serde 1.0.130",
+]
 
 [[package]]
 name = "itertools"

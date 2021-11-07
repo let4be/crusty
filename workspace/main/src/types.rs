@@ -2,6 +2,7 @@ use std::net::{IpAddr, SocketAddr};
 
 use clickhouse::Row;
 use crusty_core::types as ct;
+use ipnetwork::{Ipv4Network, Ipv6Network};
 use serde::{Deserialize, Serialize};
 
 use crate::{_prelude::*, config, config::config};
@@ -39,30 +40,17 @@ impl Domain {
 	}
 
 	fn calc_shard(addr: &SocketAddr) -> (String, usize) {
-		let mut addr = match addr.ip() {
-			IpAddr::V4(ip) => ip.octets().to_vec(),
-			IpAddr::V6(ip) => ip.octets().to_vec(),
+		let cfg = &config().queue.jobs;
+
+		let masked_addr = match addr.ip() {
+			IpAddr::V4(ip) => (Ipv4Network::new(ip, cfg.addr_key_v4_mask).unwrap().network().octets().to_vec()),
+			IpAddr::V6(ip) => (Ipv6Network::new(ip, cfg.addr_key_v6_mask).unwrap().network().octets().to_vec()),
 		};
 
-		let mut left =
-			if addr.len() > 4 { config().queue.jobs.addr_key_v6_mask } else { config().queue.jobs.addr_key_v4_mask };
-		for a in &mut addr {
-			if left >= 8 {
-				left -= 8;
-			} else {
-				let mut mask = 0;
-				for k in 0..left {
-					mask |= 1 << k;
-				}
-				*a &= mask;
-				left = 0;
-			}
-		}
-
-		let addr_key = base64::encode(addr);
+		let addr_key = base64::encode(masked_addr);
 		let mut hasher = crc32fast::Hasher::new();
 		hasher.update(addr_key.as_bytes());
-		let shard = hasher.finalize() as usize % config().queue.jobs.shard_total;
+		let shard = hasher.finalize() as usize % cfg.shard_total;
 		(addr_key, shard)
 	}
 

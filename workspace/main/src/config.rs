@@ -257,7 +257,7 @@ impl CrustyConfig {
 		r
 	}
 
-	pub fn new_from_content(content: &str) -> std::result::Result<Self, ConfigError> {
+	fn new_from_content(content: &str) -> std::result::Result<Self, ConfigError> {
 		let mut s = Config::default();
 
 		s.merge(File::from_str(&Self::expand_vars(content), FileFormat::Yaml))?;
