@@ -20,7 +20,7 @@ default = ["lol_html_parser"]
 [dependencies]
 tokio = { version = "^1.12", features = ["rt", "rt-multi-thread", "io-util", "net", "time", "macros", "signal"] }
 itertools = "~0.10.1"
-strum = { version = "0.22", features = ["derive"] }
+strum = { version = "0.23", features = ["derive"] }
 anyhow = "~1.0.40"
 futures = "~0.3.14"
 tracing = "~0.1.25"
