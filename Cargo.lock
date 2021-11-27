@@ -447,7 +447,7 @@ dependencies = [
  "relabuf",
  "serde 1.0.130",
  "serde_json",
- "strum 0.23.0",
+ "strum",
  "tokio",
  "tracing",
  "tracing-futures",
@@ -459,9 +459,9 @@ dependencies = [
 
 [[package]]
 name = "crusty-core"
-version = "0.81.0"
+version = "0.82.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8606d8834cd97e25aee0f05c7921d99af1850795fb556d826957738bc4c2735b"
+checksum = "62e4c653f54c96ceae479ef061ce01d6ca01649af1a5ac0e29f9223b6fcc2380"
 dependencies = [
  "anyhow",
  "bytes",
@@ -482,7 +482,7 @@ dependencies = [
  "rand 0.8.4",
  "robotstxt-with-cache",
  "serde 1.0.130",
- "strum 0.22.0",
+ "strum",
  "thiserror",
  "tokio",
  "tracing",
@@ -2498,15 +2498,6 @@ name = "strsim"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
-
-[[package]]
-name = "strum"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7ac893c7d471c8a21f31cfe213ec4f6d9afeed25537c772e08ef3f005f8729e"
-dependencies = [
- "strum_macros 0.22.0",
-]
 
 [[package]]
 name = "strum"
